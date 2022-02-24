@@ -1,3 +1,4 @@
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 int main()
@@ -19,10 +20,15 @@ int main()
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
+        float time = static_cast<float>(glfwGetTime());
+        glClearColor(0.1f * time, 0.0f, 0.0f, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
