@@ -21,6 +21,7 @@ target_include_directories(miri-tfm
     PRIVATE external/glad/include
     PRIVATE external/imgui
     PRIVATE external/imgui/backends
+    PRIVATE external/stb
 )
 
 target_link_libraries(miri-tfm
