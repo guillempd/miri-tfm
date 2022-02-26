@@ -56,9 +56,38 @@ void SetupShaders(GLuint& program)
     in vec2 texCoord;
     out vec4 FragColor;
     uniform sampler2D hdrImage;
+    uniform float verticalFov;
+    // TODO: Check this code extracted from learnopengl.com
+    const vec2 invAtan = vec2(0.1591, 0.3183);
+    vec2 SampleSphericalMap(vec3 v)
+    {
+        vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+        uv *= invAtan;
+        uv += 0.5;
+        return uv;
+    }
     void main()
     {
-        FragColor = texture(hdrImage, texCoord);
+        // NOTE: Be careful with all z coordinates (might be negated)
+        // These would be uniforms
+        const vec3 cameraRight = vec3(1.0, 0.0, 0.0);
+        const vec3 cameraUp = vec3(0.0, 1.0, 0.0);
+        const vec3 cameraForward = vec3(0.0, 0.0, 1.0);
+        const vec3 cameraPosition = vec3(0.0);
+        // float verticalFov = 3.1415/4;
+        float ar = float(4)/float(3);
+        float near = 0.1;
+
+        const mat3 cameraRotation = mat3(cameraRight, cameraUp, cameraForward);
+        vec2 ndc = 2 * texCoord - vec2(1.0);
+        float top = near * tan(verticalFov/2);
+        float right = top * ar;
+        vec2 viewOffset = ndc * vec2(top, right);
+        vec3 ray = cameraPosition + cameraRotation * vec3(viewOffset, -near); // FIXME: cameraPosition should not be used here
+        vec3 direction = normalize(ray);
+        // Sample with this direction the hdrImage
+
+        FragColor = texture(hdrImage, SampleSphericalMap(direction));
     }
 )";
 
@@ -110,12 +139,13 @@ void LoadImageTexture(GLuint& texture)
     }
 }
 
-void Render(GLuint vao, GLuint program, GLuint texture)
+void Render(GLuint vao, GLuint program, GLuint texture, float verticalFov)
 {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUseProgram(program);
     glUniform1i(glGetUniformLocation(program, "hdrImage"), 0);
+    glUniform1f(glGetUniformLocation(program, "verticalFov"), verticalFov);
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
@@ -184,6 +214,7 @@ int main()
     LoadImageTexture(texture);
 
     float clearColor[3] = { 1.0f, 1.0f, 1.0f };
+    float verticalFov = 3.1415f / 4.0f;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -201,13 +232,14 @@ int main()
         if (ImGui::Begin("Color picker"))
         {
             ImGui::ColorEdit3("Clear Color", clearColor);
+            ImGui::SliderFloat("Vertical Fov", &verticalFov, 3.1415f / 8.0f, 3.1415f / 2.0f);
         }
         ImGui::End();
 
         glClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Render(vao, program, texture);
+        Render(vao, program, texture, verticalFov);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
