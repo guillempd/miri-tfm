@@ -4,6 +4,7 @@ project(miri-tfm)
 
 add_executable(miri-tfm
     main.cpp
+    Application.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_demo.cpp
     external/imgui/imgui_draw.cpp
