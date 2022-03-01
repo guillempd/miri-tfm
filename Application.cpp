@@ -23,7 +23,7 @@ Application::~Application()
     std::cout << "Destroying Application" << std::endl;
 }
 
-void Application::Init()
+void Application::Initialize()
 {
     LoadFullScreenQuad();
     LoadShaders();

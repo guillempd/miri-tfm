@@ -5,7 +5,7 @@ class Application
 public:
     Application();
     ~Application();
-    void Init();
+    void Initialize();
     void OnRender();
     void OnCursorMovement(double xpos, double ypos);
 private:
