@@ -40,14 +40,19 @@ void Window::InstallCallbacks()
 
     glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
     {
-        Window* thisWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
         thisWindow->OnMouseButton(button, action, mods);
     });
 
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos)
     {
-        Window* thisWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
         thisWindow->OnCursorPos(xpos, ypos);
+    });
+
+    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
+    {
+        glViewport(0, 0, width, height);
     });
 }
 

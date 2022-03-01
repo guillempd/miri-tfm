@@ -5,8 +5,6 @@
 
 #include <glm/glm.hpp>
 
-#include <GLAD/glad.h>
-
 class Application
 {
 public:
@@ -19,6 +17,5 @@ public:
 private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
-    float m_clearColor[3];
     HdrSky m_hdrSky;
 };

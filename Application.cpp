@@ -1,13 +1,16 @@
 #include "Application.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <imgui.h>
+
+#include <glad/glad.h>
 
 #include <iostream>
 
 Application::Application()
     : m_camera()
     , m_previousCursorPosition()
-    , m_clearColor{1.0f, 1.0f, 1.0f}
     , m_hdrSky()
 {
     std::cout << "Creating Application" << std::endl;
@@ -20,6 +23,7 @@ Application::~Application()
 
 void Application::Initialize()
 {
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     m_hdrSky.Load();
 }
 
@@ -41,15 +45,7 @@ void Application::OnRender()
 {
     ImGui::ShowDemoWindow();
 
-    if (ImGui::Begin("Color picker"))
-    {
-        ImGui::ColorEdit3("Clear Color", m_clearColor);
-    }
-    ImGui::End();
-
     m_camera.OnRender();
-
-    glClearColor(m_clearColor[0], m_clearColor[1], m_clearColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     m_hdrSky.Render(m_camera);
