@@ -55,6 +55,12 @@ int main()
         application->OnCursorMovement(xpos, ypos);
     });
 
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
+    {
+        Application* application = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        application->OnMouseClick(button, action, mods);
+    });
+
 
     glViewport(0, 0, 1024, 768);
 
@@ -81,12 +87,12 @@ int main()
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        glfwPollEvents();
         application.OnRender();
 
         ImGui::Render();
