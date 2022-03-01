@@ -12,16 +12,19 @@ Camera::Camera()
     , m_azimuth(0.0f)
     , m_zenith(3.1415f / 2.0f)
     , m_isRotating(false)
+    , m_verticalFov(3.1415f / 4.0f)
 {
 }
 
 void Camera::OnRender()
 {
-    /*if (ImGui::Begin("Camera"))
+    if (ImGui::Begin("Camera"))
     {
         ImGui::SliderFloat("Azimuth", &m_azimuth, 0.0f, 2.0f * 3.14f);
+        ImGui::SliderFloat("Vertical Fov", &m_verticalFov, 3.1415f / 8.0f, 3.1415f / 2.0f);
     }
-    ImGui::End();*/
+    ImGui::End();
+
     m_forward = glm::vec3(glm::sin(m_zenith) * glm::cos(m_azimuth), glm::cos(m_zenith), glm::sin(m_zenith) * glm::sin(m_azimuth));
     m_right = glm::normalize(glm::cross(m_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
     m_up = glm::cross(m_right, m_forward);

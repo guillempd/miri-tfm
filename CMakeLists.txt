@@ -1,5 +1,8 @@
 ﻿cmake_minimum_required(VERSION 3.18)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 project(miri-tfm)
 
 add_executable(miri-tfm
@@ -7,6 +10,9 @@ add_executable(miri-tfm
     Application.cpp
     Window.cpp
     Camera.cpp
+    Texture.cpp
+    Program.cpp
+    HdrSky.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_demo.cpp
     external/imgui/imgui_draw.cpp
