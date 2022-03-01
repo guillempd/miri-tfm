@@ -8,7 +8,8 @@
 #include <iostream>
 
 Application::Application()
-    : m_clearColor{1.0f, 1.0f, 1.0f}
+    : m_camera()
+    , m_clearColor{1.0f, 1.0f, 1.0f}
     , m_verticalFov(3.1415f / 4.0f)
     , m_vao(GL_NONE)
     , m_vbo(GL_NONE)
@@ -32,9 +33,16 @@ void Application::Initialize()
 
 void Application::OnCursorMovement(double xpos, double ypos)
 {
-    if (ImGui::GetIO().WantCaptureMouse) return;
+    glm::vec2 currentCursorPosition = glm::vec2(xpos, ypos);
+    glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
+    m_camera.OnMouseMovement(cursorMovement);
 
-    std::cout << "Cursor moved to position (" << xpos << ", " << ypos << ")" << std::endl;
+    m_previousCursorPosition = currentCursorPosition;
+}
+
+void Application::OnMouseClick(int button, int action, int mods)
+{
+    m_camera.OnMouseClick(button, action, mods);
 }
 
 
@@ -80,6 +88,9 @@ void Application::LoadShaders()
     out vec4 FragColor;
     uniform sampler2D hdrImage;
     uniform float verticalFov;
+    uniform vec3 cameraRight;
+    uniform vec3 cameraUp;
+    uniform vec3 cameraForward;
     // TODO: Check this code extracted from learnopengl.com
     const vec2 invAtan = vec2(0.1591, 0.3183);
     vec2 SampleSphericalMap(vec3 v)
@@ -93,15 +104,15 @@ void Application::LoadShaders()
     {
         // NOTE: Be careful with all z coordinates (might be negated)
         // These would be uniforms
-        const vec3 cameraRight = vec3(1.0, 0.0, 0.0);
-        const vec3 cameraUp = vec3(0.0, 1.0, 0.0);
-        const vec3 cameraForward = vec3(0.0, 0.0, 1.0);
+        // const vec3 cameraRight = vec3(1.0, 0.0, 0.0);
+        // const vec3 cameraUp = vec3(0.0, 1.0, 0.0);
+        // const vec3 cameraForward = vec3(0.0, 0.0, 1.0);
         const vec3 cameraPosition = vec3(0.0);
         // float verticalFov = 3.1415/4;
         float ar = float(4)/float(3);
         float near = 0.1;
 
-        const mat3 cameraRotation = mat3(cameraRight, cameraUp, cameraForward);
+        mat3 cameraRotation = mat3(cameraRight, cameraUp, cameraForward);
         vec2 ndc = 2 * texCoord - vec2(1.0);
         float top = near * tan(verticalFov/2);
         float right = top * ar;
@@ -174,6 +185,8 @@ void Application::OnRender()
     }
     ImGui::End();
 
+    m_camera.OnRender();
+
     glClearColor(m_clearColor[0], m_clearColor[1], m_clearColor[2], 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glActiveTexture(GL_TEXTURE0);
@@ -181,6 +194,12 @@ void Application::OnRender()
     glUseProgram(m_program);
     glUniform1i(glGetUniformLocation(m_program, "hdrImage"), 0);
     glUniform1f(glGetUniformLocation(m_program, "verticalFov"), m_verticalFov);
+    const glm::vec3& cameraRight = m_camera.GetRight();
+    glUniform3f(glGetUniformLocation(m_program, "cameraRight"), cameraRight.x, cameraRight.y, cameraRight.z);
+    const glm::vec3& cameraUp = m_camera.GetUp();
+    glUniform3f(glGetUniformLocation(m_program, "cameraUp"), cameraUp.x, cameraUp.y, cameraUp.z);
+    const glm::vec3& cameraForward = m_camera.GetForward();
+    glUniform3f(glGetUniformLocation(m_program, "cameraForward"), cameraForward.x, cameraForward.y, cameraForward.z);
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }

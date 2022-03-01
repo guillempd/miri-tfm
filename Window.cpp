@@ -103,6 +103,8 @@ void Window::OnMouseButton(int button, int action, int mods)
 {
     if (ImGui::GetIO().WantCaptureMouse) return;
 
+    m_application.OnMouseClick(button, action, mods);
+
 }
 
 void Window::OnCursorPos(double xpos, double ypos)

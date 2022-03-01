@@ -6,6 +6,7 @@ add_executable(miri-tfm
     main.cpp
     Application.cpp
     Window.cpp
+    Camera.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_demo.cpp
     external/imgui/imgui_draw.cpp
@@ -24,6 +25,7 @@ target_include_directories(miri-tfm
     PRIVATE external/imgui
     PRIVATE external/imgui/backends
     PRIVATE external/stb
+    PRIVATE external/glm
 )
 
 target_link_libraries(miri-tfm

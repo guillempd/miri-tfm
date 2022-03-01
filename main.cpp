@@ -17,6 +17,6 @@ int main()
         window.Initialize();
         window.MainLoop();
     }
-    
+
     glfwTerminate();
 }
