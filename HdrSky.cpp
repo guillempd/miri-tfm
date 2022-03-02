@@ -1,5 +1,11 @@
 #include "HdrSky.h"
 
+#include <nfd.hpp>
+
+#include <imgui.h>
+
+#include <iostream>
+
 void HdrSky::Load()
 {
     const char* vertexShaderSource = R"(
@@ -90,6 +96,8 @@ void HdrSky::LoadFullScreenQuad()
 
 void HdrSky::Render(const Camera& camera)
 {
+    RenderUi();
+
     m_texture.SetUnit(0);
     m_program.Use();
     m_program.SetInt("hdrImage", 0);
@@ -100,4 +108,20 @@ void HdrSky::Render(const Camera& camera)
 
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void HdrSky::RenderUi()
+{
+    if (ImGui::Begin("HDR Sky Settings"))
+    {
+        ImGui::Text("whatever");
+        ImGui::SameLine();
+        if (ImGui::Button("Open..."))
+        {
+            NFD::UniquePath path;
+            NFD::OpenDialog(path);
+            if (path) std::cout << "Opened file: " << path << std::endl;
+        }
+    }
+    ImGui::End();
 }

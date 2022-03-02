@@ -24,10 +24,12 @@ add_executable(miri-tfm
 
 add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
+add_subdirectory(external/nativefiledialog-extended)
 
 target_include_directories(miri-tfm
     PRIVATE external/glfw/include
     PRIVATE external/glad/include
+    PRIVATE external/nativefiledialog-extended/src/include
     PRIVATE external/imgui
     PRIVATE external/imgui/backends
     PRIVATE external/stb
@@ -37,4 +39,5 @@ target_include_directories(miri-tfm
 target_link_libraries(miri-tfm
     glfw
     glad
+    nfd
 )

@@ -12,6 +12,7 @@ public:
     HdrSky() = default;
     void Load();
     void Render(const Camera& camera);
+    void RenderUi();
 private:
     void LoadFullScreenQuad();
 private:

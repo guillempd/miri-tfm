@@ -2,6 +2,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <nfd.hpp>
+
 #include <iostream>
 
 int main()
@@ -13,10 +15,12 @@ int main()
 
     if (glfwInit())
     {
+        NFD::Init();
         Window window = Window();
         window.Initialize();
         window.MainLoop();
     }
 
+    NFD::Quit();
     glfwTerminate();
 }
