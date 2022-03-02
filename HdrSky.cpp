@@ -28,6 +28,7 @@ void HdrSky::Load()
     uniform vec3 cameraRight;
     uniform vec3 cameraUp;
     uniform vec3 cameraForward;
+    uniform float aspectRatio;
     // TODO: Check this code extracted from learnopengl.com
     const vec2 invAtan = vec2(0.1591, 0.3183);
     vec2 SampleSphericalMap(vec3 v)
@@ -40,25 +41,22 @@ void HdrSky::Load()
     void main()
     {
         // NOTE: Be careful with all z coordinates (might be negated)
-        // These would be uniforms
-        // const vec3 cameraRight = vec3(1.0, 0.0, 0.0);
-        // const vec3 cameraUp = vec3(0.0, 1.0, 0.0);
-        // const vec3 cameraForward = vec3(0.0, 0.0, 1.0);
         const vec3 cameraPosition = vec3(0.0);
-        // float verticalFov = 3.1415/4;
-        float ar = float(4)/float(3);
         float near = 0.1;
 
         mat3 cameraRotation = mat3(cameraRight, cameraUp, cameraForward);
         vec2 ndc = 2 * texCoord - vec2(1.0);
         float top = near * tan(verticalFov/2);
-        float right = top * ar;
-        vec2 viewOffset = ndc * vec2(top, right);
-        vec3 ray = cameraPosition + cameraRotation * vec3(viewOffset, -near); // FIXME: cameraPosition should not be used here
+        float right = top * aspectRatio;
+        vec2 viewOffset = ndc * vec2(right, top);
+        vec3 ray = cameraPosition + cameraRotation * vec3(viewOffset, near); // FIXME: cameraPosition should not be used here
         vec3 direction = normalize(ray);
         // Sample with this direction the hdrImage
 
         FragColor = texture(hdrImage, SampleSphericalMap(direction));
+        FragColor = FragColor / (1.0 + FragColor);
+        FragColor.a = 1.0;
+        // if (aspectRatio > 1.0) FragColor = vec4(0.0);
     }
 )";
 
@@ -66,7 +64,7 @@ void HdrSky::Load()
     m_program.SetFragmentShaderSource(fragmentShaderSource);
     m_program.Build();
 
-    m_texture.Load();
+    m_texture.Load("D:/Descargas/drackenstein_quarry_4k.hdr");
 
     LoadFullScreenQuad();
 }
@@ -105,6 +103,7 @@ void HdrSky::Render(const Camera& camera)
     m_program.SetVec3("cameraRight", camera.GetRight());
     m_program.SetVec3("cameraUp", camera.GetUp());
     m_program.SetVec3("cameraForward", camera.GetForward());
+    m_program.SetFloat("aspectRatio", camera.GetAspectRatio());
 
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -114,13 +113,18 @@ void HdrSky::RenderUi()
 {
     if (ImGui::Begin("HDR Sky Settings"))
     {
+        ImGui::Text("HDR Image");
         ImGui::Text("whatever");
         ImGui::SameLine();
         if (ImGui::Button("Open..."))
         {
             NFD::UniquePath path;
             NFD::OpenDialog(path);
-            if (path) std::cout << "Opened file: " << path << std::endl;
+            if (path)
+            {
+                std::cout << "Opened file: " << path << std::endl;
+                m_texture.Load(path.get());
+            }
         }
     }
     ImGui::End();

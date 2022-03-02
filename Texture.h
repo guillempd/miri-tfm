@@ -2,11 +2,13 @@
 
 #include <glad/glad.h>
 
+#include <string_view>
+
 class Texture
 {
 public:
     Texture();
-    void Load();
+    void Load(std::string_view imagePath);
     void SetUnit(unsigned int unit);
     GLuint m_id;
 private:

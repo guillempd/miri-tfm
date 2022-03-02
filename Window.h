@@ -12,6 +12,7 @@ public:
 private:
     void OnMouseButton(int button, int action, int mods);
     void OnCursorPos(double xpos, double ypos);
+    void OnFramebufferSize(int width, int height);
     void MakeCurrent() const;
     void InstallCallbacks();
     void InitializeImGui() const;

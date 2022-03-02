@@ -21,9 +21,10 @@ Application::~Application()
     std::cout << "Destroying Application" << std::endl;
 }
 
-void Application::Initialize()
+void Application::Initialize(int width, int height)
 {
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    OnFramebufferSize(width, height);
     m_hdrSky.Load();
 }
 
@@ -39,6 +40,12 @@ void Application::OnCursorMovement(double xpos, double ypos)
 void Application::OnMouseClick(int button, int action, int mods)
 {
     m_camera.OnMouseClick(button, action, mods);
+}
+
+void Application::OnFramebufferSize(int width, int height)
+{
+    glViewport(0, 0, width, height);
+    m_camera.SetAspectRatio(width, height);
 }
 
 void Application::OnRender()

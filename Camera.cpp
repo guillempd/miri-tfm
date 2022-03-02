@@ -51,3 +51,8 @@ void Camera::OnMouseClick(int button, int action, int mods)
         else /* action == GLFW_RELEASE */ m_isRotating = false;
     }
 }
+
+void Camera::SetAspectRatio(int width, int height)
+{
+    m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+}

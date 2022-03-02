@@ -13,6 +13,8 @@ public:
     const glm::vec3& GetForward() const { return m_forward; }
     const glm::vec3& GetUp() const { return m_up; }
     float GetVerticalFov() const { return m_verticalFov; }
+    float GetAspectRatio() const { return m_aspectRatio; }
+    void SetAspectRatio(int width, int height);
 private:
     glm::vec3 m_position;
     glm::vec3 m_right;
@@ -22,4 +24,5 @@ private:
     float m_zenith;
     bool m_isRotating;
     float m_verticalFov;
+    float m_aspectRatio;
 };

@@ -10,11 +10,11 @@ Texture::Texture()
 {
 }
 
-void Texture::Load()
+void Texture::Load(std::string_view imagePath)
 {
     int x, y, n;
     stbi_set_flip_vertically_on_load(true);
-    float* data = stbi_loadf("D:/Descargas/drackenstein_quarry_4k.hdr", &x, &y, &n, 0);
+    float* data = stbi_loadf(imagePath.data(), &x, &y, &n, 0);
     glGenTextures(1, &m_id);
 
     if (data)

@@ -4,8 +4,6 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include <glad/glad.h>
-
 Window::Window()
 {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -24,14 +22,13 @@ void Window::Initialize()
     MakeCurrent();
     InstallCallbacks();
     InitializeImGui();
-    m_application.Initialize();
+    m_application.Initialize(1024, 768);
 }
 
 void Window::MakeCurrent() const
 {
     glfwMakeContextCurrent(m_window);
     gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
-    glViewport(0, 0, 1024, 768);
 }
 
 void Window::InstallCallbacks()
@@ -52,7 +49,8 @@ void Window::InstallCallbacks()
 
     glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
     {
-        glViewport(0, 0, width, height);
+        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        thisWindow->OnFramebufferSize(width, height);
     });
 }
 
@@ -109,7 +107,6 @@ void Window::OnMouseButton(int button, int action, int mods)
     if (ImGui::GetIO().WantCaptureMouse) return;
 
     m_application.OnMouseClick(button, action, mods);
-
 }
 
 void Window::OnCursorPos(double xpos, double ypos)
@@ -117,4 +114,9 @@ void Window::OnCursorPos(double xpos, double ypos)
     if (ImGui::GetIO().WantCaptureMouse) return;
 
     m_application.OnCursorMovement(xpos, ypos);
+}
+
+void Window::OnFramebufferSize(int width, int height)
+{
+    m_application.OnFramebufferSize(width, height);
 }
