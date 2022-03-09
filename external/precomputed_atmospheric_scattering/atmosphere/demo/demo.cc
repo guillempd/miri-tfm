@@ -40,7 +40,6 @@ independent of our atmosphere model. The only part which is related to it is the
 #include "atmosphere/demo/demo.h"
 
 #include <glad/glad.h>
-#include <GL/freeglut.h>
 
 #include <algorithm>
 #include <cmath>
@@ -85,8 +84,6 @@ const char kVertexShader[] = R"(
 
 #include "atmosphere/demo/demo.glsl.inc"
 
-static std::map<int, Demo*> INSTANCES;
-
 }  // anonymous namespace
 
 /*
@@ -114,34 +111,6 @@ Demo::Demo(int viewport_width, int viewport_height) :
     sun_zenith_angle_radians_(1.3),
     sun_azimuth_angle_radians_(2.9),
     exposure_(10.0) {
-  glutInitWindowSize(viewport_width, viewport_height);
-  window_id_ = glutCreateWindow("Atmosphere Demo");
-  INSTANCES[window_id_] = this;
-  if (!gladLoadGL()) {
-    throw std::runtime_error("GLAD initialization failed");
-  }
-  if (!GLAD_GL_VERSION_3_3) {
-    throw std::runtime_error("OpenGL 3.3 or higher is required");
-  }
-
-  glutDisplayFunc([]() {
-    INSTANCES[glutGetWindow()]->HandleRedisplayEvent();
-  });
-  glutReshapeFunc([](int width, int height) {
-    INSTANCES[glutGetWindow()]->HandleReshapeEvent(width, height);
-  });
-  glutKeyboardFunc([](unsigned char key, int x, int y) {
-    INSTANCES[glutGetWindow()]->HandleKeyboardEvent(key);
-  });
-  glutMouseFunc([](int button, int state, int x, int y) {
-    INSTANCES[glutGetWindow()]->HandleMouseClickEvent(button, state, x, y);
-  });
-  glutMotionFunc([](int x, int y) {
-    INSTANCES[glutGetWindow()]->HandleMouseDragEvent(x, y);
-  });
-  glutMouseWheelFunc([](int button, int dir, int x, int y) {
-    INSTANCES[glutGetWindow()]->HandleMouseWheelEvent(dir);
-  });
 
   glGenVertexArrays(1, &full_screen_quad_vao_);
   glBindVertexArray(full_screen_quad_vao_);
@@ -173,7 +142,6 @@ Demo::~Demo() {
   glDeleteProgram(program_);
   glDeleteBuffers(1, &full_screen_quad_vbo_);
   glDeleteVertexArrays(1, &full_screen_quad_vao_);
-  INSTANCES.erase(window_id_);
 }
 
 /*
@@ -341,9 +309,6 @@ because our demo app does not have any texture of its own):
   glUniform2f(glGetUniformLocation(program_, "sun_size"),
       tan(kSunAngularRadius),
       cos(kSunAngularRadius));
-
-  // This sets 'view_from_clip', which only depends on the window size.
-  HandleReshapeEvent(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 }
 
 /*
@@ -388,9 +353,6 @@ void Demo::HandleRedisplayEvent() const {
   glBindVertexArray(full_screen_quad_vao_);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
-
-  glutSwapBuffers();
-  glutPostRedisplay();
 }
 
 /*
@@ -418,9 +380,7 @@ void Demo::HandleReshapeEvent(int viewport_width, int viewport_height) {
 }
 
 void Demo::HandleKeyboardEvent(unsigned char key) {
-  if (key == 27) {
-    glutDestroyWindow(window_id_);
-  } else if (key == 'h') {
+  if (key == 'h') {
     show_help_ = !show_help_;
   } else if (key == 's') {
     use_constant_solar_spectrum_ = !use_constant_solar_spectrum_;
@@ -471,13 +431,15 @@ void Demo::HandleMouseClickEvent(
     int button, int state, int mouse_x, int mouse_y) {
   previous_mouse_x_ = mouse_x;
   previous_mouse_y_ = mouse_y;
-  is_ctrl_key_pressed_ = (glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0;
+  // is_ctrl_key_pressed_ = (glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0;
 
+  /* FIXME: What is this for (?)
   if ((button == 3) || (button == 4)) {
     if (state == GLUT_DOWN) {
       HandleMouseWheelEvent(button == 3 ? 1 : -1);
     }
   }
+  */
 }
 
 void Demo::HandleMouseDragEvent(int mouse_x, int mouse_y) {
