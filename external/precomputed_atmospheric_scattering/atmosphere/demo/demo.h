@@ -63,7 +63,7 @@ class Demo {
   void InitResources();
   void InitModel();
   void SetRenderingContext() const;
-  void HandleRedisplayEvent() const;
+  void HandleRedisplayEvent();
   void HandleReshapeEvent(int viewport_width, int viewport_height);
   void HandleKeyboardEvent(unsigned char key);
   void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y);
@@ -73,8 +73,11 @@ class Demo {
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,
       double sun_azimuth_angle_radians, double exposure);
 
+  void RenderUi();
+  void Reshape() const;
+
  private:
-  enum Luminance {
+  enum class Luminance {
     // Render the spectral radiance at kLambdaR, kLambdaG, kLambdaB.
     NONE,
     // Render the sRGB luminance, using an approximate (on the fly) conversion
@@ -121,6 +124,8 @@ class Demo {
   std::vector<double> m_wavelengths;
   std::vector<double> m_solar_irradiance;
   double m_BottomRadius;
+  int m_windowWidth;
+  int m_windowHeight;
 };
 
 }  // namespace demo

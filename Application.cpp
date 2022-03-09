@@ -25,7 +25,7 @@ Application::~Application()
 
 void Application::Initialize(int width, int height)
 {
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     m_hdrSky.Load();
     m_physicalSky.Initialize();
     OnFramebufferSize(width, height);
@@ -50,12 +50,13 @@ void Application::OnFramebufferSize(int width, int height)
     glViewport(0, 0, width, height);
     m_camera.SetAspectRatio(width, height);
     m_physicalSky.HandleReshapeEvent(width, height);
+    GLenum errorCode = glGetError();
+    if (errorCode != GL_NO_ERROR) std::cerr << "GL error after resize" << std::endl;
 }
 
 void Application::OnRender()
 {
     ImGui::ShowDemoWindow();
-
     m_camera.OnRender();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -71,10 +72,14 @@ void Application::OnRender()
     case SkyType::HDR:
     {
         m_hdrSky.Render(m_camera);
+        GLenum errorCode = glGetError();
+        if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering HDR Sky" << std::endl;
     } break;
     case SkyType::PHYSICAL:
     {
         m_physicalSky.HandleRedisplayEvent();
+        GLenum errorCode = glGetError();
+        if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
     } break;
     default:
     {

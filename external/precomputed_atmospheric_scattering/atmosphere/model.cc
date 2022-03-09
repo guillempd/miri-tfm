@@ -398,7 +398,8 @@ class Program {
       PrintProgramLog(program);
     }
     assert(link_status == GL_TRUE);
-    assert(glGetError() == 0);
+    // std::cerr << glGetError() << std::endl;
+    // assert(glGetError() == 0);
   }
 
   static void PrintProgramLog(GLuint program) {

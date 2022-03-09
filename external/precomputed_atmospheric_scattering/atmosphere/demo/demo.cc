@@ -39,6 +39,8 @@ independent of our atmosphere model. The only part which is related to it is the
 
 #include "atmosphere/demo/demo.h"
 
+#include <imgui.h>
+
 #include <glad/glad.h>
 
 #include <algorithm>
@@ -101,7 +103,7 @@ Demo::Demo(int viewport_width, int viewport_height) :
     use_ozone_(true),
     use_combined_textures_(true),
     use_half_precision_(true),
-    use_luminance_(NONE),
+    use_luminance_(Luminance::NONE),
     do_white_balance_(false),
     show_help_(true),
     program_(0),
@@ -111,6 +113,9 @@ Demo::Demo(int viewport_width, int viewport_height) :
     sun_zenith_angle_radians_(1.3),
     sun_azimuth_angle_radians_(2.9),
     exposure_(10.0) {
+
+    m_windowWidth = viewport_width;
+    m_windowHeight = viewport_height;
 
 }
 
@@ -222,7 +227,9 @@ void Demo::InitModel() {
   ozone_density.push_back(
       DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
 
-  
+  // FIXME(guillem): Be careful with these
+  m_wavelengths.clear();
+  m_solar_irradiance.clear();
   std::vector<double> rayleigh_scattering;
   std::vector<double> mie_scattering;
   std::vector<double> mie_extinction;
@@ -251,7 +258,7 @@ void Demo::InitModel() {
       m_BottomRadius, kTopRadius, {rayleigh_layer}, rayleigh_scattering,
       {mie_layer}, mie_scattering, mie_extinction, kMiePhaseFunctionG,
       ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-      kLengthUnitInMeters, use_luminance_ == PRECOMPUTED ? 15 : 3,
+      kLengthUnitInMeters, use_luminance_ == Luminance::PRECOMPUTED ? 15 : 3,
       use_combined_textures_, use_half_precision_));
   model_->Init();
 
@@ -268,7 +275,7 @@ to get the final scene rendering program:
 
   const std::string fragment_shader_str =
       "#version 330\n" +
-      std::string(use_luminance_ != NONE ? "#define USE_LUMINANCE\n" : "") +
+      std::string(use_luminance_ != Luminance::NONE ? "#define USE_LUMINANCE\n" : "") +
       "const float kLengthUnitInMeters = " +
       std::to_string(kLengthUnitInMeters) + ";\n" +
       demo_glsl;
@@ -296,6 +303,7 @@ because our demo app does not have any texture of its own):
 */
 
   SetRenderingContext();
+  Reshape();
 }
 
 void Demo::SetRenderingContext() const {
@@ -319,6 +327,21 @@ void Demo::SetRenderingContext() const {
   glUniform2f(glGetUniformLocation(program_, "sun_size"),
     tan(kSunAngularRadius),
     cos(kSunAngularRadius));
+
+  const float kFovY = 50.0 / 180.0 * kPi;
+  const float kTanFovY = tan(kFovY / 2.0);
+  float aspect_ratio = static_cast<float>(m_windowWidth) / m_windowHeight;
+
+  // Transform matrix from clip space to camera space (i.e. the inverse of a
+  // GL_PROJECTION matrix).
+  float view_from_clip[16] = {
+    kTanFovY * aspect_ratio, 0.0, 0.0, 0.0,
+    0.0, kTanFovY, 0.0, 0.0,
+    0.0, 0.0, 0.0, -1.0,
+    0.0, 0.0, 1.0, 1.0
+  };
+  glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, true,
+      view_from_clip);
 }
 
 /*
@@ -327,7 +350,8 @@ position and to the Sun direction, and then draws a full screen quad (and
 optionally a help screen).
 */
 
-void Demo::HandleRedisplayEvent() const {
+void Demo::HandleRedisplayEvent() {
+  RenderUi();
   SetRenderingContext();
   // Unit vectors of the camera frame, expressed in world space.
   float cos_z = cos(view_zenith_angle_radians_);
@@ -353,7 +377,7 @@ void Demo::HandleRedisplayEvent() const {
       model_from_view[7],
       model_from_view[11]);
   glUniform1f(glGetUniformLocation(program_, "exposure"),
-      use_luminance_ != NONE ? exposure_ * 1e-5 : exposure_);
+      use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
   glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"),
       1, true, model_from_view);
   glUniform3f(glGetUniformLocation(program_, "sun_direction"),
@@ -372,70 +396,61 @@ interact with the atmosphere model:
 */
 
 void Demo::HandleReshapeEvent(int viewport_width, int viewport_height) {
-  glViewport(0, 0, viewport_width, viewport_height);
-
-  const float kFovY = 50.0 / 180.0 * kPi;
-  const float kTanFovY = tan(kFovY / 2.0);
-  float aspect_ratio = static_cast<float>(viewport_width) / viewport_height;
-
-  // Transform matrix from clip space to camera space (i.e. the inverse of a
-  // GL_PROJECTION matrix).
-  float view_from_clip[16] = {
-    kTanFovY * aspect_ratio, 0.0, 0.0, 0.0,
-    0.0, kTanFovY, 0.0, 0.0,
-    0.0, 0.0, 0.0, -1.0,
-    0.0, 0.0, 1.0, 1.0
-  };
-  glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, true,
-      view_from_clip);
+  m_windowWidth = viewport_width;
+  m_windowHeight = viewport_height;
+  Reshape();
 }
 
-void Demo::HandleKeyboardEvent(unsigned char key) {
-  if (key == 'h') {
-    show_help_ = !show_help_;
-  } else if (key == 's') {
-    use_constant_solar_spectrum_ = !use_constant_solar_spectrum_;
-  } else if (key == 'o') {
-    use_ozone_ = !use_ozone_;
-  } else if (key == 't') {
-    use_combined_textures_ = !use_combined_textures_;
-  } else if (key == 'p') {
-    use_half_precision_ = !use_half_precision_;
-  } else if (key == 'l') {
-    switch (use_luminance_) {
-      case NONE: use_luminance_ = APPROXIMATE; break;
-      case APPROXIMATE: use_luminance_ = PRECOMPUTED; break;
-      case PRECOMPUTED: use_luminance_ = NONE; break;
+void Demo::Reshape() const
+{
+    glViewport(0, 0, m_windowWidth, m_windowHeight);
+}
+
+void Demo::RenderUi()
+{
+    bool shouldRecomputeModel = false;
+    if (ImGui::Begin("Physical Sky Settings"))
+    {
+        shouldRecomputeModel |= ImGui::Checkbox("Use constant solar spectrum", &use_constant_solar_spectrum_);
+        shouldRecomputeModel |= ImGui::Checkbox("Use ozone", &use_ozone_);
+        shouldRecomputeModel |= ImGui::Checkbox("Use combined textures", &use_combined_textures_);
+        shouldRecomputeModel |= ImGui::Checkbox("Use half precision", &use_half_precision_);
+
+        ImGui::Text("Luminance");
+        shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::NONE));
+        ImGui::SameLine();
+        shouldRecomputeModel |= ImGui::RadioButton("Approximate", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::APPROXIMATE));
+        ImGui::SameLine();
+        shouldRecomputeModel |= ImGui::RadioButton("Precomputed", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::PRECOMPUTED));
+
+        ImGui::Checkbox("Do white balance", &do_white_balance_);
+
+        float exposure_f = exposure_;
+        ImGui::DragFloat("Exposure", &exposure_f, 0.1f, 2.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+        exposure_ = exposure_f;
+
+        ImGui::Text("Predefined Views");
+        if (ImGui::Button("1")) SetView(9000.0, 1.47, 0.0, 1.3, 3.0, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("2")) SetView(9000.0, 1.47, 0.0, 1.564, -3.0, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("3")) SetView(7000.0, 1.57, 0.0, 1.54, -2.96, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("4")) SetView(7000.0, 1.57, 0.0, 1.328, -3.044, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("5")) SetView(9000.0, 1.39, 0.0, 1.2, 0.7, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("6")) SetView(9000.0, 1.5, 0.0, 1.628, 1.05, 200.0);
+        ImGui::SameLine();
+        if (ImGui::Button("7")) SetView(7000.0, 1.43, 0.0, 1.57, 1.34, 40.0);
+        ImGui::SameLine();
+        if (ImGui::Button("8")) SetView(2.7e6, 0.81, 0.0, 1.57, 2.0, 10.0);
+        ImGui::SameLine();
+        if (ImGui::Button("9")) SetView(1.2e7, 0.0, 0.0, 0.93, -2.0, 10.0);
     }
-  } else if (key == 'w') {
-    do_white_balance_ = !do_white_balance_;
-  } else if (key == '+') {
-    exposure_ *= 1.1;
-  } else if (key == '-') {
-    exposure_ /= 1.1;
-  } else if (key == '1') {
-    SetView(9000.0, 1.47, 0.0, 1.3, 3.0, 10.0);
-  } else if (key == '2') {
-    SetView(9000.0, 1.47, 0.0, 1.564, -3.0, 10.0);
-  } else if (key == '3') {
-    SetView(7000.0, 1.57, 0.0, 1.54, -2.96, 10.0);
-  } else if (key == '4') {
-    SetView(7000.0, 1.57, 0.0, 1.328, -3.044, 10.0);
-  } else if (key == '5') {
-    SetView(9000.0, 1.39, 0.0, 1.2, 0.7, 10.0);
-  } else if (key == '6') {
-    SetView(9000.0, 1.5, 0.0, 1.628, 1.05, 200.0);
-  } else if (key == '7') {
-    SetView(7000.0, 1.43, 0.0, 1.57, 1.34, 40.0);
-  } else if (key == '8') {
-    SetView(2.7e6, 0.81, 0.0, 1.57, 2.0, 10.0);
-  } else if (key == '9') {
-    SetView(1.2e7, 0.0, 0.0, 0.93, -2.0, 10.0);
-  }
-  if (key == 's' || key == 'o' || key == 't' || key == 'p' || key == 'l' ||
-      key == 'w') {
-    InitModel();
-  }
+    ImGui::End();
+
+    if (shouldRecomputeModel) InitModel();
 }
 
 void Demo::HandleMouseClickEvent(
