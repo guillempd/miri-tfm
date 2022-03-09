@@ -160,8 +160,6 @@ Demo::Demo(int viewport_width, int viewport_height) :
   glEnableVertexAttribArray(kAttribIndex);
   glBindVertexArray(0);
 
-  text_renderer_.reset(new TextRenderer);
-
   InitModel();
 }
 
@@ -390,30 +388,6 @@ void Demo::HandleRedisplayEvent() const {
   glBindVertexArray(full_screen_quad_vao_);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
-
-  if (show_help_) {
-    std::stringstream help;
-    help << "Mouse:\n"
-         << " drag, CTRL+drag, wheel: view and sun directions\n"
-         << "Keys:\n"
-         << " h: help\n"
-         << " s: solar spectrum (currently: "
-         << (use_constant_solar_spectrum_ ? "constant" : "realistic") << ")\n"
-         << " o: ozone (currently: " << (use_ozone_ ? "on" : "off") << ")\n"
-         << " t: combine textures (currently: "
-         << (use_combined_textures_ ? "on" : "off") << ")\n"
-         << " p: half precision (currently: "
-         << (use_half_precision_ ? "on" : "off") << ")\n"
-         << " l: use luminance (currently: "
-         << (use_luminance_ == PRECOMPUTED ? "precomputed" :
-             (use_luminance_ == APPROXIMATE ? "approximate" : "off")) << ")\n"
-         << " w: white balance (currently: "
-         << (do_white_balance_ ? "on" : "off") << ")\n"
-         << " +/-: increase/decrease exposure (" << exposure_ << ")\n"
-         << " 1-9: predefined views\n";
-    text_renderer_->SetColor(1.0, 0.0, 0.0);
-    text_renderer_->DrawText(help.str(), 5, 4);
-  }
 
   glutSwapBuffers();
   glutPostRedisplay();

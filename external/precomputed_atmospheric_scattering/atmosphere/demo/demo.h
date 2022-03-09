@@ -45,7 +45,6 @@ to render the scene and the help messages:
 #include <memory>
 
 #include "atmosphere/model.h"
-#include "text/text_renderer.h"
 
 namespace atmosphere {
 namespace demo {
@@ -101,7 +100,6 @@ class Demo {
   GLuint program_;
   GLuint full_screen_quad_vao_;
   GLuint full_screen_quad_vbo_;
-  std::unique_ptr<TextRenderer> text_renderer_;
   int window_id_;
 
   double view_distance_meters_;
