@@ -13,6 +13,7 @@ private:
     void OnMouseButton(int button, int action, int mods);
     void OnCursorPos(double xpos, double ypos);
     void OnFramebufferSize(int width, int height);
+    void OnScroll(double xoffset, double yoffset);
     void MakeCurrent() const;
     void InstallCallbacks();
     void InitializeImGui() const;

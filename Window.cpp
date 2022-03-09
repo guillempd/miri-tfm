@@ -52,6 +52,12 @@ void Window::InstallCallbacks()
         Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
         thisWindow->OnFramebufferSize(width, height);
     });
+
+    glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset)
+    {
+        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        thisWindow->OnScroll(xoffset, yoffset);
+    });
 }
 
 void Window::InitializeImGui() const
@@ -119,4 +125,9 @@ void Window::OnCursorPos(double xpos, double ypos)
 void Window::OnFramebufferSize(int width, int height)
 {
     m_application.OnFramebufferSize(width, height);
+}
+
+void Window::OnScroll(double xoffset, double yoffset)
+{
+    m_application.OnScroll(xoffset, yoffset);
 }

@@ -54,6 +54,11 @@ void Application::OnFramebufferSize(int width, int height)
     if (errorCode != GL_NO_ERROR) std::cerr << "GL error after resize" << std::endl;
 }
 
+void Application::OnScroll(double xoffset, double yoffset)
+{
+    m_physicalSky.HandleMouseWheelEvent(static_cast<int>(yoffset));
+}
+
 void Application::OnRender()
 {
     ImGui::ShowDemoWindow();

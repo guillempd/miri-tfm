@@ -486,11 +486,8 @@ void Demo::HandleMouseDragEvent(int mouse_x, int mouse_y) {
 }
 
 void Demo::HandleMouseWheelEvent(int mouse_wheel_direction) {
-  if (mouse_wheel_direction < 0) {
-    view_distance_meters_ *= 1.05;
-  } else {
-    view_distance_meters_ /= 1.05;
-  }
+  if (mouse_wheel_direction < 0) while (mouse_wheel_direction++) view_distance_meters_ *= 1.05;
+  else while (mouse_wheel_direction--) view_distance_meters_ /= 1.05;
 }
 
 void Demo::SetView(double view_distance_meters,

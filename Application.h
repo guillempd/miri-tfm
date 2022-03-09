@@ -17,6 +17,7 @@ public:
     void OnCursorMovement(double xpos, double ypos);
     void OnMouseClick(int button, int action, int mods);
     void OnFramebufferSize(int width, int height);
+    void OnScroll(double xoffset, double yoffset);
 private:
     enum class SkyType {HDR, PHYSICAL};
 private:
