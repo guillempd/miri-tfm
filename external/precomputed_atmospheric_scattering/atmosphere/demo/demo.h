@@ -59,6 +59,20 @@ class Demo {
   const GLuint fragment_shader() const { return fragment_shader_; }
   const GLuint program() const { return program_; }
 
+  void Initialize();
+  void InitResources();
+  void InitModel();
+  void SetRenderingContext() const;
+  void HandleRedisplayEvent() const;
+  void HandleReshapeEvent(int viewport_width, int viewport_height);
+  void HandleKeyboardEvent(unsigned char key);
+  void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y);
+  void HandleMouseDragEvent(int mouse_x, int mouse_y);
+  void HandleMouseWheelEvent(int mouse_wheel_direction);
+  void SetView(double view_distance_meters, double view_zenith_angle_radians,
+      double view_azimuth_angle_radians, double sun_zenith_angle_radians,
+      double sun_azimuth_angle_radians, double exposure);
+
  private:
   enum Luminance {
     // Render the spectral radiance at kLambdaR, kLambdaG, kLambdaB.
@@ -75,16 +89,6 @@ class Demo {
     PRECOMPUTED
   };
 
-  void InitModel();
-  void HandleRedisplayEvent() const;
-  void HandleReshapeEvent(int viewport_width, int viewport_height);
-  void HandleKeyboardEvent(unsigned char key);
-  void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y);
-  void HandleMouseDragEvent(int mouse_x, int mouse_y);
-  void HandleMouseWheelEvent(int mouse_wheel_direction);
-  void SetView(double view_distance_meters, double view_zenith_angle_radians,
-      double view_azimuth_angle_radians, double sun_zenith_angle_radians,
-      double sun_azimuth_angle_radians, double exposure);
 
   bool use_constant_solar_spectrum_;
   bool use_ozone_;
@@ -112,6 +116,11 @@ class Demo {
   int previous_mouse_x_;
   int previous_mouse_y_;
   bool is_ctrl_key_pressed_;
+
+  // NOTE(guillem): Added by me
+  std::vector<double> m_wavelengths;
+  std::vector<double> m_solar_irradiance;
+  double m_BottomRadius;
 };
 
 }  // namespace demo

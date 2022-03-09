@@ -112,24 +112,6 @@ Demo::Demo(int viewport_width, int viewport_height) :
     sun_azimuth_angle_radians_(2.9),
     exposure_(10.0) {
 
-  glGenVertexArrays(1, &full_screen_quad_vao_);
-  glBindVertexArray(full_screen_quad_vao_);
-  glGenBuffers(1, &full_screen_quad_vbo_);
-  glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
-  const GLfloat vertices[] = {
-    -1.0, -1.0, 0.0, 1.0,
-    +1.0, -1.0, 0.0, 1.0,
-    -1.0, +1.0, 0.0, 1.0,
-    +1.0, +1.0, 0.0, 1.0,
-  };
-  glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
-  constexpr GLuint kAttribIndex = 0;
-  constexpr int kCoordsPerVertex = 4;
-  glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
-  glEnableVertexAttribArray(kAttribIndex);
-  glBindVertexArray(0);
-
-  InitModel();
 }
 
 /*
@@ -142,6 +124,30 @@ Demo::~Demo() {
   glDeleteProgram(program_);
   glDeleteBuffers(1, &full_screen_quad_vbo_);
   glDeleteVertexArrays(1, &full_screen_quad_vao_);
+}
+
+void Demo::Initialize() {
+    InitResources();
+    InitModel();
+}
+
+void Demo::InitResources() {
+  glGenVertexArrays(1, &full_screen_quad_vao_);
+  glBindVertexArray(full_screen_quad_vao_);
+  glGenBuffers(1, &full_screen_quad_vbo_);
+  glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
+  const GLfloat vertices[] = {
+      -1.0, -1.0, 0.0, 1.0,
+      +1.0, -1.0, 0.0, 1.0,
+      -1.0, +1.0, 0.0, 1.0,
+      +1.0, +1.0, 0.0, 1.0,
+  };
+  glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
+  constexpr GLuint kAttribIndex = 0;
+  constexpr int kCoordsPerVertex = 4;
+  glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
+  glEnableVertexAttribArray(kAttribIndex);
+  glBindVertexArray(0);
 }
 
 /*
@@ -189,7 +195,6 @@ void Demo::InitModel() {
   // Wavelength independent solar irradiance "spectrum" (not physically
   // realistic, but was used in the original implementation).
   constexpr double kConstantSolarIrradiance = 1.5;
-  constexpr double kBottomRadius = 6360000.0;
   constexpr double kTopRadius = 6420000.0;
   constexpr double kRayleigh = 1.24062e-6;
   constexpr double kRayleighScaleHeight = 8000.0;
@@ -201,6 +206,8 @@ void Demo::InitModel() {
   constexpr double kGroundAlbedo = 0.1;
   const double max_sun_zenith_angle =
       (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
+
+  m_BottomRadius = 6360000.0;
 
   DensityProfileLayer
       rayleigh_layer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0);
@@ -215,8 +222,7 @@ void Demo::InitModel() {
   ozone_density.push_back(
       DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
 
-  std::vector<double> wavelengths;
-  std::vector<double> solar_irradiance;
+  
   std::vector<double> rayleigh_scattering;
   std::vector<double> mie_scattering;
   std::vector<double> mie_extinction;
@@ -226,11 +232,11 @@ void Demo::InitModel() {
     double lambda = static_cast<double>(l) * 1e-3;  // micro-meters
     double mie =
         kMieAngstromBeta / kMieScaleHeight * pow(lambda, -kMieAngstromAlpha);
-    wavelengths.push_back(l);
+    m_wavelengths.push_back(l);
     if (use_constant_solar_spectrum_) {
-      solar_irradiance.push_back(kConstantSolarIrradiance);
+      m_solar_irradiance.push_back(kConstantSolarIrradiance);
     } else {
-      solar_irradiance.push_back(kSolarIrradiance[(l - kLambdaMin) / 10]);
+      m_solar_irradiance.push_back(kSolarIrradiance[(l - kLambdaMin) / 10]);
     }
     rayleigh_scattering.push_back(kRayleigh * pow(lambda, -4));
     mie_scattering.push_back(mie * kMieSingleScatteringAlbedo);
@@ -241,8 +247,8 @@ void Demo::InitModel() {
     ground_albedo.push_back(kGroundAlbedo);
   }
 
-  model_.reset(new Model(wavelengths, solar_irradiance, kSunAngularRadius,
-      kBottomRadius, kTopRadius, {rayleigh_layer}, rayleigh_scattering,
+  model_.reset(new Model(m_wavelengths, m_solar_irradiance, kSunAngularRadius,
+      m_BottomRadius, kTopRadius, {rayleigh_layer}, rayleigh_scattering,
       {mie_layer}, mie_scattering, mie_extinction, kMiePhaseFunctionG,
       ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
       kLengthUnitInMeters, use_luminance_ == PRECOMPUTED ? 15 : 3,
@@ -289,26 +295,30 @@ all (in our case this includes the <code>Model</code>'s texture uniforms,
 because our demo app does not have any texture of its own):
 */
 
+  SetRenderingContext();
+}
+
+void Demo::SetRenderingContext() const {
   glUseProgram(program_);
   model_->SetProgramUniforms(program_, 0, 1, 2, 3);
   double white_point_r = 1.0;
   double white_point_g = 1.0;
   double white_point_b = 1.0;
   if (do_white_balance_) {
-    Model::ConvertSpectrumToLinearSrgb(wavelengths, solar_irradiance,
-        &white_point_r, &white_point_g, &white_point_b);
-    double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
-    white_point_r /= white_point;
-    white_point_g /= white_point;
-    white_point_b /= white_point;
+      Model::ConvertSpectrumToLinearSrgb(m_wavelengths, m_solar_irradiance,
+          &white_point_r, &white_point_g, &white_point_b);
+      double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
+      white_point_r /= white_point;
+      white_point_g /= white_point;
+      white_point_b /= white_point;
   }
   glUniform3f(glGetUniformLocation(program_, "white_point"),
-      white_point_r, white_point_g, white_point_b);
+   white_point_r, white_point_g, white_point_b);
   glUniform3f(glGetUniformLocation(program_, "earth_center"),
-      0.0, 0.0, -kBottomRadius / kLengthUnitInMeters);
+   0.0, 0.0, -m_BottomRadius / kLengthUnitInMeters);
   glUniform2f(glGetUniformLocation(program_, "sun_size"),
-      tan(kSunAngularRadius),
-      cos(kSunAngularRadius));
+    tan(kSunAngularRadius),
+    cos(kSunAngularRadius));
 }
 
 /*
@@ -318,6 +328,7 @@ optionally a help screen).
 */
 
 void Demo::HandleRedisplayEvent() const {
+  SetRenderingContext();
   // Unit vectors of the camera frame, expressed in world space.
   float cos_z = cos(view_zenith_angle_radians_);
   float sin_z = sin(view_zenith_angle_radians_);

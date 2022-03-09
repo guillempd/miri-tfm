@@ -23,7 +23,6 @@ make_absolute(GENERATED_FILES_INCLUDES)
 
 set (ROOT ../../)
 set (SRC ${ROOT}atmosphere/)
-set (TEXT ${ROOT}text/)
 set (PUB ${ROOT}bin/)
 set (PUB_ABS ${PUB})
 make_absolute(PUB_ABS)
@@ -36,14 +35,6 @@ set (EXT_WIN ${PLATFORM_WIN_DIR}external/)
 set (GLAD ${EXT}glad/)
 set (GLAD_INCLUDES ${GLAD}include)
 make_absolute(GLAD_INCLUDES)
-
-set (FREEGLUT ${EXT_WIN}freeglut/)
-set (FREEGLUT_INCLUDES ${FREEGLUT}include)
-make_absolute(FREEGLUT_INCLUDES)
-set (FREEGLUT_LIBS ${FREEGLUT}lib/x64/freeglut.lib)
-make_absolute(FREEGLUT_LIBS)
-set (FREEGLUT_DLL ${FREEGLUT}bin/x64/freeglut.dll)
-make_absolute(FREEGLUT_DLL)
 
 set (CREATE_GLSL_INC ${PLATFORM_WIN_DIR}create_glsl_inc.bat)
 
@@ -97,16 +88,7 @@ set (INCLUDES
 	${GENERATED_FILES_INCLUDES}
 	${ROOT_INCLUDES}
 	${GLAD_INCLUDES}
-	${FREEGLUT_INCLUDES}
 )
-
-set (TEXT_PATH ${TEXT})
-set (TEXT_FILES
-	${TEXT_PATH}font.inc
-	${TEXT_PATH}text_renderer.cc
-	${TEXT_PATH}text_renderer.h
-)
-source_group(Text FILES ${TEXT_FILES})
 
 set (MODEL_PATH ${PROJSRC})
 set (MODEL_FILES
@@ -125,7 +107,7 @@ set (DEMO_FILES
 	${DEMO_PATH}demo.cc
 	${DEMO_PATH}demo.h
 	${DEMO_PATH}demo.glsl
-	${DEMO_PATH}demo_main.cc
+	# ${DEMO_PATH}demo_main.cc
 )
 add_glsl_inc_cmd(${DEMO_PATH}demo.glsl ${ROOT} ${GENERATED_FILES_PATH})
 source_group(Demo FILES ${DEMO_FILES})
@@ -138,7 +120,6 @@ set (GLAD_FILES
 source_group(Glad FILES ${GLAD_FILES})
 
 set (SRC_FILES
-	${TEXT_FILES}
 	${MODEL_FILES}
 	${DEMO_FILES}
 	${GLAD_FILES}
@@ -147,7 +128,6 @@ set (SRC_FILES
 set (LIBS
 	Shlwapi.lib
 	Shell32.lib
-	${FREEGLUT_LIBS}
 )
 
 add_executable (${PROJ} ${SRC_FILES})
@@ -159,7 +139,3 @@ set_target_properties(${PROJ} PROPERTIES RELEASE_POSTFIX "" )
 set_target_properties(${PROJ} PROPERTIES MINSIZEREL_POSTFIX "_s" )
 set_target_properties(${PROJ} PROPERTIES RELWITHDEBINFO_POSTFIX "_r" )
 target_link_libraries(${PROJ} ${LIBS})
-
-add_custom_command(TARGET ${PROJ} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${FREEGLUT_DLL} $<TARGET_FILE_DIR:${PROJ}>
-)

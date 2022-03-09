@@ -20,6 +20,8 @@ add_executable(miri-tfm
     external/imgui/imgui_widgets.cpp
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_opengl3.cpp
+    external/precomputed_atmospheric_scattering/atmosphere/model.cc
+    external/precomputed_atmospheric_scattering/atmosphere/demo/demo.cc
 )
 
 add_subdirectory(external/glfw)
@@ -34,6 +36,7 @@ target_include_directories(miri-tfm
     PRIVATE external/imgui/backends
     PRIVATE external/stb
     PRIVATE external/glm
+    PRIVATE external/precomputed_atmospheric_scattering
 )
 
 target_link_libraries(miri-tfm

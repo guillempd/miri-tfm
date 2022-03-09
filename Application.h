@@ -3,6 +3,8 @@
 #include "Camera.h"
 #include "HdrSky.h"
 
+#include "atmosphere/demo/demo.h"
+
 #include <glm/glm.hpp>
 
 class Application
@@ -16,7 +18,12 @@ public:
     void OnMouseClick(int button, int action, int mods);
     void OnFramebufferSize(int width, int height);
 private:
+    enum class SkyType {HDR, PHYSICAL};
+private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
     HdrSky m_hdrSky;
+    atmosphere::demo::Demo m_physicalSky;
+    SkyType m_skyType;
+private:
 };
