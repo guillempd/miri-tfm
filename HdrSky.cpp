@@ -14,7 +14,7 @@ void HdrSky::Load()
     out vec2 texCoord;
     void main()
     {
-        gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);
+        gl_Position = vec4(aPos.x, aPos.y, 1.0, 1.0);
         texCoord = 0.5 * (aPos.xy + vec2(1.0));
     }
 )";
@@ -105,8 +105,14 @@ void HdrSky::Render(const Camera& camera)
     m_program.SetVec3("cameraForward", camera.GetForward());
     m_program.SetFloat("aspectRatio", camera.GetAspectRatio());
 
-    glBindVertexArray(m_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    GLint previousDepthFunc;
+    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    glDepthFunc(GL_LEQUAL);
+    {
+        glBindVertexArray(m_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    glDepthFunc(previousDepthFunc);
 }
 
 void HdrSky::RenderUi()

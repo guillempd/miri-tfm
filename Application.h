@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "HdrSky.h"
 class Window; // Only forward declaration
+#include "Mesh.h"
 
 #include "atmosphere/demo/demo.h"
 
@@ -28,4 +29,5 @@ private:
     atmosphere::demo::Demo m_physicalSky;
     SkyType m_skyType;
     Window* m_window;
+    Mesh m_mesh;
 };

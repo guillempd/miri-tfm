@@ -13,6 +13,7 @@ add_executable(miri-tfm
     Texture.cpp
     Program.cpp
     HdrSky.cpp
+    Mesh.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_demo.cpp
     external/imgui/imgui_draw.cpp
@@ -27,6 +28,7 @@ add_executable(miri-tfm
 add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
 add_subdirectory(external/nativefiledialog-extended)
+add_subdirectory(external/assimp)
 
 target_include_directories(miri-tfm
     PRIVATE external/glfw/include
@@ -37,10 +39,12 @@ target_include_directories(miri-tfm
     PRIVATE external/stb
     PRIVATE external/glm
     PRIVATE external/precomputed_atmospheric_scattering
+    PRIVATE external/assimp/include
 )
 
 target_link_libraries(miri-tfm
     glfw
     glad
     nfd
+    assimp
 )

@@ -15,6 +15,8 @@ public:
     float GetVerticalFov() const { return m_verticalFov; }
     float GetAspectRatio() const { return m_aspectRatio; }
     void SetAspectRatio(int width, int height);
+    glm::mat4 GetViewMatrix() const;
+    glm::mat4 GetProjectionMatrix() const;
 private:
     glm::vec3 m_position;
     glm::vec3 m_right;

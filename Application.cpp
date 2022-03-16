@@ -13,7 +13,7 @@ Application::Application()
     , m_previousCursorPosition()
     , m_hdrSky()
     , m_physicalSky(1, 1)
-    , m_skyType(SkyType::PHYSICAL)
+    , m_skyType(SkyType::HDR)
 {
     std::cout << "Creating Application" << std::endl;
 }
@@ -27,8 +27,16 @@ void Application::Initialize(int width, int height, Window* window)
 {
     m_window = window;
     glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     m_hdrSky.Load();
     m_physicalSky.Initialize(m_window);
+    m_mesh.Load();
     OnFramebufferSize(width, height);
 }
 
@@ -75,6 +83,8 @@ void Application::OnRender()
         ImGui::RadioButton("Physical Sky", reinterpret_cast<int*>(&m_skyType), static_cast<int>(SkyType::PHYSICAL));
     }
     ImGui::End();
+
+    m_mesh.Render(m_camera);
 
     switch (m_skyType)
     {

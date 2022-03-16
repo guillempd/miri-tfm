@@ -57,3 +57,8 @@ void Program::SetVec3(std::string_view key, const glm::vec3& value)
 {
     glUniform3fv(glGetUniformLocation(m_id, key.data()), 1, glm::value_ptr(value));
 }
+
+void Program::SetMat4(std::string_view key, const glm::mat4& value)
+{
+    glUniformMatrix4fv(glGetUniformLocation(m_id, key.data()), 1, GL_FALSE, glm::value_ptr(value));
+}

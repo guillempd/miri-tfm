@@ -2,6 +2,11 @@
 
 #include <imgui.h>
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+
+#include <glm/matrix.hpp>
+
 #include <GLFW/glfw3.h>
 
 Camera::Camera()
@@ -25,8 +30,17 @@ void Camera::OnRender()
     }
     ImGui::End();
 
-    m_forward = glm::vec3(glm::sin(m_zenith) * glm::cos(m_azimuth), glm::cos(m_zenith), glm::sin(m_zenith) * glm::sin(m_azimuth));
+    /*m_forward = glm::vec3(glm::sin(m_zenith) * glm::cos(m_azimuth), glm::cos(m_zenith), glm::sin(m_zenith) * glm::sin(m_azimuth));
     m_right = glm::normalize(glm::cross(m_forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    m_up = glm::cross(m_right, m_forward);*/
+
+    // ORBIT CONTROLS
+    float cos_z = glm::cos(m_zenith);
+    float sin_z = glm::sin(m_zenith);
+    float cos_a = glm::cos(m_azimuth);
+    float sin_a = glm::sin(m_azimuth);
+    m_forward = -glm::vec3(sin_z * cos_a, cos_z, sin_z * sin_a);
+    m_right = glm::vec3(sin_a, 0.0f, -cos_a);
     m_up = glm::cross(m_right, m_forward);
 }
 
@@ -55,4 +69,14 @@ void Camera::OnMouseClick(int button, int action, int mods)
 void Camera::SetAspectRatio(int width, int height)
 {
     m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+}
+
+glm::mat4 Camera::GetViewMatrix() const
+{
+    return glm::lookAt(-m_forward, glm::vec3(0.0f), m_up);
+}
+
+glm::mat4 Camera::GetProjectionMatrix() const
+{
+    return glm::perspective(m_verticalFov, m_aspectRatio, 0.01f, 100.0f);
 }
