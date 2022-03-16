@@ -45,6 +45,8 @@ class Window;
 
 #include <glad/glad.h>
 
+#include <glm/glm.hpp>
+
 #include <memory>
 
 #include "atmosphere/model.h"
@@ -68,9 +70,8 @@ class Demo {
   void SetRenderingContext() const;
   void HandleRedisplayEvent();
   void HandleReshapeEvent(int viewport_width, int viewport_height);
-  void HandleKeyboardEvent(unsigned char key);
-  void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y, int mods);
-  void HandleMouseDragEvent(int mouse_x, int mouse_y);
+  void OnMouseClick(int button, int action, int mods);
+  void OnMouseMovement(glm::vec2 movement);
   void HandleMouseWheelEvent(int mouse_wheel_direction);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,

@@ -456,40 +456,26 @@ void Demo::RenderUi()
     if (shouldRecomputeModel) InitModel();
 }
 
-void Demo::HandleMouseClickEvent(
-    int button, int state, int mouse_x, int mouse_y, int mods) {
-  previous_mouse_x_ = mouse_x;
-  previous_mouse_y_ = mouse_y;
-  is_mouse_button_pressed_ = (state == GLFW_PRESS);
+void Demo::OnMouseClick(int button, int action, int mods) {
+  is_mouse_button_pressed_ = (action == GLFW_PRESS);
   is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
-  // is_ctrl_key_pressed_ = ;
-  // is_ctrl_key_pressed_ = (glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0;
-
-  /* FIXME: What is this for (?)
-  if ((button == 3) || (button == 4)) {
-    if (state == GLUT_DOWN) {
-      HandleMouseWheelEvent(button == 3 ? 1 : -1);
-    }
-  }
-  */
 }
 
-void Demo::HandleMouseDragEvent(int mouse_x, int mouse_y) {
+void Demo::OnMouseMovement(glm::vec2 movement) {
   if (!is_mouse_button_pressed_) return;
+
   constexpr double kScale = 500.0;
   if (is_ctrl_key_pressed_) {
-    sun_zenith_angle_radians_ -= (previous_mouse_y_ - mouse_y) / kScale;
+    sun_zenith_angle_radians_ -= movement.y / kScale;
     sun_zenith_angle_radians_ =
         std::max(0.0, std::min(kPi, sun_zenith_angle_radians_));
-    sun_azimuth_angle_radians_ += (previous_mouse_x_ - mouse_x) / kScale;
+    sun_azimuth_angle_radians_ += movement.x / kScale;
   } else {
-    view_zenith_angle_radians_ += (previous_mouse_y_ - mouse_y) / kScale;
+    view_zenith_angle_radians_ += movement.y / kScale;
     view_zenith_angle_radians_ =
         std::max(0.0, std::min(kPi / 2.0, view_zenith_angle_radians_));
-    view_azimuth_angle_radians_ += (previous_mouse_x_ - mouse_x) / kScale;
+    view_azimuth_angle_radians_ += movement.x / kScale;
   }
-  previous_mouse_x_ = mouse_x;
-  previous_mouse_y_ = mouse_y;
 }
 
 void Demo::HandleMouseWheelEvent(int mouse_wheel_direction) {
