@@ -39,6 +39,8 @@ independent of our atmosphere model. The only part which is related to it is the
 
 #include "atmosphere/demo/demo.h"
 
+#include "../../../Window.h"
+
 #include <imgui.h>
 
 #include <glad/glad.h>
@@ -131,7 +133,8 @@ Demo::~Demo() {
   glDeleteVertexArrays(1, &full_screen_quad_vao_);
 }
 
-void Demo::Initialize() {
+void Demo::Initialize(Window* window) {
+    is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
 }
@@ -454,9 +457,12 @@ void Demo::RenderUi()
 }
 
 void Demo::HandleMouseClickEvent(
-    int button, int state, int mouse_x, int mouse_y) {
+    int button, int state, int mouse_x, int mouse_y, int mods) {
   previous_mouse_x_ = mouse_x;
   previous_mouse_y_ = mouse_y;
+  is_mouse_button_pressed_ = (state == GLFW_PRESS);
+  is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
+  // is_ctrl_key_pressed_ = ;
   // is_ctrl_key_pressed_ = (glutGetModifiers() & GLUT_ACTIVE_CTRL) != 0;
 
   /* FIXME: What is this for (?)
@@ -469,6 +475,7 @@ void Demo::HandleMouseClickEvent(
 }
 
 void Demo::HandleMouseDragEvent(int mouse_x, int mouse_y) {
+  if (!is_mouse_button_pressed_) return;
   constexpr double kScale = 500.0;
   if (is_ctrl_key_pressed_) {
     sun_zenith_angle_radians_ -= (previous_mouse_y_ - mouse_y) / kScale;

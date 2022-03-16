@@ -40,6 +40,9 @@ to render the scene and the help messages:
 #ifndef ATMOSPHERE_DEMO_DEMO_H_
 #define ATMOSPHERE_DEMO_DEMO_H_
 
+// #include "../../../Window.h"
+class Window;
+
 #include <glad/glad.h>
 
 #include <memory>
@@ -59,14 +62,14 @@ class Demo {
   const GLuint fragment_shader() const { return fragment_shader_; }
   const GLuint program() const { return program_; }
 
-  void Initialize();
+  void Initialize(Window* m_window);
   void InitResources();
   void InitModel();
   void SetRenderingContext() const;
   void HandleRedisplayEvent();
   void HandleReshapeEvent(int viewport_width, int viewport_height);
   void HandleKeyboardEvent(unsigned char key);
-  void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y);
+  void HandleMouseClickEvent(int button, int state, int mouse_x, int mouse_y, int mods);
   void HandleMouseDragEvent(int mouse_x, int mouse_y);
   void HandleMouseWheelEvent(int mouse_wheel_direction);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
@@ -126,6 +129,7 @@ class Demo {
   double m_BottomRadius;
   int m_windowWidth;
   int m_windowHeight;
+  bool is_mouse_button_pressed_;
 };
 
 }  // namespace demo

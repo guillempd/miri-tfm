@@ -22,7 +22,7 @@ void Window::Initialize()
     MakeCurrent();
     InstallCallbacks();
     InitializeImGui();
-    m_application.Initialize(1024, 768);
+    m_application.Initialize(1024, 768, this);
 }
 
 void Window::MakeCurrent() const

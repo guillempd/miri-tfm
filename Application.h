@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "HdrSky.h"
+class Window; // Only forward declaration
 
 #include "atmosphere/demo/demo.h"
 
@@ -12,7 +13,7 @@ class Application
 public:
     Application();
     ~Application();
-    void Initialize(int width, int height);
+    void Initialize(int width, int height, Window* window);
     void OnRender();
     void OnCursorMovement(double xpos, double ypos);
     void OnMouseClick(int button, int action, int mods);
@@ -26,5 +27,5 @@ private:
     HdrSky m_hdrSky;
     atmosphere::demo::Demo m_physicalSky;
     SkyType m_skyType;
-private:
+    Window* m_window;
 };

@@ -23,11 +23,12 @@ Application::~Application()
     std::cout << "Destroying Application" << std::endl;
 }
 
-void Application::Initialize(int width, int height)
+void Application::Initialize(int width, int height, Window* window)
 {
+    m_window = window;
     glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
     m_hdrSky.Load();
-    m_physicalSky.Initialize();
+    m_physicalSky.Initialize(m_window);
     OnFramebufferSize(width, height);
 }
 
@@ -37,12 +38,15 @@ void Application::OnCursorMovement(double xpos, double ypos)
     glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
     m_camera.OnMouseMovement(cursorMovement);
 
+    m_physicalSky.HandleMouseDragEvent(static_cast<int>(xpos), static_cast<int>(ypos));
+
     m_previousCursorPosition = currentCursorPosition;
 }
 
 void Application::OnMouseClick(int button, int action, int mods)
 {
     m_camera.OnMouseClick(button, action, mods);
+    m_physicalSky.HandleMouseClickEvent(button, action, m_previousCursorPosition.x, m_previousCursorPosition.y, mods);
 }
 
 void Application::OnFramebufferSize(int width, int height)
