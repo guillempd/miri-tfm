@@ -107,7 +107,7 @@ const char fragmentShaderSource[] = R"(
     out vec4 FragColor;
     void main()
     {
-        vec3 baseColor = vec3(0.0, 1.0, 0.0);
+        vec3 baseColor = vec3(0.7, 0.7, 0.7);
         vec3 N = normalize(v_Normal);
         FragColor = vec4(baseColor * N.z, 1.0);
     }
@@ -127,7 +127,7 @@ void Mesh::Render(const Camera &camera)
 {
     m_program.Use();
     glm::mat4 model = glm::mat4(1.0f);
-    // model = glm::translate(model, glm::vec3(0.0f, -0.5f, -0.5f));
+    // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0));
     model = glm::scale(model, glm::vec3(3.0f));
     m_program.SetMat4("model", model);
     m_program.SetMat4("view", camera.GetViewMatrix());
@@ -145,5 +145,6 @@ void Mesh::Render(const Camera &camera)
 Mesh::~Mesh()
 {
     glDeleteBuffers(1, &m_vbo);
+    glDeleteBuffers(1, &m_ebo);
     glDeleteVertexArrays(1, &m_vao);
 }
