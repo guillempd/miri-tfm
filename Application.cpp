@@ -68,6 +68,7 @@ void Application::OnFramebufferSize(int width, int height)
 
 void Application::OnScroll(double xoffset, double yoffset)
 {
+    m_camera.OnScroll(static_cast<int>(yoffset));
     m_physicalSky.HandleMouseWheelEvent(static_cast<int>(yoffset));
 }
 

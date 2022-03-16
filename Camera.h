@@ -9,6 +9,7 @@ public:
     void OnRender();
     void OnMouseMovement(glm::vec2 movement);
     void OnMouseClick(int button, int action, int mods);
+    void OnScroll(int movement);
     const glm::vec3& GetRight() const { return m_right; }
     const glm::vec3& GetForward() const { return m_forward; }
     const glm::vec3& GetUp() const { return m_up; }
@@ -26,5 +27,6 @@ private:
     float m_zenith;
     bool m_isRotating;
     float m_verticalFov;
+    float m_radius;
     float m_aspectRatio;
 };

@@ -15,10 +15,11 @@ Camera::Camera()
     , m_right   (1.0f,  0.0f,  0.0f)
     , m_up      (0.0f,  1.0f,  0.0f)
     , m_forward (0.0f,  0.0f, -1.0f)
-    , m_azimuth(0.0f)
+    , m_azimuth(glm::half_pi<float>())
     , m_zenith(glm::half_pi<float>())
     , m_isRotating(false)
     , m_verticalFov(glm::half_pi<float>())
+    , m_radius(1.0f)
 {
 }
 
@@ -43,6 +44,7 @@ void Camera::OnRender()
     m_forward = -glm::vec3(sin_z * cos_a, cos_z, sin_z * sin_a);
     m_right = glm::vec3(sin_a, 0.0f, -cos_a);
     m_up = glm::cross(m_right, m_forward);
+    m_position = -m_forward * m_radius;
 }
 
 void Camera::OnMouseMovement(glm::vec2 movement)
@@ -54,8 +56,8 @@ void Camera::OnMouseMovement(glm::vec2 movement)
     m_azimuth = glm::mod(m_azimuth, glm::two_pi<float>());
 
     constexpr float safetyMargin = 0.25f;
-    m_zenith += 0.01f * movement.y;
-    m_zenith = glm::clamp(m_zenith, safetyMargin, glm::two_pi<float>() - safetyMargin);
+    m_zenith -= 0.01f * movement.y;
+    m_zenith = glm::clamp(m_zenith, safetyMargin, glm::pi<float>() - safetyMargin);
 }
 
 void Camera::OnMouseClick(int button, int action, int mods)
@@ -68,6 +70,12 @@ void Camera::OnMouseClick(int button, int action, int mods)
     }
 }
 
+void Camera::OnScroll(int movement)
+{
+    if (movement > 0) while (movement--) m_radius /= 1.1f;
+    else while (movement++) m_radius *= 1.1f;
+}
+
 void Camera::SetAspectRatio(int width, int height)
 {
     m_aspectRatio = static_cast<float>(width) / static_cast<float>(height);
@@ -75,7 +83,7 @@ void Camera::SetAspectRatio(int width, int height)
 
 glm::mat4 Camera::GetViewMatrix() const
 {
-    return glm::lookAt(-m_forward, glm::vec3(0.0f), m_up);
+    return glm::lookAt(m_position, glm::vec3(0.0f), m_up);
 }
 
 glm::mat4 Camera::GetProjectionMatrix() const
