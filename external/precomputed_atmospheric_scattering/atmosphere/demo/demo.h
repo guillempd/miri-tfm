@@ -40,12 +40,14 @@ to render the scene and the help messages:
 #ifndef ATMOSPHERE_DEMO_DEMO_H_
 #define ATMOSPHERE_DEMO_DEMO_H_
 
+#include "../../../Camera.h"
 // #include "../../../Window.h"
 class Window;
 
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
 
@@ -68,10 +70,10 @@ class Demo {
   void InitResources();
   void InitModel();
   void SetRenderingContext() const;
-  void HandleRedisplayEvent();
+  void Render(const Camera& camera);
   void HandleReshapeEvent(int viewport_width, int viewport_height);
   void OnMouseClick(int button, int action, int mods);
-  void OnMouseMovement(glm::vec2 movement);
+  bool OnMouseMovement(glm::vec2 movement);
   void HandleMouseWheelEvent(int mouse_wheel_direction);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,

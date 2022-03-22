@@ -47,6 +47,7 @@ independent of our atmosphere model. The only part which is related to it is the
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <map>
 #include <stdexcept>
 #include <sstream>
@@ -331,6 +332,7 @@ void Demo::SetRenderingContext() const {
     tan(kSunAngularRadius),
     cos(kSunAngularRadius));
 
+  // TODO: Get these from the camera
   const float kFovY = 50.0 / 180.0 * kPi;
   const float kTanFovY = tan(kFovY / 2.0);
   float aspect_ratio = static_cast<float>(m_windowWidth) / m_windowHeight;
@@ -353,41 +355,46 @@ position and to the Sun direction, and then draws a full screen quad (and
 optionally a help screen).
 */
 
-void Demo::HandleRedisplayEvent() {
+void Demo::Render(const Camera& camera) {
   RenderUi();
   SetRenderingContext();
-  // Unit vectors of the camera frame, expressed in world space.
-  float cos_z = cos(view_zenith_angle_radians_);
-  float sin_z = sin(view_zenith_angle_radians_);
-  float cos_a = cos(view_azimuth_angle_radians_);
-  float sin_a = sin(view_azimuth_angle_radians_);
-  float ux[3] = { -sin_a, cos_a, 0.0 };
-  float uy[3] = { -cos_z * cos_a, -cos_z * sin_a, sin_z };
-  float uz[3] = { sin_z * cos_a, sin_z * sin_a, cos_z };
+  /* // Unit vectors of the camera frame, expressed in world space.
+  glm::vec2 viewAngles = glm::vec2(view_azimuth_angle_radians_, view_zenith_angle_radians_);
+  glm::vec2 viewCos = glm::cos(viewAngles);
+  glm::vec2 viewSin = glm::sin(viewAngles);
+  float ux[3] = { -viewSin.x, viewCos.x, 0.0 };
+  float uy[3] = { -viewCos.y * viewCos.x, -viewCos.y * viewSin.x, viewSin.y };
+  float uz[3] = { viewSin.y * viewCos.x, viewSin.y * viewSin.x, viewCos.y };
   float l = view_distance_meters_ / kLengthUnitInMeters;
 
-  // Transform matrix from camera frame to world space (i.e. the inverse of a
-  // GL_MODELVIEW matrix).
+  // Transform matrix from camera frame to world space (i.e. the inverse of a GL_MODELVIEW matrix).
   float model_from_view[16] = {
     ux[0], uy[0], uz[0], uz[0] * l,
     ux[1], uy[1], uz[1], uz[1] * l,
     ux[2], uy[2], uz[2], uz[2] * l,
     0.0, 0.0, 0.0, 1.0
-  };
+  };*/
 
-  glUniform3f(glGetUniformLocation(program_, "camera"),
-      model_from_view[3],
-      model_from_view[7],
-      model_from_view[11]);
-  glUniform1f(glGetUniformLocation(program_, "exposure"),
-      use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-  glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"),
-      1, true, model_from_view);
-  glUniform3f(glGetUniformLocation(program_, "sun_direction"),
-      cos(sun_azimuth_angle_radians_) * sin(sun_zenith_angle_radians_),
-      sin(sun_azimuth_angle_radians_) * sin(sun_zenith_angle_radians_),
-      cos(sun_zenith_angle_radians_));
+  // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
+  // Might be ok to move these to the camera class
+  // IDEA: Create a compass widget to know in which direction we are looking at
+  glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
+  glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
+  glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
+  glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
+  glm::vec4 cameraPosition = permutation *  glm::vec4(camera.GetPosition(), 1.0f);
 
+  glm::mat4 model_from_view_ = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
+  glUniform3fv(glGetUniformLocation(program_, "camera"), 1, glm::value_ptr(cameraPosition));
+  glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, false, glm::value_ptr(model_from_view_));
+  glUniform1f(glGetUniformLocation(program_, "exposure"), use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
+
+  glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
+  glm::vec2 sunCos = glm::cos(sunAngles);
+  glm::vec2 sunSin = glm::sin(sunAngles);
+  glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
+  glUniform3fv(glGetUniformLocation(program_, "sun_direction"), 1, glm::value_ptr(sunDirection));
+  if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Submitting uniforms." << std::endl;
   glBindVertexArray(full_screen_quad_vao_);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
@@ -461,21 +468,18 @@ void Demo::OnMouseClick(int button, int action, int mods) {
   is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
 }
 
-void Demo::OnMouseMovement(glm::vec2 movement) {
-  if (!is_mouse_button_pressed_) return;
+bool Demo::OnMouseMovement(glm::vec2 movement) {
+  if (!is_mouse_button_pressed_) return false;
 
   constexpr double kScale = 500.0;
-  if (is_ctrl_key_pressed_) {
-    sun_zenith_angle_radians_ -= movement.y / kScale;
-    sun_zenith_angle_radians_ =
-        std::max(0.0, std::min(kPi, sun_zenith_angle_radians_));
-    sun_azimuth_angle_radians_ += movement.x / kScale;
-  } else {
-    view_zenith_angle_radians_ += movement.y / kScale;
-    view_zenith_angle_radians_ =
-        std::max(0.0, std::min(kPi / 2.0, view_zenith_angle_radians_));
-    view_azimuth_angle_radians_ += movement.x / kScale;
+  if (is_ctrl_key_pressed_)
+  {
+      sun_zenith_angle_radians_ -= movement.y / kScale;
+      sun_zenith_angle_radians_ = std::max(0.0, std::min(kPi, sun_zenith_angle_radians_));
+      sun_azimuth_angle_radians_ += movement.x / kScale;
+      return true;
   }
+    return false;
 }
 
 void Demo::HandleMouseWheelEvent(int mouse_wheel_direction) {

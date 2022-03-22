@@ -44,9 +44,9 @@ void Application::OnCursorMovement(double xpos, double ypos)
 {
     glm::vec2 currentCursorPosition = glm::vec2(xpos, ypos);
     glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
-
-    m_camera.OnMouseMovement(cursorMovement);
-    m_physicalSky.OnMouseMovement(cursorMovement);
+    bool captured = false;
+    if (!captured) captured = m_physicalSky.OnMouseMovement(cursorMovement);
+    if (!captured) captured = m_camera.OnMouseMovement(cursorMovement);
 
     m_previousCursorPosition = currentCursorPosition;
 }
@@ -97,7 +97,7 @@ void Application::OnRender()
     } break;
     case SkyType::PHYSICAL:
     {
-        m_physicalSky.HandleRedisplayEvent();
+        m_physicalSky.Render(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
     } break;

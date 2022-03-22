@@ -43,13 +43,13 @@ void Camera::OnRender()
     float sin_a = glm::sin(m_azimuth);
     m_forward = -glm::vec3(sin_z * cos_a, cos_z, sin_z * sin_a);
     m_right = glm::vec3(sin_a, 0.0f, -cos_a);
-    m_up = glm::cross(m_right, m_forward);
+    m_up = glm::vec3(-cos_z * cos_a, sin_z, -cos_z * sin_a); // Equivalent to: m_up = glm::cross(m_right, m_forward);
     m_position = -m_forward * m_radius;
 }
 
-void Camera::OnMouseMovement(glm::vec2 movement)
+bool Camera::OnMouseMovement(glm::vec2 movement)
 {
-    if (!m_isRotating) return;
+    if (!m_isRotating) return false;
 
     // m_isRotating
     m_azimuth += 0.01f * movement.x;
@@ -58,6 +58,7 @@ void Camera::OnMouseMovement(glm::vec2 movement)
     constexpr float safetyMargin = 0.25f;
     m_zenith -= 0.01f * movement.y;
     m_zenith = glm::clamp(m_zenith, safetyMargin, glm::pi<float>() - safetyMargin);
+    return true;
 }
 
 void Camera::OnMouseClick(int button, int action, int mods)
