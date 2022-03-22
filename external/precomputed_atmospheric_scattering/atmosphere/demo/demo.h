@@ -69,7 +69,7 @@ class Demo {
   void Initialize(Window* m_window);
   void InitResources();
   void InitModel();
-  void SetRenderingContext() const;
+  void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
   void HandleReshapeEvent(int viewport_width, int viewport_height);
   void OnMouseClick(int button, int action, int mods);

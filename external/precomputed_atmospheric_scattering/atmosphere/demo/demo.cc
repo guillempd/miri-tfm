@@ -83,7 +83,7 @@ const char kVertexShader[] = R"(
     out vec3 view_ray;
     void main() {
       view_ray =
-          (model_from_view * vec4((view_from_clip * vertex).xyz, 0.0)).xyz;
+          (model_from_view * vec4((view_from_clip * vec4(vertex.xy, 1.0, 0.0)).xyz, 0.0)).xyz;
       gl_Position = vertex;
     })";
 
@@ -146,10 +146,10 @@ void Demo::InitResources() {
   glGenBuffers(1, &full_screen_quad_vbo_);
   glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
   const GLfloat vertices[] = {
-      -1.0, -1.0, 0.0, 1.0,
-      +1.0, -1.0, 0.0, 1.0,
-      -1.0, +1.0, 0.0, 1.0,
-      +1.0, +1.0, 0.0, 1.0,
+      -1.0, -1.0, 1.0, 1.0,
+      +1.0, -1.0, 1.0, 1.0,
+      -1.0, +1.0, 1.0, 1.0,
+      +1.0, +1.0, 1.0, 1.0,
   };
   glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
   constexpr GLuint kAttribIndex = 0;
@@ -306,11 +306,11 @@ all (in our case this includes the <code>Model</code>'s texture uniforms,
 because our demo app does not have any texture of its own):
 */
 
-  SetRenderingContext();
   Reshape();
+  // SetRenderingContext();
 }
 
-void Demo::SetRenderingContext() const {
+void Demo::SetRenderingContext(const Camera& camera) const {
   glUseProgram(program_);
   model_->SetProgramUniforms(program_, 0, 1, 2, 3);
   double white_point_r = 1.0;
@@ -333,20 +333,20 @@ void Demo::SetRenderingContext() const {
     cos(kSunAngularRadius));
 
   // TODO: Get these from the camera
-  const float kFovY = 50.0 / 180.0 * kPi;
+  /*const float kFovY = 50.0 / 180.0 * kPi;
   const float kTanFovY = tan(kFovY / 2.0);
-  float aspect_ratio = static_cast<float>(m_windowWidth) / m_windowHeight;
+  float aspect_ratio = static_cast<float>(m_windowWidth) / m_windowHeight;*/
 
   // Transform matrix from clip space to camera space (i.e. the inverse of a
   // GL_PROJECTION matrix).
-  float view_from_clip[16] = {
+  /*float view_from_clip[16] = {
     kTanFovY * aspect_ratio, 0.0, 0.0, 0.0,
     0.0, kTanFovY, 0.0, 0.0,
     0.0, 0.0, 0.0, -1.0,
     0.0, 0.0, 1.0, 1.0
-  };
-  glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, true,
-      view_from_clip);
+  };*/
+  glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
+  glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
 }
 
 /*
@@ -357,7 +357,7 @@ optionally a help screen).
 
 void Demo::Render(const Camera& camera) {
   RenderUi();
-  SetRenderingContext();
+  SetRenderingContext(camera);
   /* // Unit vectors of the camera frame, expressed in world space.
   glm::vec2 viewAngles = glm::vec2(view_azimuth_angle_radians_, view_zenith_angle_radians_);
   glm::vec2 viewCos = glm::cos(viewAngles);
@@ -378,6 +378,7 @@ void Demo::Render(const Camera& camera) {
   // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
   // Might be ok to move these to the camera class
   // IDEA: Create a compass widget to know in which direction we are looking at
+
   glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
   glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
   glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
@@ -386,7 +387,7 @@ void Demo::Render(const Camera& camera) {
 
   glm::mat4 model_from_view_ = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
   glUniform3fv(glGetUniformLocation(program_, "camera"), 1, glm::value_ptr(cameraPosition));
-  glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, false, glm::value_ptr(model_from_view_));
+  glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, GL_FALSE, glm::value_ptr(model_from_view_));
   glUniform1f(glGetUniformLocation(program_, "exposure"), use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
 
   glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
@@ -395,9 +396,17 @@ void Demo::Render(const Camera& camera) {
   glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
   glUniform3fv(glGetUniformLocation(program_, "sun_direction"), 1, glm::value_ptr(sunDirection));
   if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Submitting uniforms." << std::endl;
-  glBindVertexArray(full_screen_quad_vao_);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  glBindVertexArray(0);
+
+
+
+  GLint previousDepthFunc;
+  glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+  glDepthFunc(GL_LEQUAL);
+  {
+      glBindVertexArray(full_screen_quad_vao_);
+      glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  }
+  glDepthFunc(previousDepthFunc);
 }
 
 /*

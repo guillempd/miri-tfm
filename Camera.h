@@ -19,6 +19,8 @@ public:
     void SetAspectRatio(int width, int height);
     glm::mat4 GetViewMatrix() const;
     glm::mat4 GetProjectionMatrix() const;
+    glm::mat4 GetViewFromClipMatrix() const;
+    glm::mat4 GetWorldFromViewMatrix() const;
 private:
     glm::vec3 m_position;
     glm::vec3 m_right;

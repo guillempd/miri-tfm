@@ -93,3 +93,15 @@ glm::mat4 Camera::GetProjectionMatrix() const
     constexpr float zFar = 100.0f;
     return glm::perspective(m_verticalFov, m_aspectRatio, 0.01f, 100.0f);
 }
+
+glm::mat4 Camera::GetViewFromClipMatrix() const
+{
+    // NOTE: Might use glm::inverse(GetProjectionMatrix())
+    float tan_fov = glm::tan(m_verticalFov / 2.0f);
+    return glm::mat4(glm::vec4(tan_fov * m_aspectRatio, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, tan_fov, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+}
+
+glm::mat4 Camera::GetWorldFromViewMatrix() const
+{
+    return glm::mat4(glm::vec4(m_right, 0.0f), glm::vec4(m_up, 0.0f), glm::vec4(-m_forward, 0.0f), glm::vec4(m_position, 1.0f));
+}

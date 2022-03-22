@@ -85,13 +85,13 @@ void Application::OnRender()
     }
     ImGui::End();
 
-    m_mesh.Render(m_camera);
 
     switch (m_skyType)
     {
     case SkyType::HDR:
     {
         m_hdrSky.Render(m_camera);
+        m_mesh.Render(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering HDR Sky" << std::endl;
     } break;

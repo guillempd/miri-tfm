@@ -11,24 +11,21 @@ void HdrSky::Load()
     const char* vertexShaderSource = R"(
     #version 330 core
     layout (location = 0) in vec2 aPos;
-    out vec2 texCoord;
+    uniform mat4 view_from_clip;
+    uniform mat4 world_from_view;
+    out vec3 view_ray;
     void main()
     {
+        view_ray = (world_from_view * view_from_clip * vec4(aPos.x, aPos.y, 1.0, 0.0)).xyz;
         gl_Position = vec4(aPos.x, aPos.y, 1.0, 1.0);
-        texCoord = 0.5 * (aPos.xy + vec2(1.0));
     }
 )";
 
     const char* fragmentShaderSource = R"(
     #version 330 core
-    in vec2 texCoord;
+    in vec3 view_ray;
     out vec4 FragColor;
     uniform sampler2D hdrImage;
-    uniform float verticalFov;
-    uniform vec3 cameraRight;
-    uniform vec3 cameraUp;
-    uniform vec3 cameraForward;
-    uniform float aspectRatio;
     // TODO: Check this code extracted from learnopengl.com
     const vec2 invAtan = vec2(0.1591, 0.3183);
     vec2 SampleSphericalMap(vec3 v)
@@ -40,23 +37,11 @@ void HdrSky::Load()
     }
     void main()
     {
-        // NOTE: Be careful with all z coordinates (might be negated)
-        const vec3 cameraPosition = vec3(0.0);
-        float near = 0.1;
-
-        mat3 cameraRotation = mat3(cameraRight, cameraUp, cameraForward);
-        vec2 ndc = 2 * texCoord - vec2(1.0);
-        float top = near * tan(verticalFov/2);
-        float right = top * aspectRatio;
-        vec2 viewOffset = ndc * vec2(right, top);
-        vec3 ray = cameraPosition + cameraRotation * vec3(viewOffset, near); // FIXME: cameraPosition should not be used here
-        vec3 direction = normalize(ray);
+        vec3 direction = normalize(view_ray);
         // Sample with this direction the hdrImage
-
         FragColor = texture(hdrImage, SampleSphericalMap(direction));
-        FragColor = FragColor / (1.0 + FragColor);
+        FragColor = FragColor / (1.0 + FragColor); // Tonemapping
         FragColor.a = 1.0;
-        // if (aspectRatio > 1.0) FragColor = vec4(0.0);
     }
 )";
 
@@ -99,11 +84,8 @@ void HdrSky::Render(const Camera& camera)
     m_texture.SetUnit(0);
     m_program.Use();
     m_program.SetInt("hdrImage", 0);
-    m_program.SetFloat("verticalFov", camera.GetVerticalFov());
-    m_program.SetVec3("cameraRight", camera.GetRight());
-    m_program.SetVec3("cameraUp", camera.GetUp());
-    m_program.SetVec3("cameraForward", camera.GetForward());
-    m_program.SetFloat("aspectRatio", camera.GetAspectRatio());
+    m_program.SetMat4("world_from_view", camera.GetWorldFromViewMatrix());
+    m_program.SetMat4("view_from_clip", camera.GetViewFromClipMatrix());
 
     GLint previousDepthFunc;
     glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
