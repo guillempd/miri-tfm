@@ -71,16 +71,13 @@ class Demo {
   void InitModel();
   void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
-  void HandleReshapeEvent(int viewport_width, int viewport_height);
   void OnMouseClick(int button, int action, int mods);
   bool OnMouseMovement(glm::vec2 movement);
-  void HandleMouseWheelEvent(int mouse_wheel_direction);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,
       double sun_azimuth_angle_radians, double exposure);
 
   void RenderUi();
-  void Reshape() const;
 
  private:
   enum class Luminance {
@@ -115,23 +112,16 @@ class Demo {
   GLuint full_screen_quad_vbo_;
   int window_id_;
 
-  double view_distance_meters_;
-  double view_zenith_angle_radians_;
-  double view_azimuth_angle_radians_;
   double sun_zenith_angle_radians_;
   double sun_azimuth_angle_radians_;
   double exposure_;
 
-  int previous_mouse_x_;
-  int previous_mouse_y_;
   bool is_ctrl_key_pressed_;
 
   // NOTE(guillem): Added by me
   std::vector<double> m_wavelengths;
   std::vector<double> m_solar_irradiance;
   double m_BottomRadius;
-  int m_windowWidth;
-  int m_windowHeight;
   bool is_mouse_button_pressed_;
 };
 

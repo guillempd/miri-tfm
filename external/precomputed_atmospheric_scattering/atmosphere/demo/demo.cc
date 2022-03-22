@@ -110,15 +110,9 @@ Demo::Demo(int viewport_width, int viewport_height) :
     do_white_balance_(false),
     show_help_(true),
     program_(0),
-    view_distance_meters_(9000.0),
-    view_zenith_angle_radians_(1.47),
-    view_azimuth_angle_radians_(-0.1),
     sun_zenith_angle_radians_(1.3),
     sun_azimuth_angle_radians_(2.9),
     exposure_(10.0) {
-
-    m_windowWidth = viewport_width;
-    m_windowHeight = viewport_height;
 
 }
 
@@ -305,8 +299,6 @@ to get the final scene rendering program:
 all (in our case this includes the <code>Model</code>'s texture uniforms,
 because our demo app does not have any texture of its own):
 */
-
-  Reshape();
   // SetRenderingContext();
 }
 
@@ -332,19 +324,6 @@ void Demo::SetRenderingContext(const Camera& camera) const {
     tan(kSunAngularRadius),
     cos(kSunAngularRadius));
 
-  // TODO: Get these from the camera
-  /*const float kFovY = 50.0 / 180.0 * kPi;
-  const float kTanFovY = tan(kFovY / 2.0);
-  float aspect_ratio = static_cast<float>(m_windowWidth) / m_windowHeight;*/
-
-  // Transform matrix from clip space to camera space (i.e. the inverse of a
-  // GL_PROJECTION matrix).
-  /*float view_from_clip[16] = {
-    kTanFovY * aspect_ratio, 0.0, 0.0, 0.0,
-    0.0, kTanFovY, 0.0, 0.0,
-    0.0, 0.0, 0.0, -1.0,
-    0.0, 0.0, 1.0, 1.0
-  };*/
   glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
   glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
 }
@@ -358,22 +337,6 @@ optionally a help screen).
 void Demo::Render(const Camera& camera) {
   RenderUi();
   SetRenderingContext(camera);
-  /* // Unit vectors of the camera frame, expressed in world space.
-  glm::vec2 viewAngles = glm::vec2(view_azimuth_angle_radians_, view_zenith_angle_radians_);
-  glm::vec2 viewCos = glm::cos(viewAngles);
-  glm::vec2 viewSin = glm::sin(viewAngles);
-  float ux[3] = { -viewSin.x, viewCos.x, 0.0 };
-  float uy[3] = { -viewCos.y * viewCos.x, -viewCos.y * viewSin.x, viewSin.y };
-  float uz[3] = { viewSin.y * viewCos.x, viewSin.y * viewSin.x, viewCos.y };
-  float l = view_distance_meters_ / kLengthUnitInMeters;
-
-  // Transform matrix from camera frame to world space (i.e. the inverse of a GL_MODELVIEW matrix).
-  float model_from_view[16] = {
-    ux[0], uy[0], uz[0], uz[0] * l,
-    ux[1], uy[1], uz[1], uz[1] * l,
-    ux[2], uy[2], uz[2], uz[2] * l,
-    0.0, 0.0, 0.0, 1.0
-  };*/
 
   // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
   // Might be ok to move these to the camera class
@@ -413,17 +376,6 @@ void Demo::Render(const Camera& camera) {
 <p>The other event handling methods are also straightforward, and do not
 interact with the atmosphere model:
 */
-
-void Demo::HandleReshapeEvent(int viewport_width, int viewport_height) {
-  m_windowWidth = viewport_width;
-  m_windowHeight = viewport_height;
-  Reshape();
-}
-
-void Demo::Reshape() const
-{
-    glViewport(0, 0, m_windowWidth, m_windowHeight);
-}
 
 void Demo::RenderUi()
 {
@@ -491,18 +443,14 @@ bool Demo::OnMouseMovement(glm::vec2 movement) {
     return false;
 }
 
-void Demo::HandleMouseWheelEvent(int mouse_wheel_direction) {
-  if (mouse_wheel_direction < 0) while (mouse_wheel_direction++) view_distance_meters_ *= 1.05;
-  else while (mouse_wheel_direction--) view_distance_meters_ /= 1.05;
-}
-
 void Demo::SetView(double view_distance_meters,
     double view_zenith_angle_radians, double view_azimuth_angle_radians,
     double sun_zenith_angle_radians, double sun_azimuth_angle_radians,
     double exposure) {
-  view_distance_meters_ = view_distance_meters;
-  view_zenith_angle_radians_ = view_zenith_angle_radians;
-  view_azimuth_angle_radians_ = view_azimuth_angle_radians;
+  // NOTE: This should set the camera settings
+  //view_distance_meters_ = view_distance_meters;
+  // view_zenith_angle_radians_ = view_zenith_angle_radians;
+  // view_azimuth_angle_radians_ = view_azimuth_angle_radians;
   sun_zenith_angle_radians_ = sun_zenith_angle_radians;
   sun_azimuth_angle_radians_ = sun_azimuth_angle_radians;
   exposure_ = exposure;

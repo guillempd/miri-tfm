@@ -61,7 +61,6 @@ void Application::OnFramebufferSize(int width, int height)
 {
     glViewport(0, 0, width, height);
     m_camera.SetAspectRatio(width, height);
-    m_physicalSky.HandleReshapeEvent(width, height);
     GLenum errorCode = glGetError();
     if (errorCode != GL_NO_ERROR) std::cerr << "GL error after resize" << std::endl;
 }
@@ -69,7 +68,6 @@ void Application::OnFramebufferSize(int width, int height)
 void Application::OnScroll(double xoffset, double yoffset)
 {
     m_camera.OnScroll(static_cast<int>(yoffset));
-    m_physicalSky.HandleMouseWheelEvent(static_cast<int>(yoffset));
 }
 
 void Application::OnRender()
