@@ -119,7 +119,7 @@ void Mesh::Load()
     m_program.SetFragmentShaderSource(fragmentShaderSource);
     m_program.Build();
     Assimp::Importer importer = Assimp::Importer();
-    const aiScene* scene = importer.ReadFile("D:/Descargas/horse_statue_01_4k.fbx/horse_statue_01_4k.fbx", aiProcess_Triangulate);
+    const aiScene* scene = importer.ReadFile("D:/Descargas/horse_statue_01_4k.gltf/horse_statue_01_4k.gltf", aiProcess_Triangulate);
     if (scene) ProcessScene(scene);
 }
 
