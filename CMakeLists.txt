@@ -13,6 +13,7 @@ add_executable(miri-tfm
     Texture.cpp
     Program.cpp
     HdrSky.cpp
+    PhysicalSky.cpp
     Mesh.cpp
     external/imgui/imgui.cpp
     external/imgui/imgui_demo.cpp
@@ -22,7 +23,6 @@ add_executable(miri-tfm
     external/imgui/backends/imgui_impl_glfw.cpp
     external/imgui/backends/imgui_impl_opengl3.cpp
     external/precomputed_atmospheric_scattering/atmosphere/model.cc
-    demo.cc
 )
 
 add_subdirectory(external/glfw)

@@ -37,7 +37,7 @@ independent of our atmosphere model. The only part which is related to it is the
 <code>InitModel</code> method).
 */
 
-#include "demo.h"
+#include "PhysicalSky.h"
 
 #include "Window.h"
 
@@ -53,9 +53,6 @@ independent of our atmosphere model. The only part which is related to it is the
 #include <sstream>
 #include <string>
 #include <vector>
-
-namespace atmosphere {
-namespace demo {
 
 /*
 <p>Our demo application renders a simple scene made of a purely spherical planet
@@ -101,7 +98,9 @@ global variable), and to create the vertex buffers and the text renderer that
 will be used to render the scene and the help messages:
 */
 
-Demo::Demo(int viewport_width, int viewport_height) :
+using namespace atmosphere;
+
+PhysicalSky::PhysicalSky(int viewport_width, int viewport_height) :
     use_constant_solar_spectrum_(false),
     use_ozone_(true),
     use_combined_textures_(true),
@@ -120,7 +119,7 @@ Demo::Demo(int viewport_width, int viewport_height) :
 <p>The destructor is even simpler:
 */
 
-Demo::~Demo() {
+PhysicalSky::~PhysicalSky() {
   glDeleteShader(vertex_shader_);
   glDeleteShader(fragment_shader_);
   glDeleteProgram(program_);
@@ -128,13 +127,13 @@ Demo::~Demo() {
   glDeleteVertexArrays(1, &full_screen_quad_vao_);
 }
 
-void Demo::Initialize(Window* window) {
+void PhysicalSky::Initialize(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
 }
 
-void Demo::InitResources() {
+void PhysicalSky::InitResources() {
   glGenVertexArrays(1, &full_screen_quad_vao_);
   glBindVertexArray(full_screen_quad_vao_);
   glGenBuffers(1, &full_screen_quad_vbo_);
@@ -160,7 +159,7 @@ is done in the following method. It starts with the creation of an atmosphere
 atmosphere:
 */
 
-void Demo::InitModel() {
+void PhysicalSky::InitModel() {
   // Values from "Reference Solar Spectral Irradiance: ASTM G-173", ETR column
   // (see http://rredc.nrel.gov/solar/spectra/am1.5/ASTMG173/ASTMG173.html),
   // summed and averaged in each bin (e.g. the value for 360nm is the average
@@ -302,7 +301,7 @@ because our demo app does not have any texture of its own):
   // SetRenderingContext();
 }
 
-void Demo::SetRenderingContext(const Camera& camera) const {
+void PhysicalSky::SetRenderingContext(const Camera& camera) const {
   glUseProgram(program_);
   model_->SetProgramUniforms(program_, 0, 1, 2, 3);
   double white_point_r = 1.0;
@@ -334,7 +333,7 @@ position and to the Sun direction, and then draws a full screen quad (and
 optionally a help screen).
 */
 
-void Demo::Render(const Camera& camera) {
+void PhysicalSky::Render(const Camera& camera) {
   RenderUi();
   SetRenderingContext(camera);
 
@@ -377,7 +376,7 @@ void Demo::Render(const Camera& camera) {
 interact with the atmosphere model:
 */
 
-void Demo::RenderUi()
+void PhysicalSky::RenderUi()
 {
     bool shouldRecomputeModel = false;
     if (ImGui::Begin("Physical Sky Settings"))
@@ -424,12 +423,12 @@ void Demo::RenderUi()
     if (shouldRecomputeModel) InitModel();
 }
 
-void Demo::OnMouseClick(int button, int action, int mods) {
+void PhysicalSky::OnMouseClick(int button, int action, int mods) {
   is_mouse_button_pressed_ = (action == GLFW_PRESS);
   is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
 }
 
-bool Demo::OnMouseMovement(glm::vec2 movement) {
+bool PhysicalSky::OnMouseMovement(glm::vec2 movement) {
   if (!is_mouse_button_pressed_) return false;
 
   constexpr double kScale = 500.0;
@@ -443,7 +442,7 @@ bool Demo::OnMouseMovement(glm::vec2 movement) {
     return false;
 }
 
-void Demo::SetView(double view_distance_meters,
+void PhysicalSky::SetView(double view_distance_meters,
     double view_zenith_angle_radians, double view_azimuth_angle_radians,
     double sun_zenith_angle_radians, double sun_azimuth_angle_radians,
     double exposure) {
@@ -455,6 +454,3 @@ void Demo::SetView(double view_distance_meters,
   sun_azimuth_angle_radians_ = sun_azimuth_angle_radians;
   exposure_ = exposure;
 }
-
-}  // namespace demo
-}  // namespace atmosphere

@@ -2,10 +2,10 @@
 
 #include "Camera.h"
 #include "HdrSky.h"
+#include "PhysicalSky.h"
 class Window; // Only forward declaration
 #include "Mesh.h"
 
-#include "demo.h"
 
 #include <glm/glm.hpp>
 
@@ -26,7 +26,7 @@ private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
     HdrSky m_hdrSky;
-    atmosphere::demo::Demo m_physicalSky;
+    PhysicalSky m_physicalSky;
     SkyType m_skyType;
     Window* m_window;
     Mesh m_mesh;

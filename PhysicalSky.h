@@ -37,8 +37,7 @@ atmosphere model and to the GLSL program, vertex buffers and text renderer used
 to render the scene and the help messages:
 */
 
-#ifndef ATMOSPHERE_DEMO_DEMO_H_
-#define ATMOSPHERE_DEMO_DEMO_H_
+#pragma once
 
 #include "Camera.h"
 // #include "../../../Window.h"
@@ -53,15 +52,12 @@ class Window;
 
 #include <atmosphere/model.h>
 
-namespace atmosphere {
-namespace demo {
+class PhysicalSky {
+public:
+    PhysicalSky(int viewport_width, int viewport_height);
+    ~PhysicalSky();
 
-class Demo {
- public:
-  Demo(int viewport_width, int viewport_height);
-  ~Demo();
-
-  const Model& model() const { return *model_; }
+  const atmosphere::Model& model() const { return *model_; }
   const GLuint vertex_shader() const { return vertex_shader_; }
   const GLuint fragment_shader() const { return fragment_shader_; }
   const GLuint program() const { return program_; }
@@ -104,7 +100,7 @@ class Demo {
   bool do_white_balance_;
   bool show_help_;
 
-  std::unique_ptr<Model> model_;
+  std::unique_ptr<atmosphere::Model> model_;
   GLuint vertex_shader_;
   GLuint fragment_shader_;
   GLuint program_;
@@ -124,8 +120,3 @@ class Demo {
   double m_BottomRadius;
   bool is_mouse_button_pressed_;
 };
-
-}  // namespace demo
-}  // namespace atmosphere
-
-#endif  // ATMOSPHERE_DEMO_DEMO_H_
