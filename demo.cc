@@ -37,9 +37,9 @@ independent of our atmosphere model. The only part which is related to it is the
 <code>InitModel</code> method).
 */
 
-#include "atmosphere/demo/demo.h"
+#include "demo.h"
 
-#include "../../../Window.h"
+#include "Window.h"
 
 #include <imgui.h>
 

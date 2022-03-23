@@ -5,7 +5,7 @@
 class Window; // Only forward declaration
 #include "Mesh.h"
 
-#include "atmosphere/demo/demo.h"
+#include "demo.h"
 
 #include <glm/glm.hpp>
 

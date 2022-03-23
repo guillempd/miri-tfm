@@ -40,7 +40,7 @@ to render the scene and the help messages:
 #ifndef ATMOSPHERE_DEMO_DEMO_H_
 #define ATMOSPHERE_DEMO_DEMO_H_
 
-#include "../../../Camera.h"
+#include "Camera.h"
 // #include "../../../Window.h"
 class Window;
 
@@ -51,7 +51,7 @@ class Window;
 
 #include <memory>
 
-#include "atmosphere/model.h"
+#include <atmosphere/model.h>
 
 namespace atmosphere {
 namespace demo {
