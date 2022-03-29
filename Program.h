@@ -10,6 +10,7 @@ class Program
 {
 public:
     Program();
+    ~Program();
     void Build();
     void SetVertexShaderSource(std::string_view source) { m_vertexShaderSource = source; }
     void SetFragmentShaderSource(std::string_view source) { m_fragmentShaderSource = source; }

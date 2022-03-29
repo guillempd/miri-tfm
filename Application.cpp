@@ -8,24 +8,16 @@
 
 #include <iostream>
 
-Application::Application()
+Application::Application(int width, int height, Window* window)
     : m_camera()
     , m_previousCursorPosition()
     , m_hdrSky()
     , m_physicalSky(1, 1)
     , m_skyType(SkyType::HDR)
+    , m_window(window)
 {
-    std::cout << "Creating Application" << std::endl;
-}
+    std::cout << "Creating application" << std::endl;
 
-Application::~Application()
-{
-    std::cout << "Destroying Application" << std::endl;
-}
-
-void Application::Initialize(int width, int height, Window* window)
-{
-    m_window = window;
     glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 
     glEnable(GL_DEPTH_TEST);
@@ -38,6 +30,11 @@ void Application::Initialize(int width, int height, Window* window)
     m_physicalSky.Initialize(m_window);
     m_mesh.Load();
     OnFramebufferSize(width, height);
+}
+
+Application::~Application()
+{
+    std::cout << "Destroying Application" << std::endl;
 }
 
 void Application::OnCursorMovement(double xpos, double ypos)

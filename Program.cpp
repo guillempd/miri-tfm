@@ -7,6 +7,12 @@
 Program::Program()
     : m_id(GL_NONE)
 {
+    m_id = glCreateProgram();
+}
+
+Program::~Program()
+{
+    glDeleteProgram(m_id);
 }
 
 void Program::Build()
@@ -21,7 +27,6 @@ void Program::Build()
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
 
-    m_id = glCreateProgram();
     glAttachShader(m_id, vertexShader);
     glAttachShader(m_id, fragmentShader);
     glLinkProgram(m_id);

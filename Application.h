@@ -12,9 +12,8 @@ class Window; // Only forward declaration
 class Application
 {
 public:
-    Application();
+    Application(int width, int height, Window* window);
     ~Application();
-    void Initialize(int width, int height, Window* window);
     void OnRender();
     void OnCursorMovement(double xpos, double ypos);
     void OnMouseClick(int button, int action, int mods);

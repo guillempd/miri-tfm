@@ -22,7 +22,7 @@ void Window::Initialize()
     MakeCurrent();
     InstallCallbacks();
     InitializeImGui();
-    m_application.Initialize(1024, 768, this);
+    m_application = std::make_unique<Application>(1024, 768, this);
 }
 
 void Window::MakeCurrent() const
@@ -91,7 +91,7 @@ void Window::MainLoop()
         ImGui::NewFrame();
 
         glfwPollEvents();
-        m_application.OnRender();
+        m_application->OnRender();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -112,22 +112,22 @@ void Window::OnMouseButton(int button, int action, int mods)
 {
     if (ImGui::GetIO().WantCaptureMouse) return;
 
-    m_application.OnMouseClick(button, action, mods);
+    m_application->OnMouseClick(button, action, mods);
 }
 
 void Window::OnCursorPos(double xpos, double ypos)
 {
     if (ImGui::GetIO().WantCaptureMouse) return;
 
-    m_application.OnCursorMovement(xpos, ypos);
+    m_application->OnCursorMovement(xpos, ypos);
 }
 
 void Window::OnFramebufferSize(int width, int height)
 {
-    m_application.OnFramebufferSize(width, height);
+    m_application->OnFramebufferSize(width, height);
 }
 
 void Window::OnScroll(double xoffset, double yoffset)
 {
-    m_application.OnScroll(xoffset, yoffset);
+    m_application->OnScroll(xoffset, yoffset);
 }

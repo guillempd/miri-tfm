@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <memory>
+
 class Window
 {
 public:
@@ -21,5 +23,5 @@ private:
     void InitializeImGui() const;
 private:
     GLFWwindow* m_window;
-    Application m_application;
+    std::unique_ptr<Application> m_application;
 };
