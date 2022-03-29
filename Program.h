@@ -14,6 +14,7 @@ public:
     void Build();
     void SetVertexShaderSource(std::string_view source) { m_vertexShaderSource = source; }
     void SetFragmentShaderSource(std::string_view source) { m_fragmentShaderSource = source; }
+    void AttachShader(GLuint id) const;
     void Use();
     void SetInt(std::string_view, int value);
     void SetFloat(std::string_view, float value);

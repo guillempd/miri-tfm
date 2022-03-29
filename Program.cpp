@@ -15,6 +15,11 @@ Program::~Program()
     glDeleteProgram(m_id);
 }
 
+void Program::AttachShader(GLuint id) const
+{
+    glAttachShader(m_id, id);
+}
+
 void Program::Build()
 {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -37,7 +42,7 @@ void Program::Build()
     GLint success;
     glGetProgramiv(m_id, GL_LINK_STATUS, &success);
     if (!success) {
-        GLchar infoLog[256];
+        GLchar infoLog[512];
         glGetProgramInfoLog(m_id, 512, NULL, infoLog);
         std::cerr << infoLog << std::endl;
     }

@@ -139,16 +139,20 @@ void PhysicalSky::InitResources() {
     glGenBuffers(1, &full_screen_quad_vbo_);
     glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
     const GLfloat vertices[] = {
-        -1.0, -1.0, 1.0, 1.0,
-        +1.0, -1.0, 1.0, 1.0,
-        -1.0, +1.0, 1.0, 1.0,
-        +1.0, +1.0, 1.0, 1.0,
+        -1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+        +1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+        -1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+        +1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0
     };
     glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
     constexpr GLuint kAttribIndex = 0;
     constexpr int kCoordsPerVertex = 4;
-    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
+    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 7 * sizeof(float), 0);
     glEnableVertexAttribArray(kAttribIndex);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, 7 * sizeof(float), (void*)(4 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
     glBindVertexArray(0);
 }
 
@@ -294,6 +298,84 @@ void PhysicalSky::InitModel() {
     glDetachShader(program_, fragment_shader_);
     glDetachShader(program_, model_->shader());
 
+    // NOTE(guillem): Code added by me
+    // Init mesh shader
+    const char vertexShaderSource[] = R"(
+        #version 330 core
+        layout (location = 0) in vec3 m_Pos;
+        layout (location = 1) in vec3 m_Normal;
+        uniform mat4 model;
+        uniform mat4 view;
+        uniform mat4 projection;
+        out vec3 w_Normal;
+        out vec3 w_Pos;
+        void main()
+        {
+            mat3 normalMatrix = inverse(transpose(mat3(model)));
+            w_Normal = normalMatrix * m_Normal;
+            w_Pos = (model * vec4(m_Pos, 1.0)).xyz;
+            gl_Position = projection * view * vec4(w_Pos, 1.0); 
+        }
+)";
+    const char fragmentShaderSource[] = R"(
+        #version 330 core
+
+        #ifdef USE_LUMINANCE
+        #define GetSolarRadiance GetSolarLuminance
+        #define GetSkyRadiance GetSkyLuminance
+        #define GetSkyRadianceToPoint GetSkyLuminanceToPoint
+        #define GetSunAndSkyIrradiance GetSunAndSkyIlluminance
+        #endif
+
+        // Forward declarations
+        vec3 GetSolarRadiance();
+        vec3 GetSkyRadiance(vec3 camera, vec3 view_ray, float shadow_length,
+            vec3 sun_direction, out vec3 transmittance);
+        vec3 GetSkyRadianceToPoint(vec3 camera, vec3 point, float shadow_length,
+            vec3 sun_direction, out vec3 transmittance);
+        vec3 GetSunAndSkyIrradiance(
+            vec3 p, vec3 normal, vec3 sun_direction, out vec3 sky_irradiance);
+
+        const float PI = 3.14159265;
+        const vec3 color = vec3(0.7, 0.7, 0.7);
+        uniform float exposure;
+        uniform vec3 white_point;
+        uniform vec3 sun_direction;
+        uniform vec3 earth_center;
+        uniform vec3 camera_pos;
+        in vec3 w_Pos;
+        in vec3 w_Normal;
+        out vec4 FragColor;
+        /*void main()
+        {
+            vec3 albedo = vec3(0.8, 0.7, 0.1);
+            FragColor = vec4(albedo * w_Normal.z, 1.0);
+        }*/
+        void main()
+        {
+            
+            vec3 sky_irradiance;
+            vec3 sun_irradiance = GetSunAndSkyIrradiance(w_Pos - earth_center, w_Normal, sun_direction, sky_irradiance);
+
+            vec3 sphere_radiance = color * (1.0 / PI) * (sun_irradiance + sky_irradiance);
+
+            vec3 transmittance;
+            vec3 in_scatter = GetSkyRadianceToPoint(camera_pos.xyz - earth_center, w_Pos - earth_center, 0.0, sun_direction, transmittance);
+
+            sphere_radiance = sphere_radiance * transmittance + in_scatter;
+
+            sphere_radiance = pow(vec3(1,1,1) - exp(-sphere_radiance / white_point * exposure), vec3(1.0 / 2.2));
+
+            FragColor = vec4(sphere_radiance, 1.0);
+        }
+)";
+
+    // TODO: Link to shader provided by the model
+    m_meshProgram.SetVertexShaderSource(vertexShaderSource);
+    m_meshProgram.SetFragmentShaderSource(fragmentShaderSource);
+    m_meshProgram.AttachShader(model_->shader());
+    m_meshProgram.Build();
+
     /*
     <p>Finally, it sets the uniforms of this program that can be set once and for
     all (in our case this includes the <code>Model</code>'s texture uniforms,
@@ -368,8 +450,22 @@ void PhysicalSky::Render(const Camera& camera) {
     {
         glBindVertexArray(full_screen_quad_vao_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        m_meshProgram.Use();
+        m_meshProgram.SetMat4("model", glm::mat4(1.0f));
+        m_meshProgram.SetMat4("view", camera.GetViewMatrix());
+        m_meshProgram.SetMat4("projection", camera.GetProjectionMatrix());
+        m_meshProgram.SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
+        m_meshProgram.SetVec3("sun_direction", sunDirection);
+        m_meshProgram.SetVec3("camera_pos", cameraPosition);
+        glm::vec3 whitePoint = glm::vec3(1.0); // FIXME
+        m_meshProgram.SetVec3("white_point", whitePoint);
+        glm::vec3 earthCenter = glm::vec3(0.0f, 0.0f, -m_BottomRadius / kLengthUnitInMeters); // FIXME: Is this correct or should it be permutated (?)
+        m_meshProgram.SetVec3("earth_center", earthCenter);
+        // TODO: Draw another mesh
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     glDepthFunc(previousDepthFunc);
+
 }
 
 /*
