@@ -286,6 +286,15 @@ void PhysicalSky::InitModel() {
     glShaderSource(fragment_shader_, 1, &fragment_shader_source, NULL);
     glCompileShader(fragment_shader_);
 
+    GLint success;
+    glGetShaderiv(fragment_shader_, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        GLchar infoLog[4096];
+        glGetShaderInfoLog(fragment_shader_, 4096, nullptr, infoLog);
+        std::cerr << infoLog << std::endl;
+    }
+
     if (program_ != 0) {
         glDeleteProgram(program_);
     }
