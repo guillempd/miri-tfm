@@ -323,7 +323,9 @@ void PhysicalSky::InitModel() {
             mat3 normalMatrix = inverse(transpose(mat3(model)));
             w_Normal = normalMatrix * m_Normal;
             w_Pos = (model * vec4(m_Pos, 1.0)).xyz;
-            gl_Position = projection * view * vec4(w_Pos, 1.0); 
+            gl_Position = projection * view * vec4(w_Pos, 1.0);
+            w_Normal = w_Normal.zxy;
+            w_Pos = w_Pos.zxy;
         }
 )";
     const char fragmentShaderSource[] = R"(
@@ -346,7 +348,7 @@ void PhysicalSky::InitModel() {
             vec3 p, vec3 normal, vec3 sun_direction, out vec3 sky_irradiance);
 
         const float PI = 3.14159265;
-        const vec3 color = vec3(0.7, 0.7, 0.7);
+        const vec3 color = vec3(0.1, 0.1, 0.1);
         uniform float exposure;
         uniform vec3 white_point;
         uniform vec3 sun_direction;
@@ -379,7 +381,6 @@ void PhysicalSky::InitModel() {
         }
 )";
 
-    // TODO: Link to shader provided by the model
     m_meshProgram.SetVertexShaderSource(vertexShaderSource);
     m_meshProgram.SetFragmentShaderSource(fragmentShaderSource);
     m_meshProgram.AttachShader(model_->shader());
@@ -471,7 +472,7 @@ void PhysicalSky::Render(const Camera& camera) {
         glm::vec3 earthCenter = glm::vec3(0.0f, 0.0f, -m_BottomRadius / kLengthUnitInMeters); // FIXME: Is this correct or should it be permutated (?)
         m_meshProgram.SetVec3("earth_center", earthCenter);
         // TODO: Draw another mesh
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     glDepthFunc(previousDepthFunc);
 

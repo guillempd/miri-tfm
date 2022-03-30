@@ -18,6 +18,7 @@ public:
     ~Mesh();
     void Load();
     void Render(const Camera& camera);
+    void JustRender(const Camera& camera);
 private:
     void ProcessScene(const aiScene* scene);
     void ProcessMesh(aiMesh* mesh);

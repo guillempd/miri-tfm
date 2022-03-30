@@ -42,6 +42,7 @@ to render the scene and the help messages:
 #include "Camera.h"
 #include "Program.h"
 class Window;
+#include "Mesh.h"
 
 #include <glad/glad.h>
 

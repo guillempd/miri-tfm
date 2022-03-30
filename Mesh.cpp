@@ -128,7 +128,7 @@ void Mesh::Render(const Camera &camera)
     m_program.Use();
     glm::mat4 model = glm::mat4(1.0f);
     // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0));
-    model = glm::scale(model, glm::vec3(3.0f));
+    model = glm::scale(model, glm::vec3(1.0f));
     m_program.SetMat4("model", model);
     m_program.SetMat4("view", camera.GetViewMatrix());
     m_program.SetMat4("projection", camera.GetProjectionMatrix());
@@ -139,6 +139,12 @@ void Mesh::Render(const Camera &camera)
     {
         std::cerr << "[OpenGL] E: Rendering mesh." << std::endl;
     }
+}
+
+void Mesh::JustRender(const Camera& camera)
+{
+    glBindVertexArray(m_vao);
+    glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
 }
 
 
