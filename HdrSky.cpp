@@ -8,46 +8,9 @@
 
 void HdrSky::Load()
 {
-    const char* vertexShaderSource = R"(
-    #version 330 core
-    layout (location = 0) in vec2 aPos;
-    uniform mat4 view_from_clip;
-    uniform mat4 world_from_view;
-    out vec3 view_ray;
-    void main()
-    {
-        view_ray = (world_from_view * view_from_clip * vec4(aPos.x, aPos.y, 1.0, 0.0)).xyz;
-        gl_Position = vec4(aPos.x, aPos.y, 1.0, 1.0);
-    }
-)";
-
-    const char* fragmentShaderSource = R"(
-    #version 330 core
-    in vec3 view_ray;
-    out vec4 FragColor;
-    uniform sampler2D hdrImage;
-    // TODO: Check this code extracted from learnopengl.com
-    const vec2 invAtan = vec2(0.1591, 0.3183);
-    vec2 SampleSphericalMap(vec3 v)
-    {
-        vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-        uv *= invAtan;
-        uv += 0.5;
-        return uv;
-    }
-    void main()
-    {
-        vec3 direction = normalize(view_ray);
-        // Sample with this direction the hdrImage
-        FragColor = texture(hdrImage, SampleSphericalMap(direction));
-        FragColor = FragColor / (1.0 + FragColor); // Tonemapping
-        FragColor.a = 1.0;
-    }
-)";
-
-    m_program.SetVertexShaderSource(vertexShaderSource);
-    m_program.SetFragmentShaderSource(fragmentShaderSource);
-    m_program.Build();
+    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.vert");
+    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.frag");
+    m_program.Build(vertexShaderSource, fragmentShaderSource);
 
     m_texture.Load("D:/Descargas/drackenstein_quarry_4k.hdr");
 

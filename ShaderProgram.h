@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ShaderSource.h"
+
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
@@ -13,7 +15,7 @@ public:
     ~ShaderProgram();
     void Build();
     void Build(std::string_view vertexSource, std::string_view fragmentSource);
-    //  Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource);
+    void Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource);
     void SetVertexShaderSource(std::string_view source) { m_vertexShaderSource = source; }
     void SetFragmentShaderSource(std::string_view source) { m_fragmentShaderSource = source; }
     void AttachShader(GLuint id) const;
