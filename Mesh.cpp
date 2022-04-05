@@ -87,37 +87,11 @@ void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm
     }
 }
 
-const char vertexShaderSource[] = R"(
-    #version 330 core
-    layout (location = 0) in vec3 m_Pos;
-    layout (location = 1) in vec3 m_Normal;
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
-    out vec3 v_Normal;
-    void main()
-    {
-        gl_Position = projection * view * model * vec4(m_Pos, 1.0);
-        v_Normal = inverse(transpose(mat3(view * model))) * m_Normal;
-    }
-)";
-const char fragmentShaderSource[] = R"(
-    #version 330 core
-    in vec3 v_Normal;
-    out vec4 FragColor;
-    void main()
-    {
-        vec3 baseColor = vec3(0.7, 0.7, 0.7);
-        vec3 N = normalize(v_Normal);
-        FragColor = vec4(baseColor * N.z, 1.0);
-    }
-)";
-
 void Mesh::Load()
 {
-    m_program.SetVertexShaderSource(vertexShaderSource);
-    m_program.SetFragmentShaderSource(fragmentShaderSource);
-    m_program.Build();
+    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
+    m_program.Build(vertexShaderSource, fragmentShaderSource);
     Assimp::Importer importer = Assimp::Importer();
     const aiScene* scene = importer.ReadFile("D:/Descargas/horse_statue_01_4k.gltf/horse_statue_01_4k.gltf", aiProcess_Triangulate);
     if (scene) ProcessScene(scene);

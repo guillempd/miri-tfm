@@ -21,11 +21,6 @@ void ShaderProgram::AttachShader(GLuint id) const
     glAttachShader(m_id, id);
 }
 
-void ShaderProgram::Build()
-{
-    Build(m_vertexShaderSource, m_fragmentShaderSource);
-}
-
 static void CheckShaderCompileStatus(GLuint shaderId)
 {
     GLint success;
