@@ -23,6 +23,7 @@ void Mesh::ProcessMesh(aiMesh* mesh)
 {
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> texCoords;
     std::vector<glm::uvec3> triangles;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
@@ -32,6 +33,9 @@ void Mesh::ProcessMesh(aiMesh* mesh)
 
         const aiVector3D& normal = mesh->mNormals[i];
         normals.emplace_back(normal.x, normal.y, normal.z);
+
+        const aiVector3D& texCoord = mesh->mTextureCoords[0][i];
+        texCoords.emplace_back(texCoord.x, texCoord.y);
     }
 
     for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
@@ -48,28 +52,34 @@ void Mesh::ProcessMesh(aiMesh* mesh)
     positions.emplace_back(1.0f, 1.0f, 0.0f);
 
     normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 10.0f, 1.0f);
-    normals.emplace_back(10.0f, 0.0f, 1.0f);
-    normals.emplace_back(1.0f, 1.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+
+    texCoords.emplace_back(0.0f, 1.0f);
+    texCoords.emplace_back(0.0f, 0.0f);
+    texCoords.emplace_back(1.0f, 0.0f);
+    texCoords.emplace_back(1.0f, 1.0f);
 
     triangles.emplace_back(0, 1, 2);
     triangles.emplace_back(0, 2, 3);
     m_numElements = 3 * triangles.size();*/
 
-    Upload(positions, normals, triangles);
+    Upload(positions, normals, texCoords, triangles);
 }
 
-void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm::vec3>& normals, const std::vector<glm::uvec3>& triangles)
+void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, const std::vector<glm::uvec3>& triangles)
 {
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
 
     glGenBuffers(1, &m_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (positions.size() + normals.size()) * sizeof(glm::vec3), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (positions.size() + normals.size() + texCoords.size()) * sizeof(glm::vec3), nullptr, GL_STATIC_DRAW);
 
-    glBufferSubData(GL_ARRAY_BUFFER, 0, positions.size() * sizeof(glm::vec3), positions.data());
-    glBufferSubData(GL_ARRAY_BUFFER, positions.size() * sizeof(glm::vec3), normals.size() * sizeof(glm::vec3), normals.data());
+    glBufferSubData(GL_ARRAY_BUFFER,                                                       0, positions.size() * sizeof(glm::vec3), positions.data());
+    glBufferSubData(GL_ARRAY_BUFFER,                    positions.size() * sizeof(glm::vec3),   normals.size() * sizeof(glm::vec3), normals.data());
+    glBufferSubData(GL_ARRAY_BUFFER, (positions.size() + normals.size()) * sizeof(glm::vec3), texCoords.size() * sizeof(glm::vec2), texCoords.data());
 
     glGenBuffers(1, &m_ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
@@ -80,6 +90,9 @@ void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm
 
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)(positions.size() * sizeof(glm::vec3)));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)((positions.size() + normals.size()) * sizeof(glm::vec3)));
 
     if (glGetError() != GL_NO_ERROR)
     {

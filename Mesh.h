@@ -22,7 +22,7 @@ public:
 private:
     void ProcessScene(const aiScene* scene);
     void ProcessMesh(aiMesh* mesh);
-    void Upload(const std::vector<glm::vec3>& positions, const std::vector<glm::vec3>& normals, const std::vector<glm::uvec3>& triangles);
+    void Upload(const std::vector<glm::vec3>& positions, const std::vector<glm::vec3>& normals, const std::vector<glm::vec2>& texCoords, const std::vector<glm::uvec3>& triangles);
 private:
     GLuint m_vao;
     GLuint m_vbo;
