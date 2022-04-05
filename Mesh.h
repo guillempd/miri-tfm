@@ -2,6 +2,7 @@
 
 #include "ShaderProgram.h"
 #include "Camera.h"
+#include "Texture.h"
 
 #include <glad/glad.h>
 
@@ -10,6 +11,7 @@
 #include <glm/glm.hpp>
 
 #include <vector>
+#include <string_view>
 
 class Mesh
 {
@@ -19,6 +21,8 @@ public:
     ~Mesh();
     void Render(const Camera& camera);
     void JustRender(const Camera& camera);
+    void SetAlbedo(const glm::vec3& albedo);
+    void LoadAlbedoTexture(std::string_view path);
 private:
     void ProcessScene(const aiScene* scene);
     void ProcessMesh(aiMesh* mesh);
@@ -29,4 +33,7 @@ private:
     GLuint m_ebo;
     unsigned int m_numElements;
     ShaderProgram m_program;
+    glm::vec3 m_albedo;
+    Texture m_albedoTexture;
+    bool m_useAlbedoTexture = false;
 };

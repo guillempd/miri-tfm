@@ -135,6 +135,10 @@ void Mesh::Render(const Camera &camera)
     m_program.SetMat4("model", model);
     m_program.SetMat4("view", camera.GetViewMatrix());
     m_program.SetMat4("projection", camera.GetProjectionMatrix());
+    m_program.SetVec3("albedo", m_albedo);
+    m_program.SetBool("useAlbedoTexture", m_useAlbedoTexture);
+    m_albedoTexture.SetUnit(0);
+    m_program.SetInt("albedoTexture", 0);
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
 
@@ -148,6 +152,18 @@ void Mesh::JustRender(const Camera& camera)
 {
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
+}
+
+void Mesh::SetAlbedo(const glm::vec3& albedo)
+{
+    m_albedo = albedo;
+    //m_program.SetVec3("albedo", albedo);
+}
+
+void Mesh::LoadAlbedoTexture(std::string_view path)
+{
+    m_albedoTexture.Load(path);
+    m_useAlbedoTexture = true;
 }
 
 

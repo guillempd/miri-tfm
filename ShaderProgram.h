@@ -18,6 +18,7 @@ public:
     void Use();
     void SetInt(std::string_view, int value);
     void SetFloat(std::string_view, float value);
+    void SetBool(std::string_view, bool value);
     void SetVec3(std::string_view, const glm::vec3& value);
     void SetMat4(std::string_view, const glm::mat4& value);
     GLuint m_id;

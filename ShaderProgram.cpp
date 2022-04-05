@@ -94,6 +94,11 @@ void ShaderProgram::SetFloat(std::string_view key, float value)
     glUniform1f(glGetUniformLocation(m_id, key.data()), value);
 }
 
+void ShaderProgram::SetBool(std::string_view key, bool value)
+{
+    glUniform1i(glGetUniformLocation(m_id, key.data()), value);
+}
+
 void ShaderProgram::SetVec3(std::string_view key, const glm::vec3& value)
 {
     glUniform3fv(glGetUniformLocation(m_id, key.data()), 1, glm::value_ptr(value));

@@ -83,9 +83,9 @@ void Application::OnRender()
     }
     ImGui::End();
 
-    if (ImGui::Begin("Load model"))
+    if (ImGui::Begin("Model"))
     {
-        if (ImGui::Button("Open..."))
+        if (ImGui::Button("Open other model..."))
         {
             NFD::UniquePath path;
             NFD::OpenDialog(path);
@@ -93,6 +93,19 @@ void Application::OnRender()
             {
                 std::cout << "Opened file: " << path << std::endl;
                 m_mesh = std::make_unique<Mesh>(path.get());
+            }
+        }
+        static glm::vec4 albedo = glm::vec4(1.0);
+        ImGui::ColorEdit4("Albedo", glm::value_ptr(albedo), 0);
+        m_mesh->SetAlbedo(albedo);
+        if (ImGui::Button("Load albedo texture..."))
+        {
+            NFD::UniquePath path;
+            NFD::OpenDialog(path);
+            if (path)
+            {
+                std::cout << "Opened file: " << path << std::endl;
+                m_mesh->LoadAlbedoTexture(path.get());
             }
         }
     }

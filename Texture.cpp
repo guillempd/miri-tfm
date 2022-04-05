@@ -5,11 +5,15 @@
 
 #include <iostream>
 
+// TODO: Manage texture resource (delete it at the end)
 Texture::Texture()
     : m_id(GL_NONE)
 {
 }
 
+// TODO: Load non hdr textures
+
+// This is for loading hdr textures (also valid for ldr textures)
 void Texture::Load(std::string_view imagePath)
 {
     int x, y, n;
