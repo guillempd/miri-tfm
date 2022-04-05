@@ -7,6 +7,51 @@
 
 #include <iostream>
 
+
+Mesh::Mesh()
+{
+    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
+    m_program.Build(vertexShaderSource, fragmentShaderSource);
+
+    // TODO: Use a sphere instead
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> texCoords;
+    std::vector<glm::uvec3> triangles;
+
+    positions.emplace_back(-1.0f, 1.0f, 0.0f);
+    positions.emplace_back(-1.0f, -1.0f, 0.0f);
+    positions.emplace_back(1.0f, -1.0f, 0.0f);
+    positions.emplace_back(1.0f, 1.0f, 0.0f);
+
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 0.0f, 1.0f);
+
+    texCoords.emplace_back(0.0f, 1.0f);
+    texCoords.emplace_back(0.0f, 0.0f);
+    texCoords.emplace_back(1.0f, 0.0f);
+    texCoords.emplace_back(1.0f, 1.0f);
+
+    triangles.emplace_back(0, 1, 2);
+    triangles.emplace_back(0, 2, 3);
+    m_numElements = 3 * triangles.size();
+
+    Upload(positions, normals, texCoords, triangles);
+}
+
+Mesh::Mesh(std::string_view path)
+{
+    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
+    m_program.Build(vertexShaderSource, fragmentShaderSource);
+    Assimp::Importer importer = Assimp::Importer();
+    const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes
+    if (scene) ProcessScene(scene);
+}
+
 void Mesh::ProcessScene(const aiScene* scene)
 {
     if (scene->mNumMeshes == 0)
@@ -46,25 +91,6 @@ void Mesh::ProcessMesh(aiMesh* mesh)
 
     m_numElements = 3 * triangles.size();
 
-    /*positions.emplace_back(-1.0f, 1.0f, 0.0f);
-    positions.emplace_back(-1.0f, -1.0f, 0.0f);
-    positions.emplace_back(1.0f, -1.0f, 0.0f);
-    positions.emplace_back(1.0f, 1.0f, 0.0f);
-
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-
-    texCoords.emplace_back(0.0f, 1.0f);
-    texCoords.emplace_back(0.0f, 0.0f);
-    texCoords.emplace_back(1.0f, 0.0f);
-    texCoords.emplace_back(1.0f, 1.0f);
-
-    triangles.emplace_back(0, 1, 2);
-    triangles.emplace_back(0, 2, 3);
-    m_numElements = 3 * triangles.size();*/
-
     Upload(positions, normals, texCoords, triangles);
 }
 
@@ -98,16 +124,6 @@ void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm
     {
         std::cerr << "[OpenGL] E: Uploading model" << std::endl;
     }
-}
-
-void Mesh::Load()
-{
-    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
-    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
-    m_program.Build(vertexShaderSource, fragmentShaderSource);
-    Assimp::Importer importer = Assimp::Importer();
-    const aiScene* scene = importer.ReadFile("D:/Descargas/horse_statue_01_4k.gltf/horse_statue_01_4k.gltf", aiProcess_Triangulate);
-    if (scene) ProcessScene(scene);
 }
 
 void Mesh::Render(const Camera &camera)

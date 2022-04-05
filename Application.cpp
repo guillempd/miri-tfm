@@ -2,6 +2,8 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+#include <nfd.hpp>
+
 #include <imgui.h>
 
 #include <glad/glad.h>
@@ -15,6 +17,7 @@ Application::Application(int width, int height, Window* window)
     , m_physicalSky(1, 1)
     , m_skyType(SkyType::HDR)
     , m_window(window)
+    , m_mesh()
 {
     std::cout << "Creating application" << std::endl;
 
@@ -28,7 +31,7 @@ Application::Application(int width, int height, Window* window)
 
     m_hdrSky.Load();
     m_physicalSky.Initialize(m_window);
-    m_mesh.Load();
+    m_mesh = std::make_unique<Mesh>();
     OnFramebufferSize(width, height);
 }
 
@@ -80,20 +83,34 @@ void Application::OnRender()
     }
     ImGui::End();
 
+    if (ImGui::Begin("Load model"))
+    {
+        if (ImGui::Button("Open..."))
+        {
+            NFD::UniquePath path;
+            NFD::OpenDialog(path);
+            if (path)
+            {
+                std::cout << "Opened file: " << path << std::endl;
+                m_mesh = std::make_unique<Mesh>(path.get());
+            }
+        }
+    }
+    ImGui::End();
 
     switch (m_skyType)
     {
     case SkyType::HDR:
     {
         m_hdrSky.Render(m_camera);
-        m_mesh.Render(m_camera);
+        m_mesh->Render(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering HDR Sky" << std::endl;
     } break;
     case SkyType::PHYSICAL:
     {
         m_physicalSky.Render(m_camera);
-        m_mesh.JustRender(m_camera);
+        m_mesh->JustRender(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
     } break;

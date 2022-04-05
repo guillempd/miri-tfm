@@ -14,9 +14,9 @@
 class Mesh
 {
 public:
-    Mesh() = default;
+    Mesh();
+    Mesh(std::string_view path);
     ~Mesh();
-    void Load();
     void Render(const Camera& camera);
     void JustRender(const Camera& camera);
 private:

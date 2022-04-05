@@ -9,6 +9,8 @@ class Window; // Only forward declaration
 
 #include <glm/glm.hpp>
 
+#include <memory>
+
 class Application
 {
 public:
@@ -28,5 +30,5 @@ private:
     PhysicalSky m_physicalSky;
     SkyType m_skyType;
     Window* m_window;
-    Mesh m_mesh;
+    std::unique_ptr<Mesh> m_mesh;
 };
