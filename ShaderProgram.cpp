@@ -1,26 +1,26 @@
-#include "Program.h"
+#include "ShaderProgram.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 
-Program::Program()
+ShaderProgram::ShaderProgram()
     : m_id(GL_NONE)
 {
     m_id = glCreateProgram();
 }
 
-Program::~Program()
+ShaderProgram::~ShaderProgram()
 {
     glDeleteProgram(m_id);
 }
 
-void Program::AttachShader(GLuint id) const
+void ShaderProgram::AttachShader(GLuint id) const
 {
     glAttachShader(m_id, id);
 }
 
-void Program::Build()
+void ShaderProgram::Build()
 {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     const char* vertexShaderSource = m_vertexShaderSource.data();
@@ -48,27 +48,27 @@ void Program::Build()
     }
 }
 
-void Program::Use()
+void ShaderProgram::Use()
 {
     glUseProgram(m_id);
 }
 
-void Program::SetInt(std::string_view key, int value)
+void ShaderProgram::SetInt(std::string_view key, int value)
 {
     glUniform1i(glGetUniformLocation(m_id, key.data()), value);
 }
 
-void Program::SetFloat(std::string_view key, float value)
+void ShaderProgram::SetFloat(std::string_view key, float value)
 {
     glUniform1f(glGetUniformLocation(m_id, key.data()), value);
 }
 
-void Program::SetVec3(std::string_view key, const glm::vec3& value)
+void ShaderProgram::SetVec3(std::string_view key, const glm::vec3& value)
 {
     glUniform3fv(glGetUniformLocation(m_id, key.data()), 1, glm::value_ptr(value));
 }
 
-void Program::SetMat4(std::string_view key, const glm::mat4& value)
+void ShaderProgram::SetMat4(std::string_view key, const glm::mat4& value)
 {
     glUniformMatrix4fv(glGetUniformLocation(m_id, key.data()), 1, GL_FALSE, glm::value_ptr(value));
 }

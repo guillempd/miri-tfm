@@ -6,12 +6,14 @@
 
 #include <string_view>
 
-class Program
+class ShaderProgram
 {
 public:
-    Program();
-    ~Program();
+    ShaderProgram();
+    ~ShaderProgram();
     void Build();
+    void Build(std::string_view vertexSource, std::string_view fragmentSource);
+    //  Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource);
     void SetVertexShaderSource(std::string_view source) { m_vertexShaderSource = source; }
     void SetFragmentShaderSource(std::string_view source) { m_fragmentShaderSource = source; }
     void AttachShader(GLuint id) const;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Program.h"
+#include "ShaderProgram.h"
 #include "Camera.h"
 
 #include <glad/glad.h>
@@ -28,5 +28,5 @@ private:
     GLuint m_vbo;
     GLuint m_ebo;
     unsigned int m_numElements;
-    Program m_program;
+    ShaderProgram m_program;
 };

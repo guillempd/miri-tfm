@@ -11,7 +11,7 @@ add_executable(miri-tfm
     Window.cpp
     Camera.cpp
     Texture.cpp
-    Program.cpp
+    ShaderProgram.cpp
     HdrSky.cpp
     PhysicalSky.cpp
     Mesh.cpp

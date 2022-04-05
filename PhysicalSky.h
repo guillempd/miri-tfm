@@ -40,7 +40,7 @@ to render the scene and the help messages:
 #pragma once
 
 #include "Camera.h"
-#include "Program.h"
+#include "ShaderProgram.h"
 class Window;
 #include "Mesh.h"
 
@@ -120,5 +120,5 @@ public:
   std::vector<double> m_solar_irradiance;
   double m_BottomRadius;
   bool is_mouse_button_pressed_;
-  Program m_meshProgram;
+  ShaderProgram m_meshProgram;
 };

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Program.h"
+#include "ShaderProgram.h"
 #include "Texture.h"
 #include "Camera.h"
 
@@ -16,7 +16,7 @@ public:
 private:
     void LoadFullScreenQuad();
 private:
-    Program m_program;
+    ShaderProgram m_program;
     Texture m_texture;
     GLuint m_vao;
     GLuint m_vbo;
