@@ -108,6 +108,17 @@ void Application::OnRender()
                 m_mesh->LoadAlbedoTexture(path.get());
             }
         }
+
+        if (ImGui::Button("Load normal texture..."))
+        {
+            NFD::UniquePath path;
+            NFD::OpenDialog(path);
+            if (path)
+            {
+                std::cout << "Opened file: " << path << std::endl;
+                m_mesh->LoadNormalTexture(path.get());
+            }
+        }
     }
     ImGui::End();
 
