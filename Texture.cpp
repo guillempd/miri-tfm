@@ -14,11 +14,41 @@ Texture::Texture()
 // TODO: Load non hdr textures
 
 // This is for loading hdr textures (also valid for ldr textures)
-void Texture::Load(std::string_view imagePath)
+void Texture::Load(std::string_view path)
+{
+    if (stbi_is_hdr(path.data())) LoadHdr(path);
+    else LoadLdr(path);
+}
+
+void Texture::LoadLdr(std::string_view path)
 {
     int x, y, n;
     stbi_set_flip_vertically_on_load(true);
-    float* data = stbi_loadf(imagePath.data(), &x, &y, &n, 0);
+    unsigned char* data = stbi_load(path.data(), &x, &y, &n, 3); // request 3 components (?)
+    glGenTextures(1, &m_id);
+
+    if (data)
+    {
+        glBindTexture(GL_TEXTURE_2D, m_id);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cerr << "[stbi] E: Could not load image." << std::endl;
+    }
+}
+
+void Texture::LoadHdr(std::string_view path)
+{
+    int x, y, n;
+    stbi_set_flip_vertically_on_load(true);
+    float* data = stbi_loadf(path.data(), &x, &y, &n, 0);
     glGenTextures(1, &m_id);
 
     if (data)

@@ -161,16 +161,18 @@ void Mesh::Render(const Camera &camera)
     glm::mat4 model = glm::mat4(1.0f);
     // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0));
     model = glm::scale(model, glm::vec3(1.0f));
+    //model = glm::rotate(model, -glm::half_pi<float>(), glm::vec3(1.0f, 0.0f, 0.0));
     m_program.SetMat4("model", model);
     m_program.SetMat4("view", camera.GetViewMatrix());
     m_program.SetMat4("projection", camera.GetProjectionMatrix());
-    m_program.SetVec3("albedo", m_albedo);
+    m_program.SetVec3("albedoConstant", m_albedo);
     m_program.SetBool("useAlbedoTexture", m_useAlbedoTexture);
     m_albedoTexture.SetUnit(0);
     m_program.SetInt("albedoTexture", 0);
     m_program.SetBool("useNormalTexture", m_useNormalTexture);
     m_normalTexture.SetUnit(1);
     m_program.SetInt("normalTexture", 1);
+    m_program.SetVec3("w_LightDir", -camera.GetForward());
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
 
