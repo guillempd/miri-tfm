@@ -6,8 +6,6 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/scalar_constants.hpp>
 
-#include <glm/matrix.hpp>
-
 #include <GLFW/glfw3.h> // TODO: Remove and use Window.h instead
 
 Camera::Camera()
@@ -15,9 +13,11 @@ Camera::Camera()
     , m_right   (1.0f,  0.0f,  0.0f)
     , m_up      (0.0f,  1.0f,  0.0f)
     , m_forward (0.0f,  0.0f, -1.0f)
+    , m_center  (0.0f,  0.0f,  0.0f)
     , m_azimuth(glm::half_pi<float>())
     , m_zenith(glm::half_pi<float>())
     , m_isRotating(false)
+    , m_isPanning(false)
     , m_verticalFov(glm::half_pi<float>())
     , m_radius(1.0f)
 {
@@ -29,6 +29,7 @@ void Camera::OnRender()
     {
         ImGui::SliderFloat("Azimuth", &m_azimuth, 0.0f, glm::two_pi<float>());
         ImGui::SliderFloat("Vertical Fov", &m_verticalFov, glm::quarter_pi<float>(), glm::two_thirds<float>() * glm::pi<float>());
+        if (ImGui::Button("Reset")) Reset();
     }
     ImGui::End();
 
@@ -44,30 +45,41 @@ void Camera::OnRender()
     m_forward = -glm::vec3(sin_z * cos_a, cos_z, sin_z * sin_a);
     m_right = glm::vec3(sin_a, 0.0f, -cos_a);
     m_up = glm::vec3(-cos_z * cos_a, sin_z, -cos_z * sin_a); // Equivalent to: m_up = glm::cross(m_right, m_forward);
-    m_position = -m_forward * m_radius;
+    m_position = m_center - m_forward * m_radius;
 }
 
 bool Camera::OnMouseMovement(glm::vec2 movement)
 {
-    if (!m_isRotating) return false;
-
-    // m_isRotating
-    m_azimuth += 0.01f * movement.x;
-    m_azimuth = glm::mod(m_azimuth, glm::two_pi<float>());
-
+    constexpr float sensitivity = 0.01f;
     constexpr float safetyMargin = 0.25f;
-    m_zenith -= 0.01f * movement.y;
-    m_zenith = glm::clamp(m_zenith, safetyMargin, glm::pi<float>() - safetyMargin);
-    return true;
+    if (m_isRotating)
+    {
+        m_azimuth += sensitivity * movement.x;
+        m_azimuth = glm::mod(m_azimuth, glm::two_pi<float>());
+
+        m_zenith -= sensitivity * movement.y;
+        m_zenith = glm::clamp(m_zenith, safetyMargin, glm::pi<float>() - safetyMargin);
+        return true;
+    }
+    if (m_isPanning)
+    {
+        m_center += sensitivity * (movement.x * (-m_right) + movement.y * m_up);
+        return true;
+    }
+    return false;
 }
 
 void Camera::OnMouseClick(int button, int action, int mods)
 {
-
     if (button == GLFW_MOUSE_BUTTON_LEFT)
     {
         if (action == GLFW_PRESS) m_isRotating = true;
         else /* action == GLFW_RELEASE */ m_isRotating = false;
+    }
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+    {
+        if (action == GLFW_PRESS) m_isPanning = true;
+        else /* action == GLFW_RELEASE */ m_isPanning = false;
     }
 }
 
@@ -84,7 +96,7 @@ void Camera::SetAspectRatio(int width, int height)
 
 glm::mat4 Camera::GetViewMatrix() const
 {
-    return glm::lookAt(m_position, glm::vec3(0.0f), m_up);
+    return glm::lookAt(m_position, m_center, m_up);
 }
 
 glm::mat4 Camera::GetProjectionMatrix() const
@@ -104,4 +116,12 @@ glm::mat4 Camera::GetViewFromClipMatrix() const
 glm::mat4 Camera::GetWorldFromViewMatrix() const
 {
     return glm::mat4(glm::vec4(m_right, 0.0f), glm::vec4(m_up, 0.0f), glm::vec4(-m_forward, 0.0f), glm::vec4(m_position, 1.0f));
+}
+
+void Camera::Reset()
+{
+    m_azimuth = glm::half_pi<float>();
+    m_zenith = glm::half_pi<float>();
+    m_center = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_radius = 1.0f;
 }

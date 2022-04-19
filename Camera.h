@@ -21,14 +21,17 @@ public:
     glm::mat4 GetProjectionMatrix() const;
     glm::mat4 GetViewFromClipMatrix() const;
     glm::mat4 GetWorldFromViewMatrix() const;
+    void Reset();
 private:
     glm::vec3 m_position;
     glm::vec3 m_right;
     glm::vec3 m_up;
     glm::vec3 m_forward;
+    glm::vec3 m_center;
     float m_azimuth;
     float m_zenith;
     bool m_isRotating;
+    bool m_isPanning;
     float m_verticalFov;
     float m_radius;
     float m_aspectRatio;
