@@ -129,5 +129,7 @@ void Window::OnFramebufferSize(int width, int height)
 
 void Window::OnScroll(double xoffset, double yoffset)
 {
+    if (ImGui::GetIO().WantCaptureMouse) return;
+
     m_application->OnScroll(xoffset, yoffset);
 }
