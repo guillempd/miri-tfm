@@ -60,7 +60,7 @@ Mesh::Mesh(std::string_view path)
     ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
     m_program.Build(vertexShaderSource, fragmentShaderSource);
     Assimp::Importer importer = Assimp::Importer();
-    const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes
+    const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes
     if (scene) ProcessScene(scene);
 }
 
@@ -85,9 +85,12 @@ void Mesh::ProcessMesh(aiMesh* mesh)
     std::vector<glm::vec2> texCoords;
     std::vector<glm::uvec3> triangles;
 
+    aiVector3D center = (mesh->mAABB.mMin + mesh->mAABB.mMax) / 2.0f;
+
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
     {
-        const aiVector3D& position = mesh->mVertices[i];
+        aiVector3D position = mesh->mVertices[i];
+        position -= center;
         positions.emplace_back(position.x, position.y, position.z);
 
         const aiVector3D& normal = mesh->mNormals[i];
