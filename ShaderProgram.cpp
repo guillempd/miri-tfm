@@ -76,7 +76,7 @@ void ShaderProgram::Build(std::string_view vertexSource, std::string_view fragme
 
 void ShaderProgram::Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource)
 {
-    Build(vertexSource.get(), fragmentSource.get());
+    Build(vertexSource.Get(), fragmentSource.Get());
 }
 
 void ShaderProgram::Use()

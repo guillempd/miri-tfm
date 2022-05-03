@@ -1,5 +1,3 @@
-#version 330 core
-
 #ifdef USE_LUMINANCE
 #define GetSolarRadiance GetSolarLuminance
 #define GetSkyRadiance GetSkyLuminance

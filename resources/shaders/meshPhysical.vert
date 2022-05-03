@@ -1,4 +1,3 @@
-#version 330 core
 layout (location = 0) in vec3 m_Pos;
 layout (location = 1) in vec3 m_Normal;
 uniform mat4 model;

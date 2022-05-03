@@ -1,4 +1,3 @@
-#version 330 core
 
 // m_ : Model Space
 // w_ : World Space

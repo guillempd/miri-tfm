@@ -316,6 +316,7 @@ void PhysicalSky::InitModel() {
     m_meshProgram.reset(new ShaderProgram());
     ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
     ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
+    if (use_luminance_ != Luminance::NONE) fragmentShaderSource.AddDefine("USE_LUMINANCE");
     m_meshProgram->AttachShader(model_->shader());
     m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);
 
@@ -461,6 +462,7 @@ void PhysicalSky::RenderUi()
     ImGui::End();
 
     if (shouldRecomputeModel) InitModel();
+    if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;
 }
 
 void PhysicalSky::OnMouseClick(int button, int action, int mods) {
