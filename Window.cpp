@@ -9,6 +9,7 @@ Window::Window()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
     m_window = glfwCreateWindow(1024, 768, "miri-tfm", nullptr, nullptr);
 }
 
@@ -22,7 +23,10 @@ void Window::Initialize()
     MakeCurrent();
     InstallCallbacks();
     InitializeImGui();
-    m_application = std::make_unique<Application>(1024, 768, this);
+
+    int width, height;
+    glfwGetFramebufferSize(m_window, &width, &height);
+    m_application = std::make_unique<Application>(width, height, this);
 }
 
 void Window::MakeCurrent() const
