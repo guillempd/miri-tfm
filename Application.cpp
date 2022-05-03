@@ -134,7 +134,7 @@ void Application::OnRender()
     case SkyType::PHYSICAL:
     {
         m_physicalSky.Render(m_camera);
-        // m_mesh->JustRender(m_camera);
+        m_mesh->JustRender(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
     } break;

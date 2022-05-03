@@ -11,6 +11,6 @@ void main()
     w_Normal = normalMatrix * m_Normal;
     w_Pos = (model * vec4(m_Pos, 1.0)).xyz;
     gl_Position = projection * view * vec4(w_Pos, 1.0);
-    w_Normal = w_Normal.zxy;
-    w_Pos = w_Pos.zxy;
+    // w_Normal = w_Normal.zxy;
+    // w_Pos = w_Pos.zxy;
 }

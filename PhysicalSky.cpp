@@ -399,12 +399,12 @@ void PhysicalSky::Render(const Camera& camera) {
         m_meshProgram->SetMat4("view", camera.GetViewMatrix());
         m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
         m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-        m_meshProgram->SetVec3("sun_direction", sunDirection);
-        m_meshProgram->SetVec3("camera_pos", cameraPosition);
-        glm::vec3 whitePoint = glm::vec3(1.0); // FIXME
-        m_meshProgram->SetVec3("white_point", whitePoint);
-        glm::vec3 earthCenter = glm::vec3(0.0f, 0.0f, -m_BottomRadius / kLengthUnitInMeters); // FIXME: Is this correct or should it be permutated (?)
-        m_meshProgram->SetVec3("earth_center", earthCenter);
+        m_meshProgram->SetVec3("sun_direction", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
+        m_meshProgram->SetVec3("camera_pos", camera.GetPosition());
+
+        // FIXME: These two following values are dangerous
+        m_meshProgram->SetVec3("white_point", glm::vec3(1.0));
+        m_meshProgram->SetVec3("earth_center", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
         // TODO: Draw another mesh
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
