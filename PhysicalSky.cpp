@@ -100,18 +100,19 @@ will be used to render the scene and the help messages:
 
 using namespace atmosphere;
 
-PhysicalSky::PhysicalSky(int viewport_width, int viewport_height) :
-    use_constant_solar_spectrum_(false),
-    use_ozone_(true),
-    use_combined_textures_(true),
-    use_half_precision_(true),
-    use_luminance_(Luminance::NONE),
-    do_white_balance_(false),
-    show_help_(true),
-    program_(0),
-    sun_zenith_angle_radians_(1.3),
-    sun_azimuth_angle_radians_(2.9),
-    exposure_(10.0) {
+PhysicalSky::PhysicalSky()
+    : use_constant_solar_spectrum_(false)
+    , use_ozone_(true)
+    , use_combined_textures_(true)
+    , use_half_precision_(true)
+    , use_luminance_(Luminance::NONE)
+    , do_white_balance_(false)
+    , show_help_(true)
+    , program_(0)
+    , sun_zenith_angle_radians_(1.3)
+    , sun_azimuth_angle_radians_(2.9)
+    , exposure_(10.0)
+{
 
 }
 
@@ -256,6 +257,8 @@ void PhysicalSky::InitModel() {
         ground_albedo.push_back(kGroundAlbedo);
     }
 
+    int viewportData[4];
+    glGetIntegerv(GL_VIEWPORT, viewportData);
     model_.reset(new Model(m_wavelengths, m_solar_irradiance, kSunAngularRadius,
         m_BottomRadius, kTopRadius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, kMiePhaseFunctionG,
@@ -263,6 +266,7 @@ void PhysicalSky::InitModel() {
         kLengthUnitInMeters, use_luminance_ == Luminance::PRECOMPUTED ? 15 : 3,
         use_combined_textures_, use_half_precision_));
     model_->Init();
+    glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
 
     /*
     <p>Then, it creates and compiles the vertex and fragment shaders used to render
@@ -309,10 +313,11 @@ void PhysicalSky::InitModel() {
 
     // NOTE(guillem): Code added by me
     // Init mesh shader
+    m_meshProgram.reset(new ShaderProgram());
     ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
     ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
-    m_meshProgram.AttachShader(model_->shader());
-    m_meshProgram.Build(vertexShaderSource, fragmentShaderSource);
+    m_meshProgram->AttachShader(model_->shader());
+    m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);
 
     /*
     <p>Finally, it sets the uniforms of this program that can be set once and for
@@ -388,17 +393,17 @@ void PhysicalSky::Render(const Camera& camera) {
     {
         glBindVertexArray(full_screen_quad_vao_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        m_meshProgram.Use();
-        m_meshProgram.SetMat4("model", glm::mat4(1.0f));
-        m_meshProgram.SetMat4("view", camera.GetViewMatrix());
-        m_meshProgram.SetMat4("projection", camera.GetProjectionMatrix());
-        m_meshProgram.SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-        m_meshProgram.SetVec3("sun_direction", sunDirection);
-        m_meshProgram.SetVec3("camera_pos", cameraPosition);
+        m_meshProgram->Use();
+        m_meshProgram->SetMat4("model", glm::mat4(1.0f));
+        m_meshProgram->SetMat4("view", camera.GetViewMatrix());
+        m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
+        m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
+        m_meshProgram->SetVec3("sun_direction", sunDirection);
+        m_meshProgram->SetVec3("camera_pos", cameraPosition);
         glm::vec3 whitePoint = glm::vec3(1.0); // FIXME
-        m_meshProgram.SetVec3("white_point", whitePoint);
+        m_meshProgram->SetVec3("white_point", whitePoint);
         glm::vec3 earthCenter = glm::vec3(0.0f, 0.0f, -m_BottomRadius / kLengthUnitInMeters); // FIXME: Is this correct or should it be permutated (?)
-        m_meshProgram.SetVec3("earth_center", earthCenter);
+        m_meshProgram->SetVec3("earth_center", earthCenter);
         // TODO: Draw another mesh
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }

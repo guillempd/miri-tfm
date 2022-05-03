@@ -14,7 +14,7 @@ Application::Application(int width, int height, Window* window)
     : m_camera()
     , m_previousCursorPosition()
     , m_hdrSky()
-    , m_physicalSky(1, 1)
+    , m_physicalSky()
     , m_skyType(SkyType::HDR)
     , m_window(window)
     , m_mesh()
@@ -134,7 +134,7 @@ void Application::OnRender()
     case SkyType::PHYSICAL:
     {
         m_physicalSky.Render(m_camera);
-        m_mesh->JustRender(m_camera);
+        // m_mesh->JustRender(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
     } break;

@@ -55,7 +55,7 @@ class Window;
 
 class PhysicalSky {
 public:
-    PhysicalSky(int viewport_width, int viewport_height);
+    PhysicalSky();
     ~PhysicalSky();
 
   const atmosphere::Model& model() const { return *model_; }
@@ -120,5 +120,5 @@ public:
   std::vector<double> m_solar_irradiance;
   double m_BottomRadius;
   bool is_mouse_button_pressed_;
-  ShaderProgram m_meshProgram;
+  std::unique_ptr<ShaderProgram> m_meshProgram;
 };
