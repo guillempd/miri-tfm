@@ -22,33 +22,33 @@ Mesh::Mesh()
     std::vector<glm::vec2> texCoords;
     std::vector<glm::uvec3> triangles;
 
-    positions.emplace_back(-1.0f, 1.0f, 0.0f);
-    positions.emplace_back(-1.0f, -1.0f, 0.0f);
-    positions.emplace_back(1.0f, -1.0f, 0.0f);
-    positions.emplace_back(1.0f, 1.0f, 0.0f);
+    positions.emplace_back(-1.0f, 0.0f, 1.0f);
+    positions.emplace_back(-1.0f, 0.0f, -1.0f);
+    positions.emplace_back(1.0f, 0.0f, -1.0f);
+    positions.emplace_back(1.0f, 0.0f, 1.0f);
 
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
-    normals.emplace_back(0.0f, 0.0f, 1.0f);
+    normals.emplace_back(0.0f, 1.0f, 0.0f);
+    normals.emplace_back(0.0f, 1.0f, 0.0f);
+    normals.emplace_back(0.0f, 1.0f, 0.0f);
+    normals.emplace_back(0.0f, 1.0f, 0.0f);
 
     tangents.emplace_back(1.0f, 0.0f, 0.0f);
     tangents.emplace_back(1.0f, 0.0f, 0.0f);
     tangents.emplace_back(1.0f, 0.0f, 0.0f);
     tangents.emplace_back(1.0f, 0.0f, 0.0f);
 
-    bitangents.emplace_back(0.0f, 1.0f, 0.0f);
-    bitangents.emplace_back(0.0f, 1.0f, 0.0f);
-    bitangents.emplace_back(0.0f, 1.0f, 0.0f);
-    bitangents.emplace_back(0.0f, 1.0f, 0.0f);
+    bitangents.emplace_back(0.0f, 0.0f, 1.0f);
+    bitangents.emplace_back(0.0f, 0.0f, 1.0f);
+    bitangents.emplace_back(0.0f, 0.0f, 1.0f);
+    bitangents.emplace_back(0.0f, 0.0f, 1.0f);
 
     texCoords.emplace_back(0.0f, 1.0f);
     texCoords.emplace_back(0.0f, 0.0f);
     texCoords.emplace_back(1.0f, 0.0f);
     texCoords.emplace_back(1.0f, 1.0f);
 
-    triangles.emplace_back(0, 1, 2);
-    triangles.emplace_back(0, 2, 3);
+    triangles.emplace_back(1, 0, 3);
+    triangles.emplace_back(1, 3, 2);
     m_numElements = 3 * triangles.size();
 
     Upload(positions, normals, tangents, bitangents, texCoords, triangles);
