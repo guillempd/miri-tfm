@@ -18,11 +18,11 @@ Window::~Window()
     glfwDestroyWindow(m_window);
 }
 
-void Window::Initialize()
+void Window::Init()
 {
     MakeCurrent();
     InstallCallbacks();
-    InitializeImGui();
+    InitImGui();
 
     int width, height;
     glfwGetFramebufferSize(m_window, &width, &height);
@@ -39,22 +39,16 @@ void Window::InstallCallbacks()
 {
     glfwSetWindowUserPointer(m_window, this);
 
-    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
-    {
-        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
-        thisWindow->OnMouseButton(button, action, mods);
-    });
-
     glfwSetCursorPosCallback(m_window, [](GLFWwindow* window, double xpos, double ypos)
     {
         Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
         thisWindow->OnCursorPos(xpos, ypos);
     });
 
-    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
+    glfwSetMouseButtonCallback(m_window, [](GLFWwindow* window, int button, int action, int mods)
     {
         Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
-        thisWindow->OnFramebufferSize(width, height);
+        thisWindow->OnMouseButton(button, action, mods);
     });
 
     glfwSetScrollCallback(m_window, [](GLFWwindow* window, double xoffset, double yoffset)
@@ -62,9 +56,15 @@ void Window::InstallCallbacks()
         Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
         thisWindow->OnScroll(xoffset, yoffset);
     });
+
+    glfwSetFramebufferSizeCallback(m_window, [](GLFWwindow* window, int width, int height)
+    {
+        Window* thisWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        thisWindow->OnFramebufferSize(width, height);
+    });
 }
 
-void Window::InitializeImGui() const
+void Window::InitImGui() const
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -95,6 +95,7 @@ void Window::MainLoop()
         ImGui::NewFrame();
 
         glfwPollEvents();
+        m_application->OnUpdate();
         m_application->OnRender();
 
         ImGui::Render();
@@ -112,28 +113,25 @@ void Window::MainLoop()
     }
 }
 
-void Window::OnMouseButton(int button, int action, int mods)
-{
-    if (ImGui::GetIO().WantCaptureMouse) return;
-
-    m_application->OnMouseClick(button, action, mods);
-}
-
 void Window::OnCursorPos(double xpos, double ypos)
 {
     if (ImGui::GetIO().WantCaptureMouse) return;
-
-    m_application->OnCursorMovement(xpos, ypos);
+    m_application->OnCursorPos(xpos, ypos);
 }
 
-void Window::OnFramebufferSize(int width, int height)
+void Window::OnMouseButton(int button, int action, int mods)
 {
-    m_application->OnFramebufferSize(width, height);
+    if (ImGui::GetIO().WantCaptureMouse) return;
+    m_application->OnMouseButton(button, action, mods);
 }
 
 void Window::OnScroll(double xoffset, double yoffset)
 {
     if (ImGui::GetIO().WantCaptureMouse) return;
-
     m_application->OnScroll(xoffset, yoffset);
+}
+
+void Window::OnFramebufferSize(int width, int height)
+{
+    m_application->OnFramebufferSize(width, height);
 }

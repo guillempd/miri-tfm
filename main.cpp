@@ -27,7 +27,7 @@ int main()
     else
     {
         Window window = Window();
-        window.Initialize();
+        window.Init();
         window.MainLoop();
     }
 

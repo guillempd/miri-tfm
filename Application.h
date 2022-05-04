@@ -3,9 +3,8 @@
 #include "Camera.h"
 #include "HdrSky.h"
 #include "PhysicalSky.h"
-class Window; // Only forward declaration
 #include "Mesh.h"
-
+class Window;
 
 #include <glm/glm.hpp>
 
@@ -16,11 +15,12 @@ class Application
 public:
     Application(int width, int height, Window* window);
     ~Application();
+    void OnUpdate();
     void OnRender();
-    void OnCursorMovement(double xpos, double ypos);
-    void OnMouseClick(int button, int action, int mods);
-    void OnFramebufferSize(int width, int height);
+    void OnCursorPos(double xpos, double ypos);
+    void OnMouseButton(int button, int action, int mods);
     void OnScroll(double xoffset, double yoffset);
+    void OnFramebufferSize(int width, int height);
 private:
     enum class SkyType {HDR, PHYSICAL};
 private:

@@ -11,16 +11,16 @@ class Window
 public:
     Window();
     ~Window();
-    void Initialize();
+    void Init();
     void MainLoop();
 private:
-    void OnMouseButton(int button, int action, int mods);
-    void OnCursorPos(double xpos, double ypos);
-    void OnFramebufferSize(int width, int height);
-    void OnScroll(double xoffset, double yoffset);
     void MakeCurrent() const;
     void InstallCallbacks();
-    void InitializeImGui() const;
+    void InitImGui() const;
+    void OnCursorPos(double xpos, double ypos);
+    void OnMouseButton(int button, int action, int mods);
+    void OnScroll(double xoffset, double yoffset);
+    void OnFramebufferSize(int width, int height);
 private:
     GLFWwindow* m_window;
     std::unique_ptr<Application> m_application;

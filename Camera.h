@@ -6,7 +6,7 @@ class Camera
 {
 public:
     Camera();
-    void OnRender();
+    void OnUpdate();
     bool OnMouseMovement(glm::vec2 movement);
     void OnMouseClick(int button, int action, int mods);
     void OnScroll(int movement);
@@ -16,7 +16,7 @@ public:
     const glm::vec3& GetUp() const { return m_up; }
     float GetVerticalFov() const { return m_verticalFov; }
     float GetAspectRatio() const { return m_aspectRatio; }
-    void SetAspectRatio(int width, int height);
+    void SetAspectRatio(float aspectRatio);
     glm::mat4 GetViewMatrix() const;
     glm::mat4 GetProjectionMatrix() const;
     glm::mat4 GetViewFromClipMatrix() const;

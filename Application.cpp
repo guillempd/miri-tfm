@@ -40,27 +40,27 @@ Application::~Application()
     std::cout << "Destroying Application" << std::endl;
 }
 
-void Application::OnCursorMovement(double xpos, double ypos)
+void Application::OnCursorPos(double xpos, double ypos)
 {
     glm::vec2 currentCursorPosition = glm::vec2(xpos, ypos);
     glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
     bool captured = false;
     if (!captured) captured = m_physicalSky.OnMouseMovement(cursorMovement);
-    if (!captured) captured = m_camera.OnMouseMovement(cursorMovement);
+    if (!captured) captured = m_camera.OnCursorMovement(cursorMovement);
 
     m_previousCursorPosition = currentCursorPosition;
 }
 
-void Application::OnMouseClick(int button, int action, int mods)
+void Application::OnMouseButton(int button, int action, int mods)
 {
-    m_camera.OnMouseClick(button, action, mods);
+    m_camera.OnMouseButton(button, action, mods);
     m_physicalSky.OnMouseClick(button, action, mods);
 }
 
 void Application::OnFramebufferSize(int width, int height)
 {
     glViewport(0, 0, width, height);
-    m_camera.SetAspectRatio(width, height);
+    m_camera.SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     GLenum errorCode = glGetError();
     if (errorCode != GL_NO_ERROR) std::cerr << "GL error after resize" << std::endl;
 }
@@ -70,12 +70,10 @@ void Application::OnScroll(double xoffset, double yoffset)
     m_camera.OnScroll(static_cast<int>(yoffset));
 }
 
-void Application::OnRender()
+void Application::OnUpdate()
 {
     ImGui::ShowDemoWindow();
-    m_camera.OnRender();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    m_camera.OnUpdate();
     if (ImGui::Begin("Sky Selection"))
     {
         ImGui::RadioButton("HDR Sky", reinterpret_cast<int*>(&m_skyType), static_cast<int>(SkyType::HDR));
@@ -121,6 +119,11 @@ void Application::OnRender()
         }
     }
     ImGui::End();
+}
+
+void Application::OnRender()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     switch (m_skyType)
     {
