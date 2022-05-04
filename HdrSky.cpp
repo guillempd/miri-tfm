@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-void HdrSky::Load()
+void HdrSky::Init()
 {
     ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.vert");
     ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.frag");
@@ -40,27 +40,7 @@ void HdrSky::LoadFullScreenQuad()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0); // TODO: Be careful with the offset
 }
 
-void HdrSky::Render(const Camera& camera)
-{
-    RenderUi();
-
-    m_texture.SetUnit(0);
-    m_program.Use();
-    m_program.SetInt("hdrImage", 0);
-    m_program.SetMat4("world_from_view", camera.GetWorldFromViewMatrix());
-    m_program.SetMat4("view_from_clip", camera.GetViewFromClipMatrix());
-
-    GLint previousDepthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-    glDepthFunc(GL_LEQUAL);
-    {
-        glBindVertexArray(m_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-    }
-    glDepthFunc(previousDepthFunc);
-}
-
-void HdrSky::RenderUi()
+void HdrSky::OnUpdate()
 {
     if (ImGui::Begin("HDR Sky Settings"))
     {
@@ -79,4 +59,22 @@ void HdrSky::RenderUi()
         }
     }
     ImGui::End();
+}
+
+void HdrSky::OnRender(const Camera& camera)
+{
+    m_texture.SetUnit(0);
+    m_program.Use();
+    m_program.SetInt("hdrImage", 0);
+    m_program.SetMat4("world_from_view", camera.GetWorldFromViewMatrix());
+    m_program.SetMat4("view_from_clip", camera.GetViewFromClipMatrix());
+
+    GLint previousDepthFunc;
+    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    glDepthFunc(GL_LEQUAL);
+    {
+        glBindVertexArray(m_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
+    glDepthFunc(previousDepthFunc);
 }

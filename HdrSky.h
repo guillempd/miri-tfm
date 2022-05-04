@@ -10,9 +10,10 @@ class HdrSky
 {
 public:
     HdrSky() = default;
-    void Load();
-    void Render(const Camera& camera);
-    void RenderUi();
+    ~HdrSky() = default; // TODO: Delete buffers appropriately
+    void Init();
+    void OnUpdate();
+    void OnRender(const Camera& camera);
 private:
     void LoadFullScreenQuad();
 private:

@@ -128,7 +128,7 @@ PhysicalSky::~PhysicalSky() {
     glDeleteVertexArrays(1, &full_screen_quad_vao_);
 }
 
-void PhysicalSky::Initialize(Window* window) {
+void PhysicalSky::Init(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
@@ -468,7 +468,7 @@ void PhysicalSky::OnMouseClick(int button, int action, int mods) {
     is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
 }
 
-bool PhysicalSky::OnMouseMovement(glm::vec2 movement) {
+bool PhysicalSky::OnCursorMovement(glm::vec2 movement) {
     if (!is_mouse_button_pressed_) return false;
 
     constexpr double kScale = 500.0;

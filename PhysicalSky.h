@@ -63,13 +63,13 @@ public:
   const GLuint fragment_shader() const { return fragment_shader_; }
   const GLuint program() const { return program_; }
 
-  void Initialize(Window* m_window);
+  void Init(Window* m_window);
   void InitResources();
   void InitModel();
   void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
   void OnMouseClick(int button, int action, int mods);
-  bool OnMouseMovement(glm::vec2 movement);
+  bool OnCursorMovement(glm::vec2 movement);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,
       double sun_azimuth_angle_radians, double exposure);

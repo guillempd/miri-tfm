@@ -7,8 +7,8 @@ class Camera
 public:
     Camera();
     void OnUpdate();
-    bool OnMouseMovement(glm::vec2 movement);
-    void OnMouseClick(int button, int action, int mods);
+    bool OnCursorMovement(glm::vec2 movement);
+    void OnMouseButton(int button, int action, int mods);
     void OnScroll(int movement);
     const glm::vec3& GetPosition() const { return m_position; }
     const glm::vec3& GetRight() const { return m_right; }

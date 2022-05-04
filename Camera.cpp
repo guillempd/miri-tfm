@@ -46,7 +46,7 @@ void Camera::OnUpdate()
     m_position = m_center - m_forward * m_radius;
 }
 
-bool Camera::OnMouseMovement(glm::vec2 movement)
+bool Camera::OnCursorMovement(glm::vec2 movement)
 {
     constexpr float sensitivity = 0.01f;
     constexpr float safetyMargin = 0.25f;
@@ -67,7 +67,7 @@ bool Camera::OnMouseMovement(glm::vec2 movement)
     return false;
 }
 
-void Camera::OnMouseClick(int button, int action, int mods)
+void Camera::OnMouseButton(int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT)
     {

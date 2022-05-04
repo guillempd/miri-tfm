@@ -1,14 +1,14 @@
 #include "Application.h"
+#include "ImGuiNfd.h"
 
 #include <glm/gtc/type_ptr.hpp>
-
-#include <nfd.hpp>
 
 #include <imgui.h>
 
 #include <glad/glad.h>
 
 #include <iostream>
+#include <string>
 
 Application::Application(int width, int height, Window* window)
     : m_camera()
@@ -29,8 +29,8 @@ Application::Application(int width, int height, Window* window)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    m_hdrSky.Load();
-    m_physicalSky.Initialize(m_window);
+    m_hdrSky.Init();
+    m_physicalSky.Init(m_window);
     m_mesh = std::make_unique<Mesh>();
     OnFramebufferSize(width, height);
 }
@@ -45,7 +45,7 @@ void Application::OnCursorPos(double xpos, double ypos)
     glm::vec2 currentCursorPosition = glm::vec2(xpos, ypos);
     glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
     bool captured = false;
-    if (!captured) captured = m_physicalSky.OnMouseMovement(cursorMovement);
+    if (!captured) captured = m_physicalSky.OnCursorMovement(cursorMovement);
     if (!captured) captured = m_camera.OnCursorMovement(cursorMovement);
 
     m_previousCursorPosition = currentCursorPosition;
@@ -73,7 +73,11 @@ void Application::OnScroll(double xoffset, double yoffset)
 void Application::OnUpdate()
 {
     ImGui::ShowDemoWindow();
+
     m_camera.OnUpdate();
+    m_hdrSky.OnUpdate();
+    m_mesh->OnUpdate();
+
     if (ImGui::Begin("Sky Selection"))
     {
         ImGui::RadioButton("HDR Sky", reinterpret_cast<int*>(&m_skyType), static_cast<int>(SkyType::HDR));
@@ -83,39 +87,30 @@ void Application::OnUpdate()
 
     if (ImGui::Begin("Model"))
     {
+        nfdfilteritem_t meshFilter = { "3D mesh", "gltf" };
         if (ImGui::Button("Open other model..."))
         {
-            NFD::UniquePath path;
-            NFD::OpenDialog(path);
-            if (path)
-            {
-                std::cout << "Opened file: " << path << std::endl;
-                m_mesh = std::make_unique<Mesh>(path.get());
-            }
+            std::string path = ImGuiNfd::Load(&meshFilter, 1);
+            if (path != "") m_mesh = std::make_unique<Mesh>(path);
         }
+
         static glm::vec4 albedo = glm::vec4(1.0);
         ImGui::ColorEdit4("Albedo", glm::value_ptr(albedo), 0);
         m_mesh->SetAlbedo(albedo);
+
+        nfdfilteritem_t imageFilter = { "Image", "png,jpg,hdr" };
+
         if (ImGui::Button("Load albedo texture..."))
         {
-            NFD::UniquePath path;
-            NFD::OpenDialog(path);
-            if (path)
-            {
-                std::cout << "Opened file: " << path << std::endl;
-                m_mesh->LoadAlbedoTexture(path.get());
-            }
+            
+            std::string path = ImGuiNfd::Load(&imageFilter, 1);
+            if (path != "") m_mesh->LoadAlbedoTexture(path);
         }
 
         if (ImGui::Button("Load normal texture..."))
         {
-            NFD::UniquePath path;
-            NFD::OpenDialog(path);
-            if (path)
-            {
-                std::cout << "Opened file: " << path << std::endl;
-                m_mesh->LoadNormalTexture(path.get());
-            }
+            std::string path = ImGuiNfd::Load(&imageFilter, 1);
+            if (path != "") m_mesh->LoadNormalTexture(path);
         }
     }
     ImGui::End();
@@ -129,21 +124,21 @@ void Application::OnRender()
     {
     case SkyType::HDR:
     {
-        m_hdrSky.Render(m_camera);
+        m_hdrSky.OnRender(m_camera);
         m_mesh->Render(m_camera);
         GLenum errorCode = glGetError();
-        if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering HDR Sky" << std::endl;
+        if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering HDR Sky." << std::endl;
     } break;
     case SkyType::PHYSICAL:
     {
         m_physicalSky.Render(m_camera);
         m_mesh->JustRender(m_camera);
         GLenum errorCode = glGetError();
-        if (errorCode != GL_NO_ERROR) std::cerr << "GL error after rendering physical sky" << std::endl;
+        if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering Physical Sky." << std::endl;
     } break;
     default:
     {
-        std::cout << "E: Unknown sky type selected." << std::endl;
+        std::cerr << "E: Unknown sky type selected." << std::endl;
     }
     }
 }

@@ -19,6 +19,7 @@ public:
     Mesh();
     Mesh(std::string_view path);
     ~Mesh();
+    void OnUpdate();
     void Render(const Camera& camera);
     void JustRender(const Camera& camera);
     void SetAlbedo(const glm::vec3& albedo);

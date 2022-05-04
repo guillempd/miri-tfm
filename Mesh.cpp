@@ -215,3 +215,7 @@ Mesh::~Mesh()
     glDeleteBuffers(1, &m_ebo);
     glDeleteVertexArrays(1, &m_vao);
 }
+
+void Mesh::OnUpdate()
+{
+}
