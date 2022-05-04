@@ -386,8 +386,6 @@ void PhysicalSky::Render(const Camera& camera) {
     glUniform3fv(glGetUniformLocation(program_, "sun_direction"), 1, glm::value_ptr(sunDirection));
     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Submitting uniforms." << std::endl;
 
-
-
     GLint previousDepthFunc;
     glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
     glDepthFunc(GL_LEQUAL);
@@ -398,13 +396,13 @@ void PhysicalSky::Render(const Camera& camera) {
         m_meshProgram->SetMat4("model", glm::mat4(1.0f));
         m_meshProgram->SetMat4("view", camera.GetViewMatrix());
         m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
-        m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-        m_meshProgram->SetVec3("sun_direction", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
-        m_meshProgram->SetVec3("camera_pos", camera.GetPosition());
+        m_meshProgram->SetVec3("w_CameraPos", camera.GetPosition());
+        m_meshProgram->SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
+        m_meshProgram->SetVec3("w_SunDirection", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
 
-        // FIXME: These two following values are dangerous
+        // NOTE: Review these two following values
+        m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
         m_meshProgram->SetVec3("white_point", glm::vec3(1.0));
-        m_meshProgram->SetVec3("earth_center", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
         // TODO: Draw another mesh
         // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
