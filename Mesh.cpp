@@ -1,9 +1,12 @@
 #include "Mesh.h"
+#include "ImGuiNfd.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
 #include <glm/ext/matrix_transform.hpp>
+
+#include <imgui.h>
 
 #include <iostream>
 
@@ -218,4 +221,26 @@ Mesh::~Mesh()
 
 void Mesh::OnUpdate()
 {
+    /*static glm::vec4 albedo = glm::vec4(1.0);
+    ImGui::ColorEdit4("Albedo", glm::value_ptr(albedo), 0);
+    m_mesh->SetAlbedo(albedo);*/
+
+    if (ImGui::Begin("Mesh"))
+    {
+        nfdfilteritem_t imageFilter = { "Image", "png,jpg,hdr" };
+
+        if (ImGui::Button("Load albedo texture..."))
+        {
+
+            std::string path = ImGuiNfd::Load(&imageFilter, 1);
+            if (path != "") LoadAlbedoTexture(path);
+        }
+
+        if (ImGui::Button("Load normal texture..."))
+        {
+            std::string path = ImGuiNfd::Load(&imageFilter, 1);
+            if (path != "") LoadNormalTexture(path);
+        }
+    }
+    ImGui::End();
 }

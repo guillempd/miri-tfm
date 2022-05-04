@@ -93,25 +93,6 @@ void Application::OnUpdate()
             std::string path = ImGuiNfd::Load(&meshFilter, 1);
             if (path != "") m_mesh = std::make_unique<Mesh>(path);
         }
-
-        static glm::vec4 albedo = glm::vec4(1.0);
-        ImGui::ColorEdit4("Albedo", glm::value_ptr(albedo), 0);
-        m_mesh->SetAlbedo(albedo);
-
-        nfdfilteritem_t imageFilter = { "Image", "png,jpg,hdr" };
-
-        if (ImGui::Button("Load albedo texture..."))
-        {
-            
-            std::string path = ImGuiNfd::Load(&imageFilter, 1);
-            if (path != "") m_mesh->LoadAlbedoTexture(path);
-        }
-
-        if (ImGui::Button("Load normal texture..."))
-        {
-            std::string path = ImGuiNfd::Load(&imageFilter, 1);
-            if (path != "") m_mesh->LoadNormalTexture(path);
-        }
     }
     ImGui::End();
 }
