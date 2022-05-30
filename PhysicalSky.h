@@ -121,4 +121,13 @@ public:
   double m_BottomRadius;
   bool is_mouse_button_pressed_;
   std::unique_ptr<ShaderProgram> m_meshProgram;
+
+  // NEW Parameters
+  float m_SunIntensity;
+  float m_SunAngularRadius;
+
+  float m_AtmosphereBottomRadius;
+  float m_AtmosphereTopRadius;
+
+  float m_MiePhaseFunctionG;
 };

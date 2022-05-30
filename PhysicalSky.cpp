@@ -461,6 +461,30 @@ void PhysicalSky::RenderUi()
 
     if (shouldRecomputeModel) InitModel();
     if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;
+
+    // NEW
+    if (ImGui::Begin("Physical Sky Settings New"))
+    {
+        // TODO: Sun Color
+        ImGui::SliderFloat("Sun Intensity", &m_SunIntensity, 0.0f, 150000.0f);
+        ImGui::SliderFloat("Sun Angular Radius", &m_SunAngularRadius, 0.0f, 5.0f);
+
+        // TODO: Apply constraints betwen bottom and top radi
+        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_AtmosphereBottomRadius, 0.0f, 10000.0f);
+        ImGui::SliderFloat("Atmosphere Top Radius", &m_AtmosphereTopRadius, 0.0f, 10000.0f);
+
+        // TODO: Ground Albedo
+
+        // TODO: Rayleigh Layer
+        // TODO: Rayleigh Scattering
+
+        // TODO: Mie Layer
+        // TODO: Mie Scattering
+        ImGui::SliderFloat("Mie Phase Function G", &m_MiePhaseFunctionG, 0.0f, 1.0f);
+
+
+    }
+    ImGui::End();
 }
 
 void PhysicalSky::OnMouseClick(int button, int action, int mods) {
