@@ -112,6 +112,18 @@ PhysicalSky::PhysicalSky()
     , sun_zenith_angle_radians_(1.3)
     , sun_azimuth_angle_radians_(2.9)
     , exposure_(10.0)
+    , m_groundAlbedo()
+    , m_atmosphereBottomRadius          (6360.0f)
+    , m_atmosphereTopRadius             (6720.0f)
+    , m_rayleighScatteringCoefficient   (0.175287f, 0.409607f, 1.000000f)
+    , m_rayleighScatteringScale         (0.033100f)
+    , m_mieScatteringCoefficient        (1.000000f, 1.000000f, 1.000000f)
+    , m_mieScatteringScale              (0.003996f)
+    , m_mieAbsorptionCoefficient        (1.000000f, 1.000000f, 1.000000f)
+    , m_mieAbsorptionScale              (0.000444f)
+    , m_miePhaseFunctionG               (0.800000f)
+    , m_ozoneAbsorptionCoefficient      (0.345561f, 1.000000f, 0.045189f)
+    , m_ozoneAbsorptionScale            (0.001881f)
 {
 
 }
@@ -465,24 +477,39 @@ void PhysicalSky::RenderUi()
     // NEW
     if (ImGui::Begin("Physical Sky Settings New"))
     {
+        ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_groundAlbedo), ImGuiColorEditFlags_Float);
+
         // TODO: Sun Color
         ImGui::SliderFloat("Sun Intensity", &m_sunIntensity, 0.0f, 150000.0f);
-        ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 5.0f);
+        ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 5.0f); // Change to angular diameter/size (?) This is in degrees convert to radians
 
-        // TODO: Apply constraints betwen bottom and top radi
-        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_atmosphereBottomRadius, 0.0f, 10000.0f);
-        ImGui::SliderFloat("Atmosphere Top Radius", &m_atmosphereTopRadius, 0.0f, 10000.0f);
+        // TODO: Apply constraints between bottom and top radi
+        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_atmosphereBottomRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat("Atmosphere Top Radius", &m_atmosphereTopRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
 
-        // TODO: Ground Albedo
+        if (ImGui::CollapsingHeader("Rayleigh"))
+        {
+            // TODO: Layer
+            ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_rayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
+            ImGui::SliderFloat("Scattering Scale", &m_rayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        }
 
-        // TODO: Rayleigh Layer
-        // TODO: Rayleigh Scattering
+        if (ImGui::CollapsingHeader("Mie"))
+        {
+            // TODO: Layer
+            ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_mieScatteringCoefficient), ImGuiColorEditFlags_Float);
+            ImGui::SliderFloat("Scattering Scale", &m_mieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_mieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            ImGui::SliderFloat("Absorption Scale", &m_mieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SliderFloat("Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        }
 
-        // TODO: Mie Layer
-        // TODO: Mie Scattering
-        ImGui::SliderFloat("Mie Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f);
-
-
+        if (ImGui::CollapsingHeader("Ozone"))
+        {
+            // TODO: Layer
+            ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_ozoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            ImGui::SliderFloat("Absorption Scale", &m_ozoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        }
     }
     ImGui::End();
 }

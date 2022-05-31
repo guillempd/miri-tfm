@@ -123,11 +123,23 @@ public:
   std::unique_ptr<ShaderProgram> m_meshProgram;
 
   // NEW Parameters
+  glm::vec3 m_groundAlbedo;
+
   float m_sunIntensity;
   float m_sunAngularRadius;
 
   float m_atmosphereBottomRadius;
   float m_atmosphereTopRadius;
 
+  glm::vec3 m_rayleighScatteringCoefficient;
+  float m_rayleighScatteringScale;
+
+  glm::vec3 m_mieScatteringCoefficient;
+  float m_mieScatteringScale;
+  glm::vec3 m_mieAbsorptionCoefficient;
+  float m_mieAbsorptionScale;
   float m_miePhaseFunctionG;
+
+  glm::vec3 m_ozoneAbsorptionCoefficient;
+  float m_ozoneAbsorptionScale;
 };
