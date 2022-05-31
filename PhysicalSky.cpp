@@ -466,12 +466,12 @@ void PhysicalSky::RenderUi()
     if (ImGui::Begin("Physical Sky Settings New"))
     {
         // TODO: Sun Color
-        ImGui::SliderFloat("Sun Intensity", &m_SunIntensity, 0.0f, 150000.0f);
-        ImGui::SliderFloat("Sun Angular Radius", &m_SunAngularRadius, 0.0f, 5.0f);
+        ImGui::SliderFloat("Sun Intensity", &m_sunIntensity, 0.0f, 150000.0f);
+        ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 5.0f);
 
         // TODO: Apply constraints betwen bottom and top radi
-        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_AtmosphereBottomRadius, 0.0f, 10000.0f);
-        ImGui::SliderFloat("Atmosphere Top Radius", &m_AtmosphereTopRadius, 0.0f, 10000.0f);
+        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_atmosphereBottomRadius, 0.0f, 10000.0f);
+        ImGui::SliderFloat("Atmosphere Top Radius", &m_atmosphereTopRadius, 0.0f, 10000.0f);
 
         // TODO: Ground Albedo
 
@@ -480,7 +480,7 @@ void PhysicalSky::RenderUi()
 
         // TODO: Mie Layer
         // TODO: Mie Scattering
-        ImGui::SliderFloat("Mie Phase Function G", &m_MiePhaseFunctionG, 0.0f, 1.0f);
+        ImGui::SliderFloat("Mie Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f);
 
 
     }

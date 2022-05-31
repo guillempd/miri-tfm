@@ -123,11 +123,11 @@ public:
   std::unique_ptr<ShaderProgram> m_meshProgram;
 
   // NEW Parameters
-  float m_SunIntensity;
-  float m_SunAngularRadius;
+  float m_sunIntensity;
+  float m_sunAngularRadius;
 
-  float m_AtmosphereBottomRadius;
-  float m_AtmosphereTopRadius;
+  float m_atmosphereBottomRadius;
+  float m_atmosphereTopRadius;
 
-  float m_MiePhaseFunctionG;
+  float m_miePhaseFunctionG;
 };
