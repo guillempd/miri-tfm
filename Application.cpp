@@ -106,14 +106,14 @@ void Application::OnRender()
     case SkyType::HDR:
     {
         m_hdrSky.OnRender(m_camera);
-        m_mesh->Render(m_camera);
+        // m_mesh->Render(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering HDR Sky." << std::endl;
     } break;
     case SkyType::PHYSICAL:
     {
         m_physicalSky.Render(m_camera);
-        m_mesh->JustRender(m_camera);
+        // m_mesh->JustRender(m_camera);
         GLenum errorCode = glGetError();
         if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering Physical Sky." << std::endl;
     } break;

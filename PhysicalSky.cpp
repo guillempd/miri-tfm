@@ -271,14 +271,27 @@ void PhysicalSky::InitModel() {
 
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
-    model_.reset(new Model(m_wavelengths, m_solar_irradiance, kSunAngularRadius,
-        m_BottomRadius, kTopRadius, { rayleigh_layer }, rayleigh_scattering,
-        { mie_layer }, mie_scattering, mie_extinction, kMiePhaseFunctionG,
-        ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_luminance_ == Luminance::PRECOMPUTED ? 15 : 3,
-        use_combined_textures_, use_half_precision_));
+
+    // TODO: Convert to dvec3 all coefficients
+    // TODO: Multiply by scale
+    glm::dvec3 d_wavelengths = glm::dvec3(0.0);
+    glm::dvec3 d_rayleigh_scattering = m_rayleighScatteringCoefficient;
+    glm::dvec3 d_mie_scattering = m_mieScatteringCoefficient;
+    glm::dvec3 d_mie_extinction = m_mieAbsorptionCoefficient; // TODO: Fix
+    glm::dvec3 d_ground_albedo = m_groundAlbedo;
+    glm::dvec3 d_absorption_extinction = m_ozoneAbsorptionCoefficient;
+    glm::dvec3 d_solar_irradiance = glm::dvec3(1.0);
+
+    model_.reset(new Model(d_wavelengths, d_solar_irradiance, kSunAngularRadius,
+        m_BottomRadius, kTopRadius, { rayleigh_layer }, d_rayleigh_scattering,
+        { mie_layer }, d_mie_scattering, d_mie_extinction, kMiePhaseFunctionG,
+        ozone_density, d_absorption_extinction, d_ground_albedo, max_sun_zenith_angle,
+        kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
     model_->Init();
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
+
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Initializing model." << std::endl;
+
 
     /*
     <p>Then, it creates and compiles the vertex and fragment shaders used to render
@@ -288,8 +301,20 @@ void PhysicalSky::InitModel() {
 
     vertex_shader_ = glCreateShader(GL_VERTEX_SHADER);
     const char* const vertex_shader_source = kVertexShader;
+    std::cout << "----------------------VERTEX SHADER SOURCE----------------------" << std::endl;
+    std::cout << vertex_shader_source << std::endl;
+    std::cout << "------------------------------------------------------------------" << std::endl;
     glShaderSource(vertex_shader_, 1, &vertex_shader_source, NULL);
     glCompileShader(vertex_shader_);
+
+    GLint success;
+    glGetShaderiv(vertex_shader_, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        GLchar infoLog[4096];
+        glGetShaderInfoLog(vertex_shader_, 4096, nullptr, infoLog);
+        std::cerr << infoLog << std::endl;
+    }
 
     const std::string fragment_shader_str =
         "#version 330\n" +
@@ -298,11 +323,13 @@ void PhysicalSky::InitModel() {
         std::to_string(kLengthUnitInMeters) + ";\n" +
         demo_glsl;
     const char* fragment_shader_source = fragment_shader_str.c_str();
+    std::cout << "----------------------FRAGMENT SHADER SOURCE----------------------" << std::endl;
+    std::cout << fragment_shader_source << std::endl;
+    std::cout << "------------------------------------------------------------------" << std::endl;
     fragment_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment_shader_, 1, &fragment_shader_source, NULL);
     glCompileShader(fragment_shader_);
 
-    GLint success;
     glGetShaderiv(fragment_shader_, GL_COMPILE_STATUS, &success);
     if (!success)
     {
@@ -323,14 +350,26 @@ void PhysicalSky::InitModel() {
     glDetachShader(program_, fragment_shader_);
     glDetachShader(program_, model_->shader());
 
+    glGetProgramiv(program_, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        GLchar infoLog[4096];
+        glGetProgramInfoLog(program_, 4096, nullptr, infoLog);
+        std::cerr << infoLog << std::endl;
+    }
+
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Compiling atmosphere shaders." << std::endl;
+
     // NOTE(guillem): Code added by me
     // Init mesh shader
-    m_meshProgram.reset(new ShaderProgram());
+    /*m_meshProgram.reset(new ShaderProgram());
     ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
     ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
     if (use_luminance_ != Luminance::NONE) fragmentShaderSource.AddDefine("USE_LUMINANCE");
     m_meshProgram->AttachShader(model_->shader());
-    m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);
+    m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);*/
+
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Compiling mesh shader." << std::endl;
 
     /*
     <p>Finally, it sets the uniforms of this program that can be set once and for
@@ -343,17 +382,20 @@ void PhysicalSky::InitModel() {
 void PhysicalSky::SetRenderingContext(const Camera& camera) const {
     glUseProgram(program_);
     model_->SetProgramUniforms(program_, 0, 1, 2, 3);
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting program uniforms." << std::endl;
+
     double white_point_r = 1.0;
     double white_point_g = 1.0;
     double white_point_b = 1.0;
-    if (do_white_balance_) {
+    // TODO: Investigate about this white balance
+    /*if (do_white_balance_) {
         Model::ConvertSpectrumToLinearSrgb(m_wavelengths, m_solar_irradiance,
             &white_point_r, &white_point_g, &white_point_b);
         double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
         white_point_r /= white_point;
         white_point_g /= white_point;
         white_point_b /= white_point;
-    }
+    }*/
     glUniform3f(glGetUniformLocation(program_, "white_point"),
         white_point_r, white_point_g, white_point_b);
     glUniform3f(glGetUniformLocation(program_, "earth_center"),
@@ -374,11 +416,15 @@ optionally a help screen).
 
 void PhysicalSky::Render(const Camera& camera) {
     RenderUi();
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After rendering UI." << std::endl;
     SetRenderingContext(camera);
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting context." << std::endl;
 
     // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
     // Might be ok to move these to the camera class
     // IDEA: Create a compass widget to know in which direction we are looking at
+
+     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Pre submitting uniforms." << std::endl;
 
     glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
     glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
@@ -404,19 +450,19 @@ void PhysicalSky::Render(const Camera& camera) {
     {
         glBindVertexArray(full_screen_quad_vao_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        m_meshProgram->Use();
-        m_meshProgram->SetMat4("model", glm::mat4(1.0f));
-        m_meshProgram->SetMat4("view", camera.GetViewMatrix());
-        m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
-        m_meshProgram->SetVec3("w_CameraPos", camera.GetPosition());
-        m_meshProgram->SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
-        m_meshProgram->SetVec3("w_SunDirection", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
+    //    m_meshProgram->Use();
+    //    m_meshProgram->SetMat4("model", glm::mat4(1.0f));
+    //    m_meshProgram->SetMat4("view", camera.GetViewMatrix());
+    //    m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
+    //    m_meshProgram->SetVec3("w_CameraPos", camera.GetPosition());
+    //    m_meshProgram->SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
+    //    m_meshProgram->SetVec3("w_SunDirection", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
 
-        // NOTE: Review these two following values
-        m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-        m_meshProgram->SetVec3("white_point", glm::vec3(1.0));
-        // TODO: Draw another mesh
-        // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    //    // NOTE: Review these two following values
+    //    m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
+    //    m_meshProgram->SetVec3("white_point", glm::vec3(1.0));
+    //    // TODO: Draw another mesh
+    //    // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     glDepthFunc(previousDepthFunc);
 

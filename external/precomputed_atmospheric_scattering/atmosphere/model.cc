@@ -502,98 +502,8 @@ void DrawQuad(const std::vector<bool>& enable_blend, GLuint quad_vao) {
   }
 }
 
-/*
-<p>Finally, we need a utility function to compute the value of the conversion
-constants *<code>_RADIANCE_TO_LUMINANCE</code>, used above to convert the
-spectral results into luminance values. These are the constants k_r, k_g, k_b
-described in Section 14.3 of <a href="https://arxiv.org/pdf/1612.04336.pdf">A
-Qualitative and Quantitative Evaluation of 8 Clear Sky Models</a>.
-
-<p>Computing their value requires an integral of a function times a CIE color
-matching function. Thus, we first need functions to interpolate an arbitrary
-function (specified by some samples), and a CIE color matching function
-(specified by tabulated values), at an arbitrary wavelength. This is the purpose
-of the following two functions:
-*/
-
 constexpr int kLambdaMin = 360;
 constexpr int kLambdaMax = 830;
-
-double CieColorMatchingFunctionTableValue(double wavelength, int column) {
-  if (wavelength <= kLambdaMin || wavelength >= kLambdaMax) {
-    return 0.0;
-  }
-  double u = (wavelength - kLambdaMin) / 5.0;
-  int row = static_cast<int>(std::floor(u));
-  assert(row >= 0 && row + 1 < 95);
-  assert(CIE_2_DEG_COLOR_MATCHING_FUNCTIONS[4 * row] <= wavelength &&
-         CIE_2_DEG_COLOR_MATCHING_FUNCTIONS[4 * (row + 1)] >= wavelength);
-  u -= row;
-  return CIE_2_DEG_COLOR_MATCHING_FUNCTIONS[4 * row + column] * (1.0 - u) +
-      CIE_2_DEG_COLOR_MATCHING_FUNCTIONS[4 * (row + 1) + column] * u;
-}
-
-double Interpolate(
-    const std::vector<double>& wavelengths,
-    const std::vector<double>& wavelength_function,
-    double wavelength) {
-  assert(wavelength_function.size() == wavelengths.size());
-  if (wavelength < wavelengths[0]) {
-    return wavelength_function[0];
-  }
-  for (unsigned int i = 0; i < wavelengths.size() - 1; ++i) {
-    if (wavelength < wavelengths[i + 1]) {
-      double u =
-          (wavelength - wavelengths[i]) / (wavelengths[i + 1] - wavelengths[i]);
-      return
-          wavelength_function[i] * (1.0 - u) + wavelength_function[i + 1] * u;
-    }
-  }
-  return wavelength_function[wavelength_function.size() - 1];
-}
-
-/*
-<p>We can then implement a utility function to compute the "spectral radiance to
-luminance" conversion constants (see Section 14.3 in <a
-href="https://arxiv.org/pdf/1612.04336.pdf">A Qualitative and Quantitative
-Evaluation of 8 Clear Sky Models</a> for their definitions):
-*/
-
-// The returned constants are in lumen.nm / watt.
-void ComputeSpectralRadianceToLuminanceFactors(
-    const std::vector<double>& wavelengths,
-    const std::vector<double>& solar_irradiance,
-    double lambda_power, double* k_r, double* k_g, double* k_b) {
-  *k_r = 0.0;
-  *k_g = 0.0;
-  *k_b = 0.0;
-  double solar_r = Interpolate(wavelengths, solar_irradiance, Model::kLambdaR);
-  double solar_g = Interpolate(wavelengths, solar_irradiance, Model::kLambdaG);
-  double solar_b = Interpolate(wavelengths, solar_irradiance, Model::kLambdaB);
-  int dlambda = 1;
-  for (int lambda = kLambdaMin; lambda < kLambdaMax; lambda += dlambda) {
-    double x_bar = CieColorMatchingFunctionTableValue(lambda, 1);
-    double y_bar = CieColorMatchingFunctionTableValue(lambda, 2);
-    double z_bar = CieColorMatchingFunctionTableValue(lambda, 3);
-    const double* xyz2srgb = XYZ_TO_SRGB;
-    double r_bar =
-        xyz2srgb[0] * x_bar + xyz2srgb[1] * y_bar + xyz2srgb[2] * z_bar;
-    double g_bar =
-        xyz2srgb[3] * x_bar + xyz2srgb[4] * y_bar + xyz2srgb[5] * z_bar;
-    double b_bar =
-        xyz2srgb[6] * x_bar + xyz2srgb[7] * y_bar + xyz2srgb[8] * z_bar;
-    double irradiance = Interpolate(wavelengths, solar_irradiance, lambda);
-    *k_r += r_bar * irradiance / solar_r *
-        pow(lambda / Model::kLambdaR, lambda_power);
-    *k_g += g_bar * irradiance / solar_g *
-        pow(lambda / Model::kLambdaG, lambda_power);
-    *k_b += b_bar * irradiance / solar_b *
-        pow(lambda / Model::kLambdaB, lambda_power);
-  }
-  *k_r *= MAX_LUMINOUS_EFFICACY * dlambda;
-  *k_g *= MAX_LUMINOUS_EFFICACY * dlambda;
-  *k_b *= MAX_LUMINOUS_EFFICACY * dlambda;
-}
 
 }  // anonymous namespace
 
@@ -612,36 +522,33 @@ initialize them), as well as a vertex buffer object to render a full screen quad
 */
 
 Model::Model(
-    const std::vector<double>& wavelengths,
-    const std::vector<double>& solar_irradiance,
+    const glm::dvec3& wavelengths,
+    const glm::dvec3& solar_irradiance,
     const double sun_angular_radius,
     double bottom_radius,
     double top_radius,
     const std::vector<DensityProfileLayer>& rayleigh_density,
-    const std::vector<double>& rayleigh_scattering,
+    const glm::dvec3& rayleigh_scattering,
     const std::vector<DensityProfileLayer>& mie_density,
-    const std::vector<double>& mie_scattering,
-    const std::vector<double>& mie_extinction,
+    const glm::dvec3& mie_scattering,
+    const glm::dvec3& mie_extinction,
     double mie_phase_function_g,
     const std::vector<DensityProfileLayer>& absorption_density,
-    const std::vector<double>& absorption_extinction,
-    const std::vector<double>& ground_albedo,
+    const glm::dvec3& absorption_extinction,
+    const glm::dvec3& ground_albedo,
     double max_sun_zenith_angle,
     double length_unit_in_meters,
-    unsigned int num_precomputed_wavelengths,
     bool combine_scattering_textures,
     bool half_precision) :
-        num_precomputed_wavelengths_(num_precomputed_wavelengths),
         half_precision_(half_precision),
         rgb_format_supported_(IsFramebufferRgbFormatSupported(half_precision)) {
-  auto to_string = [&wavelengths](const std::vector<double>& v,
-      const vec3& lambdas, double scale) {
-    double r = Interpolate(wavelengths, v, lambdas[0]) * scale;
-    double g = Interpolate(wavelengths, v, lambdas[1]) * scale;
-    double b = Interpolate(wavelengths, v, lambdas[2]) * scale;
-    return "vec3(" + std::to_string(r) + "," + std::to_string(g) + "," +
-        std::to_string(b) + ")";
-  };
+    auto to_string = [](const glm::dvec3& v, double scale)
+    {
+        double r = v.r * scale;
+        double g = v.g * scale;
+        double b = v.b * scale;
+        return "vec3(" + std::to_string(r) + "," + std::to_string(g) + "," + std::to_string(b) + ")";
+    };
   auto density_layer =
       [length_unit_in_meters](const DensityProfileLayer& layer) {
         return "DensityProfileLayer(" +
@@ -673,18 +580,23 @@ Model::Model(
   // (because the values are too large), so we store illuminance values divided
   // by MAX_LUMINOUS_EFFICACY instead. This is why, in precomputed illuminance
   // mode, we set SKY_RADIANCE_TO_LUMINANCE to MAX_LUMINOUS_EFFICACY.
-  bool precompute_illuminance = num_precomputed_wavelengths > 3;
+  //bool precompute_illuminance = num_precomputed_wavelengths > 3;
   double sky_k_r, sky_k_g, sky_k_b;
-  if (precompute_illuminance) {
-    sky_k_r = sky_k_g = sky_k_b = MAX_LUMINOUS_EFFICACY;
-  } else {
-    ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance,
-        -3 /* lambda_power */, &sky_k_r, &sky_k_g, &sky_k_b);
-  }
+  sky_k_r = sky_k_g = sky_k_b = 1.0;
+  //if (precompute_illuminance) {
+  //  sky_k_r = sky_k_g = sky_k_b = MAX_LUMINOUS_EFFICACY;
+  //} else {
+  //  ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance,
+  //      -3 /* lambda_power */, &sky_k_r, &sky_k_g, &sky_k_b);
+  //}
+
   // Compute the values for the SUN_RADIANCE_TO_LUMINANCE constant.
   double sun_k_r, sun_k_g, sun_k_b;
-  ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance,
-      0 /* lambda_power */, &sun_k_r, &sun_k_g, &sun_k_b);
+  sun_k_r = sun_k_g = sun_k_b = 1.0;
+
+  // TODO: Investigate about this function
+  //ComputeSpectralRadianceToLuminanceFactors(wavelengths, solar_irradiance,
+  //    0 /* lambda_power */, &sun_k_r, &sun_k_g, &sun_k_b);
 
   // A lambda that creates a GLSL header containing our atmosphere computation
   // functions, specialized for the given atmosphere parameters and for the 3
@@ -717,21 +629,19 @@ Model::Model(
           "#define COMBINED_SCATTERING_TEXTURES\n" : "") +
       definitions_glsl +
       "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(\n" +
-          to_string(solar_irradiance, lambdas, 1.0) + ",\n" +
+          to_string(solar_irradiance, 1.0) + ",\n" +
           std::to_string(sun_angular_radius) + ",\n" +
           std::to_string(bottom_radius / length_unit_in_meters) + ",\n" +
           std::to_string(top_radius / length_unit_in_meters) + ",\n" +
           density_profile(rayleigh_density) + ",\n" +
-          to_string(
-              rayleigh_scattering, lambdas, length_unit_in_meters) + ",\n" +
+          to_string(rayleigh_scattering, length_unit_in_meters) + ",\n" +
           density_profile(mie_density) + ",\n" +
-          to_string(mie_scattering, lambdas, length_unit_in_meters) + ",\n" +
-          to_string(mie_extinction, lambdas, length_unit_in_meters) + ",\n" +
+          to_string(mie_scattering, length_unit_in_meters) + ",\n" +
+          to_string(mie_extinction, length_unit_in_meters) + ",\n" +
           std::to_string(mie_phase_function_g) + ",\n" +
           density_profile(absorption_density) + ",\n" +
-          to_string(
-              absorption_extinction, lambdas, length_unit_in_meters) + ",\n" +
-          to_string(ground_albedo, lambdas, 1.0) + ",\n" +
+          to_string(absorption_extinction, length_unit_in_meters) + ",\n" +
+          to_string(ground_albedo, 1.0) + ",\n" +
           std::to_string(cos(max_sun_zenith_angle)) + ");\n" +
       "const vec3 SKY_SPECTRAL_RADIANCE_TO_LUMINANCE = vec3(" +
           std::to_string(sky_k_r) + "," +
@@ -769,7 +679,8 @@ Model::Model(
   // Create and compile the shader providing our API.
   std::string shader =
       glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB}) +
-      (precompute_illuminance ? "" : "#define RADIANCE_API_ENABLED\n") +
+      // (precompute_illuminance ? "" : "#define RADIANCE_API_ENABLED\n") +
+      "#define RADIANCE_API_ENABLED" +
       kAtmosphereShader;
   const char* source = shader.c_str();
   atmosphere_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
@@ -905,64 +816,65 @@ void Model::Init(unsigned int num_scattering_orders) {
 
   // The actual precomputations depend on whether we want to store precomputed
   // irradiance or illuminance values.
-  if (num_precomputed_wavelengths_ <= 3) {
-    vec3 lambdas{kLambdaR, kLambdaG, kLambdaB};
-    mat3 luminance_from_radiance{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-    Precompute(fbo, delta_irradiance_texture, delta_rayleigh_scattering_texture,
-        delta_mie_scattering_texture, delta_scattering_density_texture,
-        delta_multiple_scattering_texture, lambdas, luminance_from_radiance,
-        false /* blend */, num_scattering_orders);
-  } else {
-    constexpr double kLambdaMin = 360.0;
-    constexpr double kLambdaMax = 830.0;
-    int num_iterations = (num_precomputed_wavelengths_ + 2) / 3;
-    double dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations);
-    for (int i = 0; i < num_iterations; ++i) {
-      vec3 lambdas{
-        kLambdaMin + (3 * i + 0.5) * dlambda,
-        kLambdaMin + (3 * i + 1.5) * dlambda,
-        kLambdaMin + (3 * i + 2.5) * dlambda
-      };
-      auto coeff = [dlambda](double lambda, int component) {
-        // Note that we don't include MAX_LUMINOUS_EFFICACY here, to avoid
-        // artefacts due to too large values when using half precision on GPU.
-        // We add this term back in kAtmosphereShader, via
-        // SKY_SPECTRAL_RADIANCE_TO_LUMINANCE (see also the comments in the
-        // Model constructor).
-        double x = CieColorMatchingFunctionTableValue(lambda, 1);
-        double y = CieColorMatchingFunctionTableValue(lambda, 2);
-        double z = CieColorMatchingFunctionTableValue(lambda, 3);
-        return static_cast<float>((
-            XYZ_TO_SRGB[component * 3] * x +
-            XYZ_TO_SRGB[component * 3 + 1] * y +
-            XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda);
-      };
-      mat3 luminance_from_radiance{
-        coeff(lambdas[0], 0), coeff(lambdas[1], 0), coeff(lambdas[2], 0),
-        coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1),
-        coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)
-      };
-      Precompute(fbo, delta_irradiance_texture,
-          delta_rayleigh_scattering_texture, delta_mie_scattering_texture,
-          delta_scattering_density_texture, delta_multiple_scattering_texture,
-          lambdas, luminance_from_radiance, i > 0 /* blend */,
-          num_scattering_orders);
-    }
+  //if (num_precomputed_wavelengths_ <= 3) {
+  vec3 lambdas{kLambdaR, kLambdaG, kLambdaB};
+  mat3 luminance_from_radiance{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+  Precompute(fbo, delta_irradiance_texture, delta_rayleigh_scattering_texture,
+      delta_mie_scattering_texture, delta_scattering_density_texture,
+      delta_multiple_scattering_texture, lambdas, luminance_from_radiance,
+      false /* blend */, num_scattering_orders);
+  //}
+  //else {
+  //  constexpr double kLambdaMin = 360.0;
+  //  constexpr double kLambdaMax = 830.0;
+  //  int num_iterations = (num_precomputed_wavelengths_ + 2) / 3;
+  //  double dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations);
+  //  for (int i = 0; i < num_iterations; ++i) {
+  //    vec3 lambdas{
+  //      kLambdaMin + (3 * i + 0.5) * dlambda,
+  //      kLambdaMin + (3 * i + 1.5) * dlambda,
+  //      kLambdaMin + (3 * i + 2.5) * dlambda
+  //    };
+  //    auto coeff = [dlambda](double lambda, int component) {
+  //      // Note that we don't include MAX_LUMINOUS_EFFICACY here, to avoid
+  //      // artefacts due to too large values when using half precision on GPU.
+  //      // We add this term back in kAtmosphereShader, via
+  //      // SKY_SPECTRAL_RADIANCE_TO_LUMINANCE (see also the comments in the
+  //      // Model constructor).
+  //      double x = CieColorMatchingFunctionTableValue(lambda, 1);
+  //      double y = CieColorMatchingFunctionTableValue(lambda, 2);
+  //      double z = CieColorMatchingFunctionTableValue(lambda, 3);
+  //      return static_cast<float>((
+  //          XYZ_TO_SRGB[component * 3] * x +
+  //          XYZ_TO_SRGB[component * 3 + 1] * y +
+  //          XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda);
+  //    };
+  //    mat3 luminance_from_radiance{
+  //      coeff(lambdas[0], 0), coeff(lambdas[1], 0), coeff(lambdas[2], 0),
+  //      coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1),
+  //      coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)
+  //    };
+  //    Precompute(fbo, delta_irradiance_texture,
+  //        delta_rayleigh_scattering_texture, delta_mie_scattering_texture,
+  //        delta_scattering_density_texture, delta_multiple_scattering_texture,
+  //        lambdas, luminance_from_radiance, i > 0 /* blend */,
+  //        num_scattering_orders);
+  //  }
 
-    // After the above iterations, the transmittance texture contains the
-    // transmittance for the 3 wavelengths used at the last iteration. But we
-    // want the transmittance at kLambdaR, kLambdaG, kLambdaB instead, so we
-    // must recompute it here for these 3 wavelengths:
-    std::string header = glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB});
-    Program compute_transmittance(
-        kVertexShader, header + kComputeTransmittanceShader);
-    glFramebufferTexture(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, transmittance_texture_, 0);
-    glDrawBuffer(GL_COLOR_ATTACHMENT0);
-    glViewport(0, 0, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
-    compute_transmittance.Use();
-    DrawQuad({}, full_screen_quad_vao_);
-  }
+  //  // After the above iterations, the transmittance texture contains the
+  //  // transmittance for the 3 wavelengths used at the last iteration. But we
+  //  // want the transmittance at kLambdaR, kLambdaG, kLambdaB instead, so we
+  //  // must recompute it here for these 3 wavelengths:
+  //  std::string header = glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB});
+  //  Program compute_transmittance(
+  //      kVertexShader, header + kComputeTransmittanceShader);
+  //  glFramebufferTexture(
+  //      GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, transmittance_texture_, 0);
+  //  glDrawBuffer(GL_COLOR_ATTACHMENT0);
+  //  glViewport(0, 0, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+  //  compute_transmittance.Use();
+  //  DrawQuad({}, full_screen_quad_vao_);
+  //}
 
   // Delete the temporary resources allocated at the begining of this method.
   glUseProgram(0);
@@ -1009,35 +921,6 @@ void Model::SetProgramUniforms(
     glUniform1i(glGetUniformLocation(program, "single_mie_scattering_texture"),
         single_mie_scattering_texture_unit);
   }
-}
-
-/*
-<p>The utility method <code>ConvertSpectrumToLinearSrgb</code> is implemented
-with a simple numerical integration of the given function, times the CIE color
-matching funtions (with an integration step of 1nm), followed by a matrix
-multiplication:
-*/
-
-void Model::ConvertSpectrumToLinearSrgb(
-    const std::vector<double>& wavelengths,
-    const std::vector<double>& spectrum,
-    double* r, double* g, double* b) {
-  double x = 0.0;
-  double y = 0.0;
-  double z = 0.0;
-  const int dlambda = 1;
-  for (int lambda = kLambdaMin; lambda < kLambdaMax; lambda += dlambda) {
-    double value = Interpolate(wavelengths, spectrum, lambda);
-    x += CieColorMatchingFunctionTableValue(lambda, 1) * value;
-    y += CieColorMatchingFunctionTableValue(lambda, 2) * value;
-    z += CieColorMatchingFunctionTableValue(lambda, 3) * value;
-  }
-  *r = MAX_LUMINOUS_EFFICACY *
-      (XYZ_TO_SRGB[0] * x + XYZ_TO_SRGB[1] * y + XYZ_TO_SRGB[2] * z) * dlambda;
-  *g = MAX_LUMINOUS_EFFICACY *
-      (XYZ_TO_SRGB[3] * x + XYZ_TO_SRGB[4] * y + XYZ_TO_SRGB[5] * z) * dlambda;
-  *b = MAX_LUMINOUS_EFFICACY *
-      (XYZ_TO_SRGB[6] * x + XYZ_TO_SRGB[7] * y + XYZ_TO_SRGB[8] * z) * dlambda;
 }
 
 /*
