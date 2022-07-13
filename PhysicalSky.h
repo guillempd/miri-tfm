@@ -142,4 +142,6 @@ public:
 
   glm::vec3 m_ozoneAbsorptionCoefficient;
   float m_ozoneAbsorptionScale;
+
+  bool m_shouldRecomputeModel;
 };

@@ -68,8 +68,8 @@ a string literal via the generated file <code>demo.glsl.inc</code>):
 namespace {
 
     constexpr double kPi = 3.1415926;
-    constexpr double kSunAngularRadius = 0.00935 / 2.0;
-    constexpr double kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius;
+    //constexpr double kSunAngularRadius = 0.00935 / 2.0;
+    //constexpr double kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius;
     constexpr double kLengthUnitInMeters = 1000.0;
 
     const char kVertexShader[] = R"(
@@ -112,9 +112,11 @@ PhysicalSky::PhysicalSky()
     , sun_zenith_angle_radians_(1.3)
     , sun_azimuth_angle_radians_(2.9)
     , exposure_(10.0)
-    , m_groundAlbedo()
+    , m_groundAlbedo                    (0.000000f, 0.000000f, 0.000000f)
+    , m_sunIntensity                    (1.000000f)
+    , m_sunAngularRadius                (0.004675f)
     , m_atmosphereBottomRadius          (6360.0f)
-    , m_atmosphereTopRadius             (6720.0f)
+    , m_atmosphereTopRadius             (6420.0f)
     , m_rayleighScatteringCoefficient   (0.175287f, 0.409607f, 1.000000f)
     , m_rayleighScatteringScale         (0.033100f)
     , m_mieScatteringCoefficient        (1.000000f, 1.000000f, 1.000000f)
@@ -124,6 +126,7 @@ PhysicalSky::PhysicalSky()
     , m_miePhaseFunctionG               (0.800000f)
     , m_ozoneAbsorptionCoefficient      (0.345561f, 1.000000f, 0.045189f)
     , m_ozoneAbsorptionScale            (0.001881f)
+    , m_shouldRecomputeModel(false)
 {
 
 }
@@ -177,97 +180,20 @@ atmosphere:
 */
 
 void PhysicalSky::InitModel() {
-    // Values from "Reference Solar Spectral Irradiance: ASTM G-173", ETR column
-    // (see http://rredc.nrel.gov/solar/spectra/am1.5/ASTMG173/ASTMG173.html),
-    // summed and averaged in each bin (e.g. the value for 360nm is the average
-    // of the ASTM G-173 values for all wavelengths between 360 and 370nm).
-    // Values in W.m^-2.
-    constexpr int kLambdaMin = 360;
-    constexpr int kLambdaMax = 830;
-    constexpr double kSolarIrradiance[48] = {
-      1.11776, 1.14259, 1.01249, 1.14716, 1.72765, 1.73054, 1.6887, 1.61253,
-      1.91198, 2.03474, 2.02042, 2.02212, 1.93377, 1.95809, 1.91686, 1.8298,
-      1.8685, 1.8931, 1.85149, 1.8504, 1.8341, 1.8345, 1.8147, 1.78158, 1.7533,
-      1.6965, 1.68194, 1.64654, 1.6048, 1.52143, 1.55622, 1.5113, 1.474, 1.4482,
-      1.41018, 1.36775, 1.34188, 1.31429, 1.28303, 1.26758, 1.2367, 1.2082,
-      1.18737, 1.14683, 1.12362, 1.1058, 1.07124, 1.04992
-    };
-    // Values from http://www.iup.uni-bremen.de/gruppen/molspec/databases/
-    // referencespectra/o3spectra2011/index.html for 233K, summed and averaged in
-    // each bin (e.g. the value for 360nm is the average of the original values
-    // for all wavelengths between 360 and 370nm). Values in m^2.
-    constexpr double kOzoneCrossSection[48] = {
-      1.18e-27, 2.182e-28, 2.818e-28, 6.636e-28, 1.527e-27, 2.763e-27, 5.52e-27,
-      8.451e-27, 1.582e-26, 2.316e-26, 3.669e-26, 4.924e-26, 7.752e-26, 9.016e-26,
-      1.48e-25, 1.602e-25, 2.139e-25, 2.755e-25, 3.091e-25, 3.5e-25, 4.266e-25,
-      4.672e-25, 4.398e-25, 4.701e-25, 5.019e-25, 4.305e-25, 3.74e-25, 3.215e-25,
-      2.662e-25, 2.238e-25, 1.852e-25, 1.473e-25, 1.209e-25, 9.423e-26, 7.455e-26,
-      6.566e-26, 5.105e-26, 4.15e-26, 4.228e-26, 3.237e-26, 2.451e-26, 2.801e-26,
-      2.534e-26, 1.624e-26, 1.465e-26, 2.078e-26, 1.383e-26, 7.105e-27
-    };
-    // From https://en.wikipedia.org/wiki/Dobson_unit, in molecules.m^-2.
-    constexpr double kDobsonUnit = 2.687e20;
-    // Maximum number density of ozone molecules, in m^-3 (computed so at to get
-    // 300 Dobson units of ozone - for this we divide 300 DU by the integral of
-    // the ozone density profile defined below, which is equal to 15km).
-    constexpr double kMaxOzoneNumberDensity = 300.0 * kDobsonUnit / 15000.0;
-    // Wavelength independent solar irradiance "spectrum" (not physically
-    // realistic, but was used in the original implementation).
-    constexpr double kConstantSolarIrradiance = 1.5;
-    constexpr double kTopRadius = 6420000.0;
-    constexpr double kRayleigh = 1.24062e-6;
     constexpr double kRayleighScaleHeight = 8000.0;
     constexpr double kMieScaleHeight = 1200.0;
-    constexpr double kMieAngstromAlpha = 0.0;
-    constexpr double kMieAngstromBeta = 5.328e-3;
-    constexpr double kMieSingleScatteringAlbedo = 0.9;
-    constexpr double kMiePhaseFunctionG = 0.8;
-    constexpr double kGroundAlbedo = 0.1;
     const double max_sun_zenith_angle =
         (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
 
-    m_BottomRadius = 6360000.0;
-
-    DensityProfileLayer
-        rayleigh_layer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0);
+    DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0);
     DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0);
     // Density profile increasing linearly from 0 to 1 between 10 and 25km, and
     // decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
     // profile from http://www.kln.ac.lk/science/Chemistry/Teaching_Resources/
     // Documents/Introduction%20to%20atmospheric%20chemistry.pdf (page 10).
     std::vector<DensityProfileLayer> ozone_density;
-    ozone_density.push_back(
-        DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
-    ozone_density.push_back(
-        DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
-
-    // FIXME(guillem): Be careful with these
-    m_wavelengths.clear();
-    m_solar_irradiance.clear();
-    std::vector<double> rayleigh_scattering;
-    std::vector<double> mie_scattering;
-    std::vector<double> mie_extinction;
-    std::vector<double> absorption_extinction;
-    std::vector<double> ground_albedo;
-    for (int l = kLambdaMin; l <= kLambdaMax; l += 10) {
-        double lambda = static_cast<double>(l) * 1e-3;  // micro-meters
-        double mie =
-            kMieAngstromBeta / kMieScaleHeight * pow(lambda, -kMieAngstromAlpha);
-        m_wavelengths.push_back(l);
-        if (use_constant_solar_spectrum_) {
-            m_solar_irradiance.push_back(kConstantSolarIrradiance);
-        }
-        else {
-            m_solar_irradiance.push_back(kSolarIrradiance[(l - kLambdaMin) / 10]);
-        }
-        rayleigh_scattering.push_back(kRayleigh * pow(lambda, -4));
-        mie_scattering.push_back(mie * kMieSingleScatteringAlbedo);
-        mie_extinction.push_back(mie);
-        absorption_extinction.push_back(use_ozone_ ?
-            kMaxOzoneNumberDensity * kOzoneCrossSection[(l - kLambdaMin) / 10] :
-            0.0);
-        ground_albedo.push_back(kGroundAlbedo);
-    }
+    ozone_density.push_back(DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
+    ozone_density.push_back(DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
 
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
@@ -275,16 +201,20 @@ void PhysicalSky::InitModel() {
     // TODO: Convert to dvec3 all coefficients
     // TODO: Multiply by scale
     glm::dvec3 d_wavelengths = glm::dvec3(0.0);
-    glm::dvec3 d_rayleigh_scattering = m_rayleighScatteringCoefficient;
-    glm::dvec3 d_mie_scattering = m_mieScatteringCoefficient;
-    glm::dvec3 d_mie_extinction = m_mieAbsorptionCoefficient; // TODO: Fix
-    glm::dvec3 d_ground_albedo = m_groundAlbedo;
+    glm::dvec3 d_rayleigh_scattering = m_rayleighScatteringCoefficient * m_rayleighScatteringScale;
+    glm::dvec3 d_mie_scattering = m_mieScatteringCoefficient * m_mieScatteringScale;
+    glm::dvec3 d_mie_extinction = m_mieScatteringCoefficient * m_mieScatteringScale + m_mieAbsorptionCoefficient * m_mieAbsorptionScale; // TODO: Fix
     glm::dvec3 d_absorption_extinction = m_ozoneAbsorptionCoefficient;
-    glm::dvec3 d_solar_irradiance = glm::dvec3(1.0);
+    glm::dvec3 d_ground_albedo = m_groundAlbedo;
+    glm::dvec3 d_solar_irradiance = glm::dvec3(1.0)/* * static_cast<double>(m_sunIntensity)*/;
+    double d_bottom_radius = m_atmosphereBottomRadius * 1000.0;
+    double d_top_radius = m_atmosphereTopRadius * 1000.0;
+    double d_mie_phase_function_g = m_miePhaseFunctionG;
+    double d_sun_angular_radius = m_sunAngularRadius;
 
-    model_.reset(new Model(d_wavelengths, d_solar_irradiance, kSunAngularRadius,
-        m_BottomRadius, kTopRadius, { rayleigh_layer }, d_rayleigh_scattering,
-        { mie_layer }, d_mie_scattering, d_mie_extinction, kMiePhaseFunctionG,
+    model_.reset(new Model(d_wavelengths, d_solar_irradiance, d_sun_angular_radius,
+        d_bottom_radius, d_top_radius, { rayleigh_layer }, d_rayleigh_scattering,
+        { mie_layer }, d_mie_scattering, d_mie_extinction, d_mie_phase_function_g,
         ozone_density, d_absorption_extinction, d_ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
     model_->Init();
@@ -399,10 +329,10 @@ void PhysicalSky::SetRenderingContext(const Camera& camera) const {
     glUniform3f(glGetUniformLocation(program_, "white_point"),
         white_point_r, white_point_g, white_point_b);
     glUniform3f(glGetUniformLocation(program_, "earth_center"),
-        0.0, 0.0, -m_BottomRadius / kLengthUnitInMeters);
+        0.0, 0.0, -(m_atmosphereBottomRadius * 1000) / kLengthUnitInMeters);
     glUniform2f(glGetUniformLocation(program_, "sun_size"),
-        tan(kSunAngularRadius),
-        cos(kSunAngularRadius));
+        tan(m_sunAngularRadius),
+        cos(m_sunAngularRadius));
 
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
     glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
@@ -473,6 +403,7 @@ void PhysicalSky::Render(const Camera& camera) {
 interact with the atmosphere model:
 */
 
+// TODO: Recompute model once parameters change
 void PhysicalSky::RenderUi()
 {
     bool shouldRecomputeModel = false;
@@ -493,7 +424,7 @@ void PhysicalSky::RenderUi()
         ImGui::Checkbox("Do white balance", &do_white_balance_);
 
         float exposure_f = exposure_;
-        ImGui::DragFloat("Exposure", &exposure_f, 0.1f, 2.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+        ImGui::DragFloat("Exposure", &exposure_f, 0.1f, 0.0f, 1000.0f, "%.3f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
         exposure_ = exposure_f;
 
         ImGui::Text("Predefined Views");
@@ -523,38 +454,47 @@ void PhysicalSky::RenderUi()
     // NEW
     if (ImGui::Begin("Physical Sky Settings New"))
     {
-        ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_groundAlbedo), ImGuiColorEditFlags_Float);
+        m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_groundAlbedo), ImGuiColorEditFlags_Float);
 
         // TODO: Sun Color
-        ImGui::SliderFloat("Sun Intensity", &m_sunIntensity, 0.0f, 150000.0f);
-        ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 5.0f); // Change to angular diameter/size (?) This is in degrees convert to radians
+        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Intensity", &m_sunIntensity, 0.0f, 150000.0f);
+        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 0.1f); // Change to angular diameter/size (?) This is in degrees convert to radians
 
         // TODO: Apply constraints between bottom and top radi
-        ImGui::SliderFloat("Atmosphere Bottom Radius", &m_atmosphereBottomRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-        ImGui::SliderFloat("Atmosphere Top Radius", &m_atmosphereTopRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Bottom Radius", &m_atmosphereBottomRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Top Radius", &m_atmosphereTopRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
 
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
             // TODO: Layer
-            ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_rayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
-            ImGui::SliderFloat("Scattering Scale", &m_rayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_rayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_rayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
         }
 
         if (ImGui::CollapsingHeader("Mie"))
         {
             // TODO: Layer
-            ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_mieScatteringCoefficient), ImGuiColorEditFlags_Float);
-            ImGui::SliderFloat("Scattering Scale", &m_mieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_mieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            ImGui::SliderFloat("Absorption Scale", &m_mieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::SliderFloat("Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_mieScatteringCoefficient), ImGuiColorEditFlags_Float);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_mieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_mieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_mieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
         }
 
         if (ImGui::CollapsingHeader("Ozone"))
         {
             // TODO: Layer
-            ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_ozoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            ImGui::SliderFloat("Absorption Scale", &m_ozoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_ozoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_ozoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        }
+
+        if (m_shouldRecomputeModel)
+        {
+            if (ImGui::Button("Recompute Model"))
+            {
+                InitModel();
+                m_shouldRecomputeModel = false;
+            }
         }
     }
     ImGui::End();
