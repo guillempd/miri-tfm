@@ -466,26 +466,34 @@ void PhysicalSky::RenderUi()
 
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
+            ImGui::PushID("Rayleigh");
             // TODO: Layer
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_rayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_rayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_rayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Mie"))
         {
+            ImGui::PushID("Mie");
             // TODO: Layer
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_mieScatteringCoefficient), ImGuiColorEditFlags_Float);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_mieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_mieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_mieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_mieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Ozone"))
         {
+            ImGui::PushID("Ozone");
             // TODO: Layer
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_ozoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_ozoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::PopID();
         }
 
         if (m_shouldRecomputeModel)
