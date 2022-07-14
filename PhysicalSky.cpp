@@ -101,32 +101,30 @@ will be used to render the scene and the help messages:
 using namespace atmosphere;
 
 PhysicalSky::PhysicalSky()
-    : use_constant_solar_spectrum_(false)
-    , use_ozone_(true)
-    , use_combined_textures_(true)
-    , use_half_precision_(true)
-    , use_luminance_(Luminance::NONE)
+    : use_combined_textures_(false)
+    , use_half_precision_(false)
     , do_white_balance_(false)
-    , show_help_(true)
     , program_(0)
     , sun_zenith_angle_radians_(1.3)
     , sun_azimuth_angle_radians_(2.9)
-    , exposure_(10.0)
-    , m_groundAlbedo                    (0.000000f, 0.000000f, 0.000000f)
+    , exposure_(1.0)
+    , m_groundAlbedo                    (0.401978f, 0.401978f, 0.401978f)
     , m_sunIntensity                    (1.000000f)
     , m_sunAngularRadius                (0.004675f)
     , m_atmosphereBottomRadius          (6360.0f)
-    , m_atmosphereTopRadius             (6420.0f)
+    , m_atmosphereTopRadius             (6460.0f)
     , m_rayleighScatteringCoefficient   (0.175287f, 0.409607f, 1.000000f)
     , m_rayleighScatteringScale         (0.033100f)
+    , m_rayleighExponentialDistribution (8.000000f)
     , m_mieScatteringCoefficient        (1.000000f, 1.000000f, 1.000000f)
     , m_mieScatteringScale              (0.003996f)
     , m_mieAbsorptionCoefficient        (1.000000f, 1.000000f, 1.000000f)
     , m_mieAbsorptionScale              (0.000444f)
     , m_miePhaseFunctionG               (0.800000f)
+    , m_mieExponentialDistribution      (1.200000f)
     , m_ozoneAbsorptionCoefficient      (0.345561f, 1.000000f, 0.045189f)
     , m_ozoneAbsorptionScale            (0.001881f)
-    , m_shouldRecomputeModel(false)
+    , m_shouldRecomputeModel            (false)
 {
 
 }
@@ -180,17 +178,17 @@ atmosphere:
 */
 
 void PhysicalSky::InitModel() {
-    constexpr double kRayleighScaleHeight = 8000.0;
-    constexpr double kMieScaleHeight = 1200.0;
     const double max_sun_zenith_angle =
         (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
 
-    DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / kRayleighScaleHeight, 0.0, 0.0);
-    DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0);
+    // NOTE: Investigate about the units of these
+    DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / (m_rayleighExponentialDistribution * 1000.0), 0.0, 0.0);
+    DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / (m_mieExponentialDistribution * 1000.0), 0.0, 0.0);
     // Density profile increasing linearly from 0 to 1 between 10 and 25km, and
     // decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
     // profile from http://www.kln.ac.lk/science/Chemistry/Teaching_Resources/
     // Documents/Introduction%20to%20atmospheric%20chemistry.pdf (page 10).
+    // TODO: Add parameters to control this profile layer
     std::vector<DensityProfileLayer> ozone_density;
     ozone_density.push_back(DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
     ozone_density.push_back(DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
@@ -199,14 +197,14 @@ void PhysicalSky::InitModel() {
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
     // TODO: Convert to dvec3 all coefficients
-    // TODO: Multiply by scale
+    // TODO: Add explicit casts
     glm::dvec3 d_wavelengths = glm::dvec3(0.0);
     glm::dvec3 d_rayleigh_scattering = m_rayleighScatteringCoefficient * m_rayleighScatteringScale;
     glm::dvec3 d_mie_scattering = m_mieScatteringCoefficient * m_mieScatteringScale;
     glm::dvec3 d_mie_extinction = m_mieScatteringCoefficient * m_mieScatteringScale + m_mieAbsorptionCoefficient * m_mieAbsorptionScale; // TODO: Fix
-    glm::dvec3 d_absorption_extinction = m_ozoneAbsorptionCoefficient;
+    glm::dvec3 d_absorption_extinction = m_ozoneAbsorptionCoefficient * m_ozoneAbsorptionScale;
     glm::dvec3 d_ground_albedo = m_groundAlbedo;
-    glm::dvec3 d_solar_irradiance = glm::dvec3(1.0)/* * static_cast<double>(m_sunIntensity)*/;
+    glm::dvec3 d_solar_irradiance = glm::dvec3(1.0) * static_cast<double>(m_sunIntensity);
     double d_bottom_radius = m_atmosphereBottomRadius * 1000.0;
     double d_top_radius = m_atmosphereTopRadius * 1000.0;
     double d_mie_phase_function_g = m_miePhaseFunctionG;
@@ -247,8 +245,7 @@ void PhysicalSky::InitModel() {
     }
 
     const std::string fragment_shader_str =
-        "#version 330\n" +
-        std::string(use_luminance_ != Luminance::NONE ? "#define USE_LUMINANCE\n" : "") +
+        "#version 330\n"
         "const float kLengthUnitInMeters = " +
         std::to_string(kLengthUnitInMeters) + ";\n" +
         demo_glsl;
@@ -365,7 +362,7 @@ void PhysicalSky::Render(const Camera& camera) {
     glm::mat4 model_from_view_ = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
     glUniform3fv(glGetUniformLocation(program_, "camera"), 1, glm::value_ptr(cameraPosition));
     glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, GL_FALSE, glm::value_ptr(model_from_view_));
-    glUniform1f(glGetUniformLocation(program_, "exposure"), use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
+    glUniform1f(glGetUniformLocation(program_, "exposure"), exposure_);
 
     glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
     glm::vec2 sunCos = glm::cos(sunAngles);
@@ -409,17 +406,8 @@ void PhysicalSky::RenderUi()
     bool shouldRecomputeModel = false;
     if (ImGui::Begin("Physical Sky Settings"))
     {
-        shouldRecomputeModel |= ImGui::Checkbox("Use constant solar spectrum", &use_constant_solar_spectrum_);
-        shouldRecomputeModel |= ImGui::Checkbox("Use ozone", &use_ozone_);
         shouldRecomputeModel |= ImGui::Checkbox("Use combined textures", &use_combined_textures_);
         shouldRecomputeModel |= ImGui::Checkbox("Use half precision", &use_half_precision_);
-
-        ImGui::Text("Luminance");
-        shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::NONE));
-        ImGui::SameLine();
-        shouldRecomputeModel |= ImGui::RadioButton("Approximate", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::APPROXIMATE));
-        ImGui::SameLine();
-        shouldRecomputeModel |= ImGui::RadioButton("Precomputed", reinterpret_cast<int*>(&use_luminance_), static_cast<int>(Luminance::PRECOMPUTED));
 
         ImGui::Checkbox("Do white balance", &do_white_balance_);
 
@@ -451,7 +439,6 @@ void PhysicalSky::RenderUi()
     if (shouldRecomputeModel) InitModel();
     if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;
 
-    // NEW
     if (ImGui::Begin("Physical Sky Settings New"))
     {
         m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_groundAlbedo), ImGuiColorEditFlags_Float);

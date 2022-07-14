@@ -77,29 +77,11 @@ public:
   void RenderUi();
 
  private:
-  enum class Luminance {
-    // Render the spectral radiance at kLambdaR, kLambdaG, kLambdaB.
-    NONE,
-    // Render the sRGB luminance, using an approximate (on the fly) conversion
-    // from 3 spectral radiance values only (see section 14.3 in <a href=
-    // "https://arxiv.org/pdf/1612.04336.pdf">A Qualitative and Quantitative
-    //  Evaluation of 8 Clear Sky Models</a>).
-    APPROXIMATE,
-    // Render the sRGB luminance, precomputed from 15 spectral radiance values
-    // (see section 4.4 in <a href=
-    // "http://www.oskee.wz.cz/stranka/uploads/SCCG10ElekKmoch.pdf">Real-time
-    //  Spectral Scattering in Large-scale Natural Participating Media</a>).
-    PRECOMPUTED
-  };
 
-
-  bool use_constant_solar_spectrum_;
-  bool use_ozone_;
+  // TODO: Remove these parameters
   bool use_combined_textures_;
   bool use_half_precision_;
-  Luminance use_luminance_;
   bool do_white_balance_;
-  bool show_help_;
 
   std::unique_ptr<atmosphere::Model> model_;
   GLuint vertex_shader_;
@@ -116,8 +98,6 @@ public:
   bool is_ctrl_key_pressed_;
 
   // NOTE(guillem): Added by me
-  std::vector<double> m_wavelengths;
-  std::vector<double> m_solar_irradiance;
   double m_BottomRadius;
   bool is_mouse_button_pressed_;
   std::unique_ptr<ShaderProgram> m_meshProgram;
@@ -133,12 +113,14 @@ public:
 
   glm::vec3 m_rayleighScatteringCoefficient;
   float m_rayleighScatteringScale;
+  float m_rayleighExponentialDistribution;
 
   glm::vec3 m_mieScatteringCoefficient;
   float m_mieScatteringScale;
   glm::vec3 m_mieAbsorptionCoefficient;
   float m_mieAbsorptionScale;
   float m_miePhaseFunctionG;
+  float m_mieExponentialDistribution;
 
   glm::vec3 m_ozoneAbsorptionCoefficient;
   float m_ozoneAbsorptionScale;
