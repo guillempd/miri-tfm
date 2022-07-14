@@ -104,12 +104,11 @@ public:
 
   // NEW Parameters
   glm::vec3 m_groundAlbedo;
+  float m_planetRadius;
+  float m_atmosphereHeight;
 
   float m_sunIntensity;
   float m_sunAngularRadius;
-
-  float m_atmosphereBottomRadius;
-  float m_atmosphereTopRadius;
 
   glm::vec3 m_rayleighScatteringCoefficient;
   float m_rayleighScatteringScale;

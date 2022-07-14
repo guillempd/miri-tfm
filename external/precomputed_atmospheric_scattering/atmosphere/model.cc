@@ -522,7 +522,6 @@ initialize them), as well as a vertex buffer object to render a full screen quad
 */
 
 Model::Model(
-    const glm::dvec3& wavelengths,
     const glm::dvec3& solar_irradiance,
     const double sun_angular_radius,
     double bottom_radius,

@@ -182,14 +182,6 @@ class DensityProfileLayer {
 class Model {
  public:
   Model(
-    // The wavelength values, in nanometers, and sorted in increasing order, for
-    // which the solar_irradiance, rayleigh_scattering, mie_scattering,
-    // mie_extinction and ground_albedo samples are provided. If your shaders
-    // use luminance values (as opposed to radiance values, see above), use a
-    // large number of wavelengths (e.g. between 15 and 50) to get accurate
-    // results (this number of wavelengths has absolutely no impact on the
-    // shader performance).
-    const glm::dvec3& wavelengths,
     // The solar irradiance at the top of the atmosphere, in W/m^2/nm. This
     // vector must have the same size as the wavelengths parameter.
     const glm::dvec3& solar_irradiance,
