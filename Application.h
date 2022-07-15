@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.h"
-#include "HdrSky.h"
+//#include "HdrSky.h"
 #include "PhysicalSky.h"
 #include "Mesh.h"
 class Window;
@@ -26,9 +26,9 @@ private:
 private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
-    HdrSky m_hdrSky;
+    // HdrSky m_hdrSky;
     PhysicalSky m_physicalSky;
     SkyType m_skyType;
     Window* m_window;
-    std::unique_ptr<Mesh> m_mesh;
+    //std::unique_ptr<Mesh> m_mesh;
 };

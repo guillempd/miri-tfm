@@ -13,11 +13,11 @@
 Application::Application(int width, int height, Window* window)
     : m_camera()
     , m_previousCursorPosition()
-    , m_hdrSky()
+    //, m_hdrSky()
     , m_physicalSky()
     , m_skyType(SkyType::HDR)
     , m_window(window)
-    , m_mesh()
+    //, m_mesh()
 {
     std::cout << "Creating application" << std::endl;
 
@@ -29,9 +29,9 @@ Application::Application(int width, int height, Window* window)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
-    m_hdrSky.Init();
+    //m_hdrSky.Init();
     m_physicalSky.Init(m_window);
-    m_mesh = std::make_unique<Mesh>();
+    //m_mesh = std::make_unique<Mesh>();
     OnFramebufferSize(width, height);
 }
 
@@ -75,17 +75,17 @@ void Application::OnUpdate()
     ImGui::ShowDemoWindow();
 
     m_camera.OnUpdate();
-    m_hdrSky.OnUpdate();
-    m_mesh->OnUpdate();
+    //m_hdrSky.OnUpdate();
+    //m_mesh->OnUpdate();
 
-    if (ImGui::Begin("Sky Selection"))
+    /*if (ImGui::Begin("Sky Selection"))
     {
         ImGui::RadioButton("HDR Sky", reinterpret_cast<int*>(&m_skyType), static_cast<int>(SkyType::HDR));
         ImGui::RadioButton("Physical Sky", reinterpret_cast<int*>(&m_skyType), static_cast<int>(SkyType::PHYSICAL));
     }
-    ImGui::End();
+    ImGui::End();*/
 
-    if (ImGui::Begin("Model"))
+    /*if (ImGui::Begin("Model"))
     {
         nfdfilteritem_t meshFilter = { "3D mesh", "gltf" };
         if (ImGui::Button("Open other model..."))
@@ -94,32 +94,33 @@ void Application::OnUpdate()
             if (path != "") m_mesh = std::make_unique<Mesh>(path);
         }
     }
-    ImGui::End();
+    ImGui::End();*/
 }
 
 void Application::OnRender()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    switch (m_skyType)
-    {
-    case SkyType::HDR:
-    {
-        m_hdrSky.OnRender(m_camera);
-        // m_mesh->Render(m_camera);
-        GLenum errorCode = glGetError();
-        if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering HDR Sky." << std::endl;
-    } break;
-    case SkyType::PHYSICAL:
-    {
-        m_physicalSky.Render(m_camera);
-        // m_mesh->JustRender(m_camera);
-        GLenum errorCode = glGetError();
-        if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering Physical Sky." << std::endl;
-    } break;
-    default:
-    {
-        std::cerr << "E: Unknown sky type selected." << std::endl;
-    }
-    }
+    //switch (m_skyType)
+    //{
+    //case SkyType::HDR:
+    //{
+    //    m_hdrSky.OnRender(m_camera);
+    //    m_mesh->Render(m_camera);
+    //    GLenum errorCode = glGetError();
+    //    if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering HDR Sky." << std::endl;
+    //} break;
+    //case SkyType::PHYSICAL:
+    //{
+    m_physicalSky.Render(m_camera);
+    //m_mesh->Render(m_camera);
+    // m_mesh->JustRender(m_camera);
+    GLenum errorCode = glGetError();
+    if (errorCode != GL_NO_ERROR) std::cerr << "[OpenGL] E: Something failed while rendering Physical Sky." << std::endl;
+    //} break;
+    //default:
+    //{
+    //    std::cerr << "E: Unknown sky type selected." << std::endl;
+    //}
+    //}
 }
