@@ -46,6 +46,7 @@ uniform vec3 white_point;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
 uniform vec2 sun_size;
+uniform vec3 ground_albedo;
 in vec3 view_ray;
 layout(location = 0) out vec4 color;
 
@@ -58,7 +59,7 @@ luminance values (see <a href="../model.h.html">model.h</a>).
 */
 
 const float PI = 3.14159265;
-const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
+// const vec3 kGroundAlbedo = vec3(0.0, 0.0, 0.04);
 
 #ifdef USE_LUMINANCE
 #define GetSolarRadiance GetSolarLuminance
@@ -246,15 +247,15 @@ void main() {
     // Normalized view direction vector.
     vec3 view_direction = normalize(view_ray);
     // Tangent of the angle subtended by this fragment.
-    float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
+    // float fragment_angular_size = length(dFdx(view_ray) + dFdy(view_ray)) / length(view_ray);
 
     // float shadow_in;
     // float shadow_out;
     // GetSphereShadowInOut(view_direction, sun_direction, shadow_in, shadow_out);
 
     // Hack to fade out light shafts when the Sun is very close to the horizon.
-    float lightshaft_fadein_hack = smoothstep(
-        0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
+    // float lightshaft_fadein_hack = smoothstep(
+    //     0.02, 0.04, dot(normalize(camera - earth_center), sun_direction));
 
     /*
     <p>We then test whether the view ray intersects the sphere S or not. If it does,
@@ -331,7 +332,7 @@ void main() {
 
     // Compute the radiance reflected by the ground, if the ray intersects it.
     float ground_alpha = 0.0;
-    vec3 ground_radiance = vec3(1.0, 0.0, 0.0);
+    vec3 ground_radiance = vec3(0.0, 0.0, 0.0);
     if (distance_to_intersection > 0.0) {
         vec3 point = camera + view_direction * distance_to_intersection;
         vec3 normal = normalize(point - earth_center);
@@ -339,7 +340,7 @@ void main() {
         // Compute the radiance reflected by the ground.
         vec3 sky_irradiance;
         vec3 sun_irradiance = GetSunAndSkyIrradiance(point - earth_center, normal, sun_direction, sky_irradiance);
-        ground_radiance = kGroundAlbedo * (1.0 / PI) * (sun_irradiance * GetSunVisibility(point, sun_direction) + sky_irradiance * GetSkyVisibility(point));
+        ground_radiance = ground_albedo * (1.0 / PI) * (sun_irradiance * GetSunVisibility(point, sun_direction) + sky_irradiance * GetSkyVisibility(point));
 
         float shadow_length = 0.0;
             // max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) *
@@ -362,12 +363,12 @@ void main() {
     vec3 radiance = GetSkyRadiance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
 
     // If the view ray intersects the Sun, add the Sun radiance.
-    float sunVisibility = smoothstep(0.0, 0.00075, dot(view_direction, sun_direction) - sun_size.y);
+    // float sunVisibility = smoothstep(0.0, 0.00075, dot(view_direction, sun_direction) - sun_size.y);
     // float sunVisibility = step(0.0, dot(view_direction, sun_direction) - sun_size.y);
-    radiance += transmittance * sunVisibility * GetSolarRadiance();
-    // if (dot(view_direction, sun_direction) > sun_size.y) {
-    //     radiance = radiance + transmittance * GetSolarRadiance();
-    // }
+    // radiance += transmittance * sunVisibility * GetSolarRadiance();
+    if (dot(view_direction, sun_direction) > sun_size.y) {
+        radiance = radiance + transmittance * GetSolarRadiance();
+    }
     radiance = mix(radiance, ground_radiance, ground_alpha);
     // radiance = mix(radiance, sphere_radiance, sphere_alpha);
     color.rgb = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));

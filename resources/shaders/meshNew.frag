@@ -36,7 +36,6 @@ void main()
 
     // APPLY TRANSMITTANCE
 
-
     vec3 transmittance;
     vec3 sky_irradiance;
     vec3 p_CameraPos = w_CameraPos - w_PlanetPos;
@@ -48,7 +47,7 @@ void main()
     result = result * transmittance + radiance * 0.0001;
 
     vec3 alt_result = color * (sun_irradiance + sky_irradiance);
-    // alt_result = alt_result * transmittance + radiance;
+    alt_result = alt_result * transmittance + radiance;
 
     FragColor = vec4(alt_result * 0.00001, 1.0);
 }

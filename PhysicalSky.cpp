@@ -331,13 +331,10 @@ void PhysicalSky::SetRenderingContext(const Camera& camera) const {
         white_point_g /= white_point;
         white_point_b /= white_point;
     }*/
-    glUniform3f(glGetUniformLocation(program_, "white_point"),
-        white_point_r, white_point_g, white_point_b);
-    glUniform3f(glGetUniformLocation(program_, "earth_center"),
-        0.0, 0.0, -m_planetRadius);
-    glUniform2f(glGetUniformLocation(program_, "sun_size"),
-        tan(m_sunAngularRadius),
-        cos(m_sunAngularRadius));
+    glUniform3f(glGetUniformLocation(program_, "white_point"), white_point_r, white_point_g, white_point_b);
+    glUniform3f(glGetUniformLocation(program_, "earth_center"), 0.0, 0.0, -m_planetRadius);
+    glUniform2f(glGetUniformLocation(program_, "sun_size"), tan(m_sunAngularRadius), cos(m_sunAngularRadius));
+    glUniform3f(glGetUniformLocation(program_, "ground_albedo"), m_groundAlbedo.r, m_groundAlbedo.g, m_groundAlbedo.b);
 
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
     glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
