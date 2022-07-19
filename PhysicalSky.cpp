@@ -125,8 +125,13 @@ PhysicalSky::PhysicalSky()
     , m_ozoneAbsorptionCoefficient      (0.345561f, 1.000000f, 0.045189f) // unitless
     , m_ozoneAbsorptionScale            (0.001881f) // km^-1
     , m_shouldRecomputeModel            (false)
+    , m_mesh()
+    , m_meshShader()
 {
-
+    m_mesh = std::make_unique<Mesh>();
+    ShaderSource vertexShader = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshNew.vert");
+    ShaderSource fragmentShader = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshNew.frag");
+    m_meshShader.Build(vertexShader, fragmentShader);
 }
 
 /*
@@ -375,6 +380,16 @@ void PhysicalSky::Render(const Camera& camera) {
     {
         glBindVertexArray(full_screen_quad_vao_);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        m_meshShader.Use();
+        m_meshShader.SetMat4("model", glm::mat4(1.0f));
+        m_meshShader.SetMat4("view", camera.GetViewMatrix());
+        m_meshShader.SetMat4("projection", camera.GetProjectionMatrix());
+        m_meshShader.SetVec3("w_LightDir", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
+
+        m_mesh->JustRender(camera);
+        // model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
+
     //    m_meshProgram->Use();
     //    m_meshProgram->SetMat4("model", glm::mat4(1.0f));
     //    m_meshProgram->SetMat4("view", camera.GetViewMatrix());

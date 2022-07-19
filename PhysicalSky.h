@@ -125,4 +125,8 @@ public:
   float m_ozoneAbsorptionScale;
 
   bool m_shouldRecomputeModel;
+
+  // Mesh and shader
+  std::unique_ptr<Mesh> m_mesh;
+  ShaderProgram m_meshShader;
 };
