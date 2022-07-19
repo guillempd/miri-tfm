@@ -129,8 +129,8 @@ PhysicalSky::PhysicalSky()
     , m_meshShader()
 {
     m_mesh = std::make_unique<Mesh>();
-    ShaderSource vertexShader = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshNew.vert");
-    ShaderSource fragmentShader = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshNew.frag");
+    ShaderStage vertexShader = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshNew.vert");
+    ShaderStage fragmentShader = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshNew.frag");
     m_meshShader.Build(vertexShader, fragmentShader);
 }
 
@@ -293,8 +293,8 @@ void PhysicalSky::InitModel() {
     // NOTE(guillem): Code added by me
     // Init mesh shader
     /*m_meshProgram.reset(new ShaderProgram());
-    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
-    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
+    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
+    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
     if (use_luminance_ != Luminance::NONE) fragmentShaderSource.AddDefine("USE_LUMINANCE");
     m_meshProgram->AttachShader(model_->shader());
     m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);*/

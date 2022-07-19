@@ -8,8 +8,8 @@
 
 void HdrSky::Init()
 {
-    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.vert");
-    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/hdrSky.frag");
+    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/hdrSky.vert");
+    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/hdrSky.frag");
     m_program.Build(vertexShaderSource, fragmentShaderSource);
 
     m_texture.Load("D:/Descargas/drackenstein_quarry_4k.hdr");

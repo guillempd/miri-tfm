@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ShaderSource.h"
+#include "ShaderStage.h"
 
 #include <glad/glad.h>
 
@@ -14,7 +14,7 @@ public:
     ShaderProgram();
     ~ShaderProgram();
     void AttachShader(GLuint id) const;
-    void Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource);
+    void Build(const ShaderStage& vertexSource, const ShaderStage& fragmentSource);
     void Use();
     void SetInt(std::string_view, int value);
     void SetFloat(std::string_view, float value);

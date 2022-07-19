@@ -5,11 +5,11 @@
 
 enum class ShaderType {VERTEX, FRAGMENT};
 
-class ShaderSource
+class ShaderStage
 {
 public:
     // NOTE: Might also add support for #inject
-    ShaderSource(std::string_view path, std::string_view includesPath = "");
+    ShaderStage(std::string_view path, std::string_view includesPath = "");
     void AddDefine(std::string symbol);
     std::string_view Get() const;
 private:

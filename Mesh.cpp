@@ -13,8 +13,8 @@
 
 Mesh::Mesh()
 {
-    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
-    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
+    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
     m_program.Build(vertexShaderSource, fragmentShaderSource);
 
     // TODO: Use a sphere instead
@@ -59,8 +59,8 @@ Mesh::Mesh()
 
 Mesh::Mesh(std::string_view path)
 {
-    ShaderSource vertexShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.vert");
-    ShaderSource fragmentShaderSource = ShaderSource("D:/dev/miri-tfm/resources/shaders/mesh.frag");
+    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
     m_program.Build(vertexShaderSource, fragmentShaderSource);
     Assimp::Importer importer = Assimp::Importer();
     const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes

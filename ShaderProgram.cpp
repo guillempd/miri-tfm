@@ -74,7 +74,7 @@ void ShaderProgram::Build(std::string_view vertexSource, std::string_view fragme
     glDeleteShader(fragmentShaderId);
 }
 
-void ShaderProgram::Build(const ShaderSource& vertexSource, const ShaderSource& fragmentSource)
+void ShaderProgram::Build(const ShaderStage& vertexSource, const ShaderStage& fragmentSource)
 {
     Build(vertexSource.Get(), fragmentSource.Get());
 }
