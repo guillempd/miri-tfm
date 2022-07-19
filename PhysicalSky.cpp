@@ -387,13 +387,17 @@ void PhysicalSky::Render(const Camera& camera) {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         m_meshShader.Use();
-        m_meshShader.SetMat4("model", glm::mat4(1.0f));
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::scale(model, glm::vec3(1.0f));
+        m_meshShader.SetMat4("model", model);
         m_meshShader.SetMat4("view", camera.GetViewMatrix());
         m_meshShader.SetMat4("projection", camera.GetProjectionMatrix());
         m_meshShader.SetVec3("w_LightDir", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
+        m_meshShader.SetVec3("w_CameraPos", camera.GetPosition());
+        m_meshShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_planetRadius, 0.0f));
+        model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
 
         m_mesh->JustRender(camera);
-        // model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
 
     //    m_meshProgram->Use();
     //    m_meshProgram->SetMat4("model", glm::mat4(1.0f));
@@ -418,7 +422,6 @@ void PhysicalSky::Render(const Camera& camera) {
 interact with the atmosphere model:
 */
 
-// TODO: Recompute model once parameters change
 void PhysicalSky::RenderUi()
 {
     bool shouldRecomputeModel = false;
