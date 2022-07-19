@@ -1,30 +1,77 @@
 #include "ShaderStage.h"
 
+#define STB_INCLUDE_LINE_GLSL
 #define STB_INCLUDE_IMPLEMENTATION
 #include <stb_include.h>
 
-#include <iostream>
+#include <glad/glad.h>
 
-ShaderStage::ShaderStage(std::string_view path, std::string_view includesPath)
-    : m_source()
+#include <iostream>
+#include <vector>
+
+
+ShaderStage::ShaderStage(ShaderType type)
+    : m_id(GL_NONE)
 {
-    char error[256];
-    char* source = stb_include_file(const_cast<char*>(path.data()), "", const_cast<char*>(includesPath.data()), error);
-    if (!source) std::cerr << "[stb_include] " << error << std::endl;
-    else
+    switch (type)
     {
-        m_source = std::string(source);
-        free(source);
+    case ShaderType::VERTEX:
+    {
+        m_id = glCreateShader(GL_VERTEX_SHADER);
+        break;
+    }
+    case ShaderType::FRAGMENT:
+    {
+        m_id = glCreateShader(GL_FRAGMENT_SHADER);
+        break;
+    }
+    default:
+    {
+        std::cerr << "[ShaderStage] E: Unknown ShaderType " << static_cast<int>(type) << "." << std::endl;
+    }
     }
 }
 
-void ShaderStage::AddDefine(std::string symbol)
+ShaderStage::~ShaderStage()
 {
-    m_source = "#define " + symbol + "\n" + m_source;
+    glDeleteShader(m_id);
 }
 
-std::string_view ShaderStage::Get() const
+void ShaderStage::Compile(const std::string& path, const std::string& includesPath)
 {
-    m_source = "#version 330 core\n" + m_source;
-    return std::string_view(m_source);
+    std::string source = LoadSource(path, includesPath);
+    const char* sourceData = source.data();
+    glShaderSource(m_id, 1, &sourceData, nullptr);
+    glCompileShader(m_id);
+
+    GLint success;
+    glGetShaderiv(m_id, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        GLint length;
+        glGetShaderiv(m_id, GL_INFO_LOG_LENGTH, &length);
+
+        std::vector<GLchar> infoLog(length);
+        glGetShaderInfoLog(m_id, length, &length, infoLog.data());
+
+        std::cerr << "[ShaderStage] E: Compiling shader." << std::endl;
+        std::cerr << infoLog.data() << std::endl;
+    }
+}
+
+std::string ShaderStage::LoadSource(const std::string& path, const std::string& includesPath = "")
+{
+    char error[256];
+    char* source = stb_include_file(const_cast<char*>(path.data()), "", const_cast<char*>(includesPath.data()), error);
+    if (!source)
+    {
+        std::cerr << "[stb_include] E: " << error << std::endl;
+        return "";
+    }
+    else
+    {
+        std::string result = std::string(source);
+        free(source);
+        return result;
+    }
 }

@@ -13,7 +13,7 @@ add_executable(miri-tfm
     Texture.cpp
     ShaderProgram.cpp
     ShaderStage.cpp
-    HdrSky.cpp
+    # HdrSky.cpp
     PhysicalSky.cpp
     Mesh.cpp
     ImGuiNfd.cpp

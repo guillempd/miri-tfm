@@ -1,3 +1,5 @@
+#version 330 core
+#include "atmosphere.glsl"
 
 in vec3 v_LightDir;
 in vec3 v_Normal;

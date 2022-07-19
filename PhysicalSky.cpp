@@ -129,9 +129,6 @@ PhysicalSky::PhysicalSky()
     , m_meshShader()
 {
     m_mesh = std::make_unique<Mesh>();
-    ShaderStage vertexShader = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshNew.vert");
-    ShaderStage fragmentShader = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshNew.frag");
-    m_meshShader.Build(vertexShader, fragmentShader);
 }
 
 /*
@@ -150,6 +147,14 @@ void PhysicalSky::Init(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
+    ShaderStage vertexShader = ShaderStage(ShaderType::VERTEX);
+    ShaderStage fragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.vert", "D:/dev/miri-tfm/resources/shaders/");
+    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_meshShader.AttachShader(vertexShader.m_id);
+    m_meshShader.AttachShader(fragmentShader.m_id);
+    m_meshShader.AttachShader(model_->shader());
+    m_meshShader.Build();
 }
 
 void PhysicalSky::InitResources() {

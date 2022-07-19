@@ -21,63 +21,83 @@ void ShaderProgram::AttachShader(GLuint id) const
     glAttachShader(m_id, id);
 }
 
-static void CheckShaderCompileStatus(GLuint shaderId)
+void ShaderProgram::Build()
 {
-    GLint success;
-    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        GLint infoLogLength;
-        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
-        std::vector<GLchar> infoLog = std::vector<GLchar>(infoLogLength);
-        glGetShaderInfoLog(shaderId, infoLogLength, nullptr, infoLog.data());
-        std::cerr << infoLog.data() << std::endl;
-    }
-}
-
-static void CheckProgramLinkStatus(GLuint programId)
-{
-    // FIXME: Why is this never reporting linking errors?
-    GLint success;
-    glGetProgramiv(programId, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        GLint infoLogLength;
-        glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength);
-        std::vector<GLchar> infoLog = std::vector<GLchar>(infoLogLength);
-        glGetShaderInfoLog(programId, infoLogLength, nullptr, infoLog.data());
-        std::cerr << infoLog.data() << std::endl;
-    }
-}
-
-void ShaderProgram::Build(std::string_view vertexSource, std::string_view fragmentSource)
-{
-    GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexSourceData = vertexSource.data();
-    glShaderSource(vertexShaderId, 1, &vertexSourceData, nullptr);
-    glCompileShader(vertexShaderId);
-    CheckShaderCompileStatus(vertexShaderId);
-
-    GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentSourceData = fragmentSource.data();
-    glShaderSource(fragmentShaderId, 1, &fragmentSourceData, nullptr);
-    glCompileShader(fragmentShaderId);
-    CheckShaderCompileStatus(fragmentShaderId);
-
-    glAttachShader(m_id, vertexShaderId);
-    glAttachShader(m_id, fragmentShaderId);
     glLinkProgram(m_id);
-    CheckProgramLinkStatus(m_id);
 
-    // TODO: glDetachShader()
-    glDeleteShader(vertexShaderId);
-    glDeleteShader(fragmentShaderId);
+    GLint success;
+    glGetProgramiv(m_id, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        GLint length;
+        glGetProgramiv(m_id, GL_INFO_LOG_LENGTH, &length);
+
+        std::vector<GLchar> infoLog(length);
+        glGetProgramInfoLog(m_id, length, &length, infoLog.data());
+
+        std::cerr << "[ShaderProgram] E: Linking shader." << std::endl;
+        std::cerr << infoLog.data() << std::endl;
+    }
+    // TODO: Dettach shaders
 }
 
-void ShaderProgram::Build(const ShaderStage& vertexSource, const ShaderStage& fragmentSource)
-{
-    Build(vertexSource.Get(), fragmentSource.Get());
-}
+//static void CheckShaderCompileStatus(GLuint shaderId)
+//{
+//    GLint success;
+//    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
+//    if (!success)
+//    {
+//        GLint infoLogLength;
+//        glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &infoLogLength);
+//        std::vector<GLchar> infoLog = std::vector<GLchar>(infoLogLength);
+//        glGetShaderInfoLog(shaderId, infoLogLength, nullptr, infoLog.data());
+//        std::cerr << infoLog.data() << std::endl;
+//    }
+//}
+//
+//static void CheckProgramLinkStatus(GLuint programId)
+//{
+//    // FIXME: Why is this never reporting linking errors?
+//    GLint success;
+//    glGetProgramiv(programId, GL_LINK_STATUS, &success);
+//    if (!success)
+//    {
+//        GLint infoLogLength;
+//        glGetProgramiv(programId, GL_INFO_LOG_LENGTH, &infoLogLength);
+//        std::vector<GLchar> infoLog = std::vector<GLchar>(infoLogLength);
+//        glGetShaderInfoLog(programId, infoLogLength, nullptr, infoLog.data());
+//        std::cerr << infoLog.data() << std::endl;
+//    }
+//}
+//
+//void ShaderProgram::Build(std::string_view vertexSource, std::string_view fragmentSource)
+//{
+//    GLuint vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+//    const char* vertexSourceData = vertexSource.data();
+//    glShaderSource(vertexShaderId, 1, &vertexSourceData, nullptr);
+//    glCompileShader(vertexShaderId);
+//    CheckShaderCompileStatus(vertexShaderId);
+//
+//    GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+//    const char* fragmentSourceData = fragmentSource.data();
+//    glShaderSource(fragmentShaderId, 1, &fragmentSourceData, nullptr);
+//    glCompileShader(fragmentShaderId);
+//    CheckShaderCompileStatus(fragmentShaderId);
+//
+//    glAttachShader(m_id, vertexShaderId);
+//    glAttachShader(m_id, fragmentShaderId);
+//    glLinkProgram(m_id);
+//    CheckProgramLinkStatus(m_id);
+//
+//    // TODO: glDetachShader()
+//    glDeleteShader(vertexShaderId);
+//    glDeleteShader(fragmentShaderId);
+//}
+//
+//void ShaderProgram::Build(const ShaderStage& vertexSource, const ShaderStage& fragmentSource)
+//{
+//    Build(vertexSource.Get(), fragmentSource.Get());
+//}
 
 void ShaderProgram::Use()
 {

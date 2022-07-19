@@ -13,9 +13,9 @@
 
 Mesh::Mesh()
 {
-    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    /*ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
     ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
-    m_program.Build(vertexShaderSource, fragmentShaderSource);
+    m_program.Build(vertexShaderSource, fragmentShaderSource);*/
 
     // TODO: Use a sphere instead
     std::vector<glm::vec3> positions;
@@ -59,9 +59,9 @@ Mesh::Mesh()
 
 Mesh::Mesh(std::string_view path)
 {
-    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
+    /*ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
     ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
-    m_program.Build(vertexShaderSource, fragmentShaderSource);
+    m_program.Build(vertexShaderSource, fragmentShaderSource);*/
     Assimp::Importer importer = Assimp::Importer();
     const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes
     if (scene) ProcessScene(scene);

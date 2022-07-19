@@ -1,17 +1,18 @@
 #pragma once
 
+#include <glad/glad.h>
+
 #include <string>
-#include <string_view>
 
 enum class ShaderType {VERTEX, FRAGMENT};
 
 class ShaderStage
 {
 public:
-    // NOTE: Might also add support for #inject
-    ShaderStage(std::string_view path, std::string_view includesPath = "");
-    void AddDefine(std::string symbol);
-    std::string_view Get() const;
+    ShaderStage(ShaderType type);
+    ~ShaderStage();
+    void Compile(const std::string& path, const std::string& includesPath = "");
+    GLuint m_id;
 private:
-    mutable std::string m_source; // NOTE: This is a bit of a hack required for the weird implementation of Get
+    static std::string LoadSource(const std::string& path, const std::string& includesPath);
 };
