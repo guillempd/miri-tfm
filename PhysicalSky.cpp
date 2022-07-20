@@ -147,14 +147,7 @@ void PhysicalSky::Init(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
-    ShaderStage vertexShader = ShaderStage(ShaderType::VERTEX);
-    ShaderStage fragmentShader = ShaderStage(ShaderType::FRAGMENT);
-    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.vert", "D:/dev/miri-tfm/resources/shaders/");
-    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.frag", "D:/dev/miri-tfm/resources/shaders/");
-    m_meshShader.AttachShader(vertexShader.m_id);
-    m_meshShader.AttachShader(fragmentShader.m_id);
-    m_meshShader.AttachShader(model_->shader());
-    m_meshShader.Build();
+    InitShaders();
 }
 
 void PhysicalSky::InitResources() {
@@ -314,30 +307,29 @@ void PhysicalSky::InitModel() {
     // SetRenderingContext();
 }
 
+void PhysicalSky::InitShaders()
+{
+    ShaderStage meshVertexShader = ShaderStage(ShaderType::VERTEX);
+    ShaderStage meshFragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.vert", "D:/dev/miri-tfm/resources/shaders/");
+    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_meshShader.AttachShader(meshVertexShader.m_id);
+    m_meshShader.AttachShader(meshFragmentShader.m_id);
+    m_meshShader.AttachShader(model_->shader());
+    m_meshShader.Build();
+
+    ShaderStage skyVertexShader = ShaderStage(ShaderType::VERTEX);
+    ShaderStage skyFragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/skyNew.vert", "D:/dev/miri-tfm/resources/shaders/");
+    skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/skyNew.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_skyShader.AttachShader(skyVertexShader.m_id);
+    m_skyShader.AttachShader(skyFragmentShader.m_id);
+    m_skyShader.AttachShader(model_->shader());
+    m_skyShader.Build();
+}
+
 void PhysicalSky::SetRenderingContext(const Camera& camera) const {
-    glUseProgram(program_);
-    model_->SetProgramUniforms(program_, 0, 1, 2, 3);
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting program uniforms." << std::endl;
-
-    double white_point_r = 1.0;
-    double white_point_g = 1.0;
-    double white_point_b = 1.0;
-    // TODO: Investigate about this white balance
-    /*if (do_white_balance_) {
-        Model::ConvertSpectrumToLinearSrgb(m_wavelengths, m_solar_irradiance,
-            &white_point_r, &white_point_g, &white_point_b);
-        double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
-        white_point_r /= white_point;
-        white_point_g /= white_point;
-        white_point_b /= white_point;
-    }*/
-    glUniform3f(glGetUniformLocation(program_, "white_point"), white_point_r, white_point_g, white_point_b);
-    glUniform3f(glGetUniformLocation(program_, "earth_center"), 0.0, 0.0, -m_planetRadius);
-    glUniform2f(glGetUniformLocation(program_, "sun_size"), tan(m_sunAngularRadius), cos(m_sunAngularRadius));
-    glUniform3f(glGetUniformLocation(program_, "ground_albedo"), m_groundAlbedo.r, m_groundAlbedo.g, m_groundAlbedo.b);
-
-    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
-    glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
+    
 }
 
 /*
@@ -356,7 +348,61 @@ void PhysicalSky::Render(const Camera& camera) {
     // Might be ok to move these to the camera class
     // IDEA: Create a compass widget to know in which direction we are looking at
 
-     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Pre submitting uniforms." << std::endl;
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Pre submitting uniforms." << std::endl;
+    RenderMeshes(camera);
+    RenderSkyNew(camera);
+}
+
+void PhysicalSky::RenderMeshes(const Camera& camera)
+{
+    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
+    glm::vec2 sunCos = glm::cos(sunAngles);
+    glm::vec2 sunSin = glm::sin(sunAngles);
+    m_meshShader.Use();
+    glm::mat4 model = glm::mat4(1.0f);
+    float control = m_planetRadius;
+    model = glm::translate(model, glm::vec3(0.0f, -control, 0.0f));
+    model = glm::scale(model, glm::vec3(control));
+    m_meshShader.SetMat4("model", model);
+    m_meshShader.SetMat4("view", camera.GetViewMatrix());
+    m_meshShader.SetMat4("projection", camera.GetProjectionMatrix());
+    m_meshShader.SetVec3("w_LightDir", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
+    m_meshShader.SetVec3("w_CameraPos", camera.GetPosition());
+    m_meshShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_planetRadius, 0.0f));
+    model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
+    m_mesh->JustRender(camera);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
+    m_meshShader.SetMat4("model", model);
+    m_mesh->JustRender(camera);
+}
+
+void PhysicalSky::RenderSky(const Camera& camera)
+{
+    glUseProgram(program_);
+    model_->SetProgramUniforms(program_, 0, 1, 2, 3);
+    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting program uniforms." << std::endl;
+
+    /*double white_point_r = 1.0;
+    double white_point_g = 1.0;
+    double white_point_b = 1.0;*/
+    // TODO: Investigate about this white balance
+    /*if (do_white_balance_) {
+        Model::ConvertSpectrumToLinearSrgb(m_wavelengths, m_solar_irradiance,
+            &white_point_r, &white_point_g, &white_point_b);
+        double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
+        white_point_r /= white_point;
+        white_point_g /= white_point;
+        white_point_b /= white_point;
+    }*/
+    // glUniform3f(glGetUniformLocation(program_, "white_point"), white_point_r, white_point_g, white_point_b);
+    glUniform3f(glGetUniformLocation(program_, "earth_center"), 0.0, 0.0, -m_planetRadius);
+    glUniform2f(glGetUniformLocation(program_, "sun_size"), tan(m_sunAngularRadius), cos(m_sunAngularRadius));
+    // glUniform3f(glGetUniformLocation(program_, "ground_albedo"), m_groundAlbedo.r, m_groundAlbedo.g, m_groundAlbedo.b);
+
+    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
+    glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
 
     glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
     glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
@@ -367,7 +413,7 @@ void PhysicalSky::Render(const Camera& camera) {
     glm::mat4 model_from_view_ = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
     glUniform3fv(glGetUniformLocation(program_, "camera"), 1, glm::value_ptr(cameraPosition));
     glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, GL_FALSE, glm::value_ptr(model_from_view_));
-    glUniform1f(glGetUniformLocation(program_, "exposure"), exposure_);
+    //glUniform1f(glGetUniformLocation(program_, "exposure"), exposure_);
 
     glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
     glm::vec2 sunCos = glm::cos(sunAngles);
@@ -375,26 +421,12 @@ void PhysicalSky::Render(const Camera& camera) {
     glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
     glUniform3fv(glGetUniformLocation(program_, "sun_direction"), 1, glm::value_ptr(sunDirection));
     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Submitting uniforms." << std::endl;
-
-    GLint previousDepthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    // GLint previousDepthFunc;
+    // glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
     glDepthFunc(GL_LEQUAL);
     {
-        //glBindVertexArray(full_screen_quad_vao_);
-        //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-        m_meshShader.Use();
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::scale(model, glm::vec3(1.0f));
-        m_meshShader.SetMat4("model", model);
-        m_meshShader.SetMat4("view", camera.GetViewMatrix());
-        m_meshShader.SetMat4("projection", camera.GetProjectionMatrix());
-        m_meshShader.SetVec3("w_LightDir", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
-        m_meshShader.SetVec3("w_CameraPos", camera.GetPosition());
-        m_meshShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_planetRadius, 0.0f));
-        model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
-
-        m_mesh->JustRender(camera);
+        glBindVertexArray(full_screen_quad_vao_);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
     //    m_meshProgram->Use();
     //    m_meshProgram->SetMat4("model", glm::mat4(1.0f));
@@ -410,8 +442,43 @@ void PhysicalSky::Render(const Camera& camera) {
     //    // TODO: Draw another mesh
     //    // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
-    glDepthFunc(previousDepthFunc);
+    // glDepthFunc(previousDepthFunc);
+}
 
+void PhysicalSky::RenderSkyNew(const Camera& camera)
+{
+    m_skyShader.Use();
+    model_->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
+    m_skyShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_planetRadius));
+    m_skyShader.SetVec3("sun_size", glm::vec3(glm::tan(m_sunAngularRadius), glm::cos(m_sunAngularRadius), 0.0f));
+    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
+    m_skyShader.SetMat4("view_from_clip", view_from_clip);
+
+    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
+    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
+    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
+    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
+    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
+
+    glm::mat4 model_from_view = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
+
+    m_skyShader.SetVec3("camera", cameraPosition);
+    m_skyShader.SetMat4("model_from_view", model_from_view);
+
+    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
+    glm::vec2 sunCos = glm::cos(sunAngles);
+    glm::vec2 sunSin = glm::sin(sunAngles);
+    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
+    m_skyShader.SetVec3("sun_direction", sunDirection);
+
+    GLint previousDepthFunc;
+    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    glDepthFunc(GL_LEQUAL);
+    {
+        glBindVertexArray(full_screen_quad_vao_);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+    glDepthFunc(previousDepthFunc);
 }
 
 /*

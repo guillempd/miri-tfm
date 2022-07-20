@@ -100,7 +100,7 @@ glm::mat4 Camera::GetViewMatrix() const
 glm::mat4 Camera::GetProjectionMatrix() const
 {
     constexpr float zNear = 0.1f;
-    constexpr float zFar = 10000.0f;
+    constexpr float zFar = 100000.0f;
     return glm::perspective(m_verticalFov, m_aspectRatio, zNear, zFar);
 }
 

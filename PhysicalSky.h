@@ -66,8 +66,12 @@ public:
   void Init(Window* m_window);
   void InitResources();
   void InitModel();
+  void InitShaders();
   void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
+  void RenderMeshes(const Camera& camera);
+  void RenderSky(const Camera& camera);
+  void RenderSkyNew(const Camera& camera);
   void OnMouseClick(int button, int action, int mods);
   bool OnCursorMovement(glm::vec2 movement);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
@@ -129,4 +133,5 @@ public:
   // Mesh and shader
   std::unique_ptr<Mesh> m_mesh;
   ShaderProgram m_meshShader;
+  ShaderProgram m_skyShader;
 };
