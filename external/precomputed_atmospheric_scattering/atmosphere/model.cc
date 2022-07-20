@@ -811,73 +811,75 @@ void Model::Init(unsigned int num_scattering_orders) {
   // here (and destroyed at the end of this method).
   GLuint fbo;
   glGenFramebuffers(1, &fbo);
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  GLint previous_fbo;
+  glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &previous_fbo);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+  {
+      // The actual precomputations depend on whether we want to store precomputed
+      // irradiance or illuminance values.
+      //if (num_precomputed_wavelengths_ <= 3) {
+      vec3 lambdas{kLambdaR, kLambdaG, kLambdaB};
+      mat3 luminance_from_radiance{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+      Precompute(fbo, delta_irradiance_texture, delta_rayleigh_scattering_texture,
+          delta_mie_scattering_texture, delta_scattering_density_texture,
+          delta_multiple_scattering_texture, lambdas, luminance_from_radiance,
+          false /* blend */, num_scattering_orders);
+      //}
+      //else {
+      //  constexpr double kLambdaMin = 360.0;
+      //  constexpr double kLambdaMax = 830.0;
+      //  int num_iterations = (num_precomputed_wavelengths_ + 2) / 3;
+      //  double dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations);
+      //  for (int i = 0; i < num_iterations; ++i) {
+      //    vec3 lambdas{
+      //      kLambdaMin + (3 * i + 0.5) * dlambda,
+      //      kLambdaMin + (3 * i + 1.5) * dlambda,
+      //      kLambdaMin + (3 * i + 2.5) * dlambda
+      //    };
+      //    auto coeff = [dlambda](double lambda, int component) {
+      //      // Note that we don't include MAX_LUMINOUS_EFFICACY here, to avoid
+      //      // artefacts due to too large values when using half precision on GPU.
+      //      // We add this term back in kAtmosphereShader, via
+      //      // SKY_SPECTRAL_RADIANCE_TO_LUMINANCE (see also the comments in the
+      //      // Model constructor).
+      //      double x = CieColorMatchingFunctionTableValue(lambda, 1);
+      //      double y = CieColorMatchingFunctionTableValue(lambda, 2);
+      //      double z = CieColorMatchingFunctionTableValue(lambda, 3);
+      //      return static_cast<float>((
+      //          XYZ_TO_SRGB[component * 3] * x +
+      //          XYZ_TO_SRGB[component * 3 + 1] * y +
+      //          XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda);
+      //    };
+      //    mat3 luminance_from_radiance{
+      //      coeff(lambdas[0], 0), coeff(lambdas[1], 0), coeff(lambdas[2], 0),
+      //      coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1),
+      //      coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)
+      //    };
+      //    Precompute(fbo, delta_irradiance_texture,
+      //        delta_rayleigh_scattering_texture, delta_mie_scattering_texture,
+      //        delta_scattering_density_texture, delta_multiple_scattering_texture,
+      //        lambdas, luminance_from_radiance, i > 0 /* blend */,
+      //        num_scattering_orders);
+      //  }
 
-  // The actual precomputations depend on whether we want to store precomputed
-  // irradiance or illuminance values.
-  //if (num_precomputed_wavelengths_ <= 3) {
-  vec3 lambdas{kLambdaR, kLambdaG, kLambdaB};
-  mat3 luminance_from_radiance{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-  Precompute(fbo, delta_irradiance_texture, delta_rayleigh_scattering_texture,
-      delta_mie_scattering_texture, delta_scattering_density_texture,
-      delta_multiple_scattering_texture, lambdas, luminance_from_radiance,
-      false /* blend */, num_scattering_orders);
-  //}
-  //else {
-  //  constexpr double kLambdaMin = 360.0;
-  //  constexpr double kLambdaMax = 830.0;
-  //  int num_iterations = (num_precomputed_wavelengths_ + 2) / 3;
-  //  double dlambda = (kLambdaMax - kLambdaMin) / (3 * num_iterations);
-  //  for (int i = 0; i < num_iterations; ++i) {
-  //    vec3 lambdas{
-  //      kLambdaMin + (3 * i + 0.5) * dlambda,
-  //      kLambdaMin + (3 * i + 1.5) * dlambda,
-  //      kLambdaMin + (3 * i + 2.5) * dlambda
-  //    };
-  //    auto coeff = [dlambda](double lambda, int component) {
-  //      // Note that we don't include MAX_LUMINOUS_EFFICACY here, to avoid
-  //      // artefacts due to too large values when using half precision on GPU.
-  //      // We add this term back in kAtmosphereShader, via
-  //      // SKY_SPECTRAL_RADIANCE_TO_LUMINANCE (see also the comments in the
-  //      // Model constructor).
-  //      double x = CieColorMatchingFunctionTableValue(lambda, 1);
-  //      double y = CieColorMatchingFunctionTableValue(lambda, 2);
-  //      double z = CieColorMatchingFunctionTableValue(lambda, 3);
-  //      return static_cast<float>((
-  //          XYZ_TO_SRGB[component * 3] * x +
-  //          XYZ_TO_SRGB[component * 3 + 1] * y +
-  //          XYZ_TO_SRGB[component * 3 + 2] * z) * dlambda);
-  //    };
-  //    mat3 luminance_from_radiance{
-  //      coeff(lambdas[0], 0), coeff(lambdas[1], 0), coeff(lambdas[2], 0),
-  //      coeff(lambdas[0], 1), coeff(lambdas[1], 1), coeff(lambdas[2], 1),
-  //      coeff(lambdas[0], 2), coeff(lambdas[1], 2), coeff(lambdas[2], 2)
-  //    };
-  //    Precompute(fbo, delta_irradiance_texture,
-  //        delta_rayleigh_scattering_texture, delta_mie_scattering_texture,
-  //        delta_scattering_density_texture, delta_multiple_scattering_texture,
-  //        lambdas, luminance_from_radiance, i > 0 /* blend */,
-  //        num_scattering_orders);
-  //  }
-
-  //  // After the above iterations, the transmittance texture contains the
-  //  // transmittance for the 3 wavelengths used at the last iteration. But we
-  //  // want the transmittance at kLambdaR, kLambdaG, kLambdaB instead, so we
-  //  // must recompute it here for these 3 wavelengths:
-  //  std::string header = glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB});
-  //  Program compute_transmittance(
-  //      kVertexShader, header + kComputeTransmittanceShader);
-  //  glFramebufferTexture(
-  //      GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, transmittance_texture_, 0);
-  //  glDrawBuffer(GL_COLOR_ATTACHMENT0);
-  //  glViewport(0, 0, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
-  //  compute_transmittance.Use();
-  //  DrawQuad({}, full_screen_quad_vao_);
-  //}
-
+      //  // After the above iterations, the transmittance texture contains the
+      //  // transmittance for the 3 wavelengths used at the last iteration. But we
+      //  // want the transmittance at kLambdaR, kLambdaG, kLambdaB instead, so we
+      //  // must recompute it here for these 3 wavelengths:
+      //  std::string header = glsl_header_factory_({kLambdaR, kLambdaG, kLambdaB});
+      //  Program compute_transmittance(
+      //      kVertexShader, header + kComputeTransmittanceShader);
+      //  glFramebufferTexture(
+      //      GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, transmittance_texture_, 0);
+      //  glDrawBuffer(GL_COLOR_ATTACHMENT0);
+      //  glViewport(0, 0, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+      //  compute_transmittance.Use();
+      //  DrawQuad({}, full_screen_quad_vao_);
+      //}
+      glUseProgram(0);
+  }
   // Delete the temporary resources allocated at the begining of this method.
-  glUseProgram(0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, previous_fbo);
   glDeleteFramebuffers(1, &fbo);
   glDeleteTextures(1, &delta_scattering_density_texture);
   glDeleteTextures(1, &delta_mie_scattering_texture);

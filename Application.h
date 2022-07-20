@@ -36,6 +36,7 @@ private:
     // POSTPROCESS STUFF
     GLuint m_hdrFramebuffer;
     GLuint m_hdrTexture;
+    GLuint m_depthRenderbuffer;
     ShaderProgram m_postprocessShader;
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;

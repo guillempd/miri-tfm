@@ -9,8 +9,9 @@ Window::Window()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-    m_window = glfwCreateWindow(1024, 768, "miri-tfm", nullptr, nullptr);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    // glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    m_window = glfwCreateWindow(1920, 1080, "miri-tfm", nullptr, nullptr);
 }
 
 Window::~Window()
