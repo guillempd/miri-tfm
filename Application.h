@@ -5,6 +5,7 @@
 #include "PhysicalSky.h"
 #include "Mesh.h"
 class Window;
+#include "ShaderProgram.h"
 
 #include <glm/glm.hpp>
 
@@ -31,4 +32,11 @@ private:
     SkyType m_skyType;
     Window* m_window;
     //std::unique_ptr<Mesh> m_mesh;
+
+    // POSTPROCESS STUFF
+    GLuint m_hdrFramebuffer;
+    GLuint m_hdrTexture;
+    ShaderProgram m_postprocessShader;
+    GLuint m_fullScreenQuadVao;
+    GLuint m_fullScreenQuadVbo;
 };

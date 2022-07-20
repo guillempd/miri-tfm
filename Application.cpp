@@ -33,10 +33,50 @@ Application::Application(int width, int height, Window* window)
     m_physicalSky.Init(m_window);
     //m_mesh = std::make_unique<Mesh>();
     OnFramebufferSize(width, height);
+
+    // FRAMEBUFFER STUFF
+    //glGenFramebuffers(1, &m_hdrFramebuffer);
+    //glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
+
+    //glGenTextures(1, &m_hdrTexture);
+    //glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, nullptr); // TODO: Correct width and height parameters
+
+    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_hdrTexture, 0);
+
+    // POSTPROCESS STUFF
+    ShaderStage vertexShader = ShaderStage(ShaderType::VERTEX);
+    ShaderStage fragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert");
+    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag");
+
+    m_postprocessShader.AttachShader(vertexShader.m_id);
+    m_postprocessShader.AttachShader(fragmentShader.m_id);
+    m_postprocessShader.Build();
+
+    // BUFFERS STUFF
+    glGenVertexArrays(1, &m_fullScreenQuadVao);
+    glBindVertexArray(m_fullScreenQuadVao);
+
+    float vertices[] = {
+        -1.0, -1.0, 0.0,
+        +1.0, -1.0, 0.0,
+        -1.0, +1.0, 0.0,
+        +1.0, +1.0, 0.0
+    };
+
+    glGenBuffers(1, &m_fullScreenQuadVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenQuadVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
 }
 
 Application::~Application()
 {
+    // glDeleteFramebuffers(1, &m_hdrFramebuffer);
+    // glDeleteTextures();
     std::cout << "Destroying Application" << std::endl;
 }
 
@@ -112,7 +152,18 @@ void Application::OnRender()
     //} break;
     //case SkyType::PHYSICAL:
     //{
-    m_physicalSky.Render(m_camera);
+    /*glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
+    m_physicalSky.Render(m_camera);*/
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+    m_postprocessShader.Use();
+
+    glBindVertexArray(m_fullScreenQuadVao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+    // TODO: Perform postprocessing (exposure adjustment, tone mapping, white balance, etc.)
+    // 
+    // 
     //m_mesh->Render(m_camera);
     // m_mesh->JustRender(m_camera);
     GLenum errorCode = glGetError();
