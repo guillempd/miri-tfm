@@ -17,6 +17,7 @@ uniform vec3 w_LightDir;
 out vec3 w_Pos;
 out vec3 v_LightDir;
 out vec3 v_Normal;
+out vec3 w_Normal;
 
 void main()
 {
@@ -24,4 +25,5 @@ void main()
     w_Pos = (model * vec4(m_Pos, 1.0)).xyz;
     v_LightDir = (view * vec4(w_LightDir, 0.0)).xyz;
     v_Normal = mat3(inverse(transpose(view * model))) * m_Normal;
+    w_Normal = mat3(inverse(transpose(model))) * m_Normal;
 }

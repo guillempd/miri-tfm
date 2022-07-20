@@ -128,7 +128,7 @@ PhysicalSky::PhysicalSky()
     , m_mesh()
     , m_meshShader()
 {
-    m_mesh = std::make_unique<Mesh>();
+    m_mesh = std::make_unique<Mesh>("D:/Escritorio/sphere.gltf");
 }
 
 /*
@@ -380,8 +380,8 @@ void PhysicalSky::Render(const Camera& camera) {
     glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
     glDepthFunc(GL_LEQUAL);
     {
-        glBindVertexArray(full_screen_quad_vao_);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        //glBindVertexArray(full_screen_quad_vao_);
+        //glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
         m_meshShader.Use();
         glm::mat4 model = glm::mat4(1.0f);

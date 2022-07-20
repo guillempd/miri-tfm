@@ -14,6 +14,7 @@ uniform vec3 w_PlanetPos;
 in vec3 w_Pos;
 in vec3 v_LightDir;
 in vec3 v_Normal;
+in vec3 w_Normal;
 
 out vec4 FragColor;
 
@@ -21,7 +22,7 @@ void main()
 {
     vec3 L = normalize(v_LightDir);
     vec3 N = normalize(v_Normal);
-    vec3 color = vec3(0.3, 0.3, 0.3);
+    vec3 color = vec3(0.1, 0.1, 0.1);
 
     vec3 ambientStrength = vec3(0.3);
     vec3 ambientTerm = color * ambientStrength;
@@ -41,13 +42,14 @@ void main()
     vec3 p_CameraPos = w_CameraPos - w_PlanetPos;
     vec3 p_Pos = w_Pos - w_PlanetPos;
     vec3 p_LightDir = w_LightDir;
+    vec3 p_Normal = normalize(w_Normal);
 
-    vec3 sun_irradiance = GetSunAndSkyIrradiance(p_Pos, vec3(0.0, 1.0, 0.0), p_LightDir, sky_irradiance);
+    vec3 sun_irradiance = GetSunAndSkyIrradiance(p_Pos, p_Normal, p_LightDir, sky_irradiance);
     vec3 radiance = GetSkyRadianceToPoint(p_CameraPos, p_Pos, 0.0, p_LightDir, transmittance);
     result = result * transmittance + radiance * 0.0001;
 
     vec3 alt_result = color * (sun_irradiance + sky_irradiance);
     alt_result = alt_result * transmittance + radiance;
 
-    FragColor = vec4(alt_result * 0.00001, 1.0);
+    FragColor = vec4(alt_result * 0.0001, 1.0);
 }
