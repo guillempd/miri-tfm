@@ -71,21 +71,6 @@ namespace {
     //constexpr double kSunAngularRadius = 0.00935 / 2.0;
     //constexpr double kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius;
     constexpr double kLengthUnitInMeters = 1000.0;
-
-    const char kVertexShader[] = R"(
-    #version 330
-    uniform mat4 model_from_view;
-    uniform mat4 view_from_clip;
-    layout(location = 0) in vec4 vertex;
-    out vec3 view_ray;
-    void main() {
-      view_ray =
-          (model_from_view * vec4((view_from_clip * vec4(vertex.xy, 1.0, 0.0)).xyz, 0.0)).xyz;
-      gl_Position = vertex;
-    })";
-
-#include <atmosphere/demo/demo.glsl.inc>
-
 }  // anonymous namespace
 
 /*
@@ -103,11 +88,8 @@ using namespace atmosphere;
 PhysicalSky::PhysicalSky()
     : use_combined_textures_(false)
     , use_half_precision_(false)
-    , do_white_balance_(false)
-    , program_(0)
     , sun_zenith_angle_radians_(1.3)
     , sun_azimuth_angle_radians_(2.9)
-    , exposure_(5e-5)
     , m_groundAlbedo                    (0.401978f, 0.401978f, 0.401978f) // unitless
     , m_sunIntensity                    (100000.000000f) // lux
     , m_sunAngularRadius                (0.004675f) // !
@@ -136,9 +118,6 @@ PhysicalSky::PhysicalSky()
 */
 
 PhysicalSky::~PhysicalSky() {
-    glDeleteShader(vertex_shader_);
-    glDeleteShader(fragment_shader_);
-    glDeleteProgram(program_);
     glDeleteBuffers(1, &full_screen_quad_vbo_);
     glDeleteVertexArrays(1, &full_screen_quad_vao_);
 }
@@ -228,77 +207,6 @@ void PhysicalSky::InitModel() {
     to get the final scene rendering program:
     */
 
-    vertex_shader_ = glCreateShader(GL_VERTEX_SHADER);
-    const char* const vertex_shader_source = kVertexShader;
-    std::cout << "----------------------VERTEX SHADER SOURCE----------------------" << std::endl;
-    std::cout << vertex_shader_source << std::endl;
-    std::cout << "------------------------------------------------------------------" << std::endl;
-    glShaderSource(vertex_shader_, 1, &vertex_shader_source, NULL);
-    glCompileShader(vertex_shader_);
-
-    GLint success;
-    glGetShaderiv(vertex_shader_, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        GLchar infoLog[4096];
-        glGetShaderInfoLog(vertex_shader_, 4096, nullptr, infoLog);
-        std::cerr << infoLog << std::endl;
-    }
-
-    const std::string fragment_shader_str =
-        "#version 330\n"
-        "const float kLengthUnitInMeters = " +
-        std::to_string(kLengthUnitInMeters) + ";\n" +
-        demo_glsl;
-    const char* fragment_shader_source = fragment_shader_str.c_str();
-    std::cout << "----------------------FRAGMENT SHADER SOURCE----------------------" << std::endl;
-    std::cout << fragment_shader_source << std::endl;
-    std::cout << "------------------------------------------------------------------" << std::endl;
-    fragment_shader_ = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader_, 1, &fragment_shader_source, NULL);
-    glCompileShader(fragment_shader_);
-
-    glGetShaderiv(fragment_shader_, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        GLchar infoLog[4096];
-        glGetShaderInfoLog(fragment_shader_, 4096, nullptr, infoLog);
-        std::cerr << infoLog << std::endl;
-    }
-
-    if (program_ != 0) {
-        glDeleteProgram(program_);
-    }
-    program_ = glCreateProgram();
-    glAttachShader(program_, vertex_shader_);
-    glAttachShader(program_, fragment_shader_);
-    glAttachShader(program_, model_->shader());
-    glLinkProgram(program_);
-    glDetachShader(program_, vertex_shader_);
-    glDetachShader(program_, fragment_shader_);
-    glDetachShader(program_, model_->shader());
-
-    glGetProgramiv(program_, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        GLchar infoLog[4096];
-        glGetProgramInfoLog(program_, 4096, nullptr, infoLog);
-        std::cerr << infoLog << std::endl;
-    }
-
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Compiling atmosphere shaders." << std::endl;
-
-    // NOTE(guillem): Code added by me
-    // Init mesh shader
-    /*m_meshProgram.reset(new ShaderProgram());
-    ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshPhysical.vert");
-    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/meshPhysical.frag");
-    if (use_luminance_ != Luminance::NONE) fragmentShaderSource.AddDefine("USE_LUMINANCE");
-    m_meshProgram->AttachShader(model_->shader());
-    m_meshProgram->Build(vertexShaderSource, fragmentShaderSource);*/
-
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Compiling mesh shader." << std::endl;
-
     /*
     <p>Finally, it sets the uniforms of this program that can be set once and for
     all (in our case this includes the <code>Model</code>'s texture uniforms,
@@ -378,73 +286,6 @@ void PhysicalSky::RenderMeshes(const Camera& camera)
     m_mesh->JustRender(camera);
 }
 
-void PhysicalSky::RenderSky(const Camera& camera)
-{
-    glUseProgram(program_);
-    model_->SetProgramUniforms(program_, 0, 1, 2, 3);
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting program uniforms." << std::endl;
-
-    /*double white_point_r = 1.0;
-    double white_point_g = 1.0;
-    double white_point_b = 1.0;*/
-    // TODO: Investigate about this white balance
-    /*if (do_white_balance_) {
-        Model::ConvertSpectrumToLinearSrgb(m_wavelengths, m_solar_irradiance,
-            &white_point_r, &white_point_g, &white_point_b);
-        double white_point = (white_point_r + white_point_g + white_point_b) / 3.0;
-        white_point_r /= white_point;
-        white_point_g /= white_point;
-        white_point_b /= white_point;
-    }*/
-    // glUniform3f(glGetUniformLocation(program_, "white_point"), white_point_r, white_point_g, white_point_b);
-    glUniform3f(glGetUniformLocation(program_, "earth_center"), 0.0, 0.0, -m_planetRadius);
-    glUniform2f(glGetUniformLocation(program_, "sun_size"), tan(m_sunAngularRadius), cos(m_sunAngularRadius));
-    // glUniform3f(glGetUniformLocation(program_, "ground_albedo"), m_groundAlbedo.r, m_groundAlbedo.g, m_groundAlbedo.b);
-
-    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
-    glUniformMatrix4fv(glGetUniformLocation(program_, "view_from_clip"), 1, GL_FALSE, glm::value_ptr(view_from_clip));
-
-    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
-    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
-    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
-    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
-    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
-
-    glm::mat4 model_from_view_ = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
-    glUniform3fv(glGetUniformLocation(program_, "camera"), 1, glm::value_ptr(cameraPosition));
-    glUniformMatrix4fv(glGetUniformLocation(program_, "model_from_view"), 1, GL_FALSE, glm::value_ptr(model_from_view_));
-    //glUniform1f(glGetUniformLocation(program_, "exposure"), exposure_);
-
-    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
-    glm::vec2 sunCos = glm::cos(sunAngles);
-    glm::vec2 sunSin = glm::sin(sunAngles);
-    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
-    glUniform3fv(glGetUniformLocation(program_, "sun_direction"), 1, glm::value_ptr(sunDirection));
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Submitting uniforms." << std::endl;
-    // GLint previousDepthFunc;
-    // glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-    glDepthFunc(GL_LEQUAL);
-    {
-        glBindVertexArray(full_screen_quad_vao_);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    //    m_meshProgram->Use();
-    //    m_meshProgram->SetMat4("model", glm::mat4(1.0f));
-    //    m_meshProgram->SetMat4("view", camera.GetViewMatrix());
-    //    m_meshProgram->SetMat4("projection", camera.GetProjectionMatrix());
-    //    m_meshProgram->SetVec3("w_CameraPos", camera.GetPosition());
-    //    m_meshProgram->SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_BottomRadius / kLengthUnitInMeters, 0.0f));
-    //    m_meshProgram->SetVec3("w_SunDirection", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
-
-    //    // NOTE: Review these two following values
-    //    m_meshProgram->SetFloat("exposure", use_luminance_ != Luminance::NONE ? exposure_ * 1e-5 : exposure_);
-    //    m_meshProgram->SetVec3("white_point", glm::vec3(1.0));
-    //    // TODO: Draw another mesh
-    //    // glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    }
-    // glDepthFunc(previousDepthFunc);
-}
-
 void PhysicalSky::RenderSkyNew(const Camera& camera)
 {
     m_skyShader.Use();
@@ -494,30 +335,24 @@ void PhysicalSky::RenderUi()
         shouldRecomputeModel |= ImGui::Checkbox("Use combined textures", &use_combined_textures_);
         shouldRecomputeModel |= ImGui::Checkbox("Use half precision", &use_half_precision_);
 
-        ImGui::Checkbox("Do white balance", &do_white_balance_);
-
-        float exposure_f = exposure_;
-        ImGui::DragFloat("Exposure", &exposure_f, 0.001f, 1e-5, 1e2, "%.6f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
-        exposure_ = exposure_f;
-
         ImGui::Text("Predefined Views");
-        if (ImGui::Button("1")) SetView(9000.0, 1.47, 0.0, 1.3, 3.0, 10.0);
+        if (ImGui::Button("1")) SetView(9000.0, 1.47, 0.0, 1.3, 3.0);
         ImGui::SameLine();
-        if (ImGui::Button("2")) SetView(9000.0, 1.47, 0.0, 1.564, -3.0, 10.0);
+        if (ImGui::Button("2")) SetView(9000.0, 1.47, 0.0, 1.564, -3.0);
         ImGui::SameLine();
-        if (ImGui::Button("3")) SetView(7000.0, 1.57, 0.0, 1.54, -2.96, 10.0);
+        if (ImGui::Button("3")) SetView(7000.0, 1.57, 0.0, 1.54, -2.96);
         ImGui::SameLine();
-        if (ImGui::Button("4")) SetView(7000.0, 1.57, 0.0, 1.328, -3.044, 10.0);
+        if (ImGui::Button("4")) SetView(7000.0, 1.57, 0.0, 1.328, -3.044);
         ImGui::SameLine();
-        if (ImGui::Button("5")) SetView(9000.0, 1.39, 0.0, 1.2, 0.7, 10.0);
+        if (ImGui::Button("5")) SetView(9000.0, 1.39, 0.0, 1.2, 0.7);
         ImGui::SameLine();
-        if (ImGui::Button("6")) SetView(9000.0, 1.5, 0.0, 1.628, 1.05, 200.0);
+        if (ImGui::Button("6")) SetView(9000.0, 1.5, 0.0, 1.628, 1.05);
         ImGui::SameLine();
-        if (ImGui::Button("7")) SetView(7000.0, 1.43, 0.0, 1.57, 1.34, 40.0);
+        if (ImGui::Button("7")) SetView(7000.0, 1.43, 0.0, 1.57, 1.34);
         ImGui::SameLine();
-        if (ImGui::Button("8")) SetView(2.7e6, 0.81, 0.0, 1.57, 2.0, 10.0);
+        if (ImGui::Button("8")) SetView(2.7e6, 0.81, 0.0, 1.57, 2.0);
         ImGui::SameLine();
-        if (ImGui::Button("9")) SetView(1.2e7, 0.0, 0.0, 0.93, -2.0, 10.0);
+        if (ImGui::Button("9")) SetView(1.2e7, 0.0, 0.0, 0.93, -2.0);
     }
     ImGui::End();
 
@@ -598,13 +433,11 @@ bool PhysicalSky::OnCursorMovement(glm::vec2 movement) {
 
 void PhysicalSky::SetView(double view_distance_meters,
     double view_zenith_angle_radians, double view_azimuth_angle_radians,
-    double sun_zenith_angle_radians, double sun_azimuth_angle_radians,
-    double exposure) {
+    double sun_zenith_angle_radians, double sun_azimuth_angle_radians) {
     // NOTE: This should set the camera settings
     //view_distance_meters_ = view_distance_meters;
     // view_zenith_angle_radians_ = view_zenith_angle_radians;
     // view_azimuth_angle_radians_ = view_azimuth_angle_radians;
     sun_zenith_angle_radians_ = sun_zenith_angle_radians;
     sun_azimuth_angle_radians_ = sun_azimuth_angle_radians;
-    exposure_ = exposure;
 }

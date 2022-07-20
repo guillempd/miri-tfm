@@ -59,9 +59,6 @@ public:
     ~PhysicalSky();
 
   const atmosphere::Model& model() const { return *model_; }
-  const GLuint vertex_shader() const { return vertex_shader_; }
-  const GLuint fragment_shader() const { return fragment_shader_; }
-  const GLuint program() const { return program_; }
 
   void Init(Window* m_window);
   void InitResources();
@@ -70,13 +67,12 @@ public:
   void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
   void RenderMeshes(const Camera& camera);
-  void RenderSky(const Camera& camera);
   void RenderSkyNew(const Camera& camera);
   void OnMouseClick(int button, int action, int mods);
   bool OnCursorMovement(glm::vec2 movement);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,
-      double sun_azimuth_angle_radians, double exposure);
+      double sun_azimuth_angle_radians);
 
   void RenderUi();
 
@@ -85,26 +81,19 @@ public:
   // TODO: Remove these parameters
   bool use_combined_textures_;
   bool use_half_precision_;
-  bool do_white_balance_;
 
   std::unique_ptr<atmosphere::Model> model_;
-  GLuint vertex_shader_;
-  GLuint fragment_shader_;
-  GLuint program_;
   GLuint full_screen_quad_vao_;
   GLuint full_screen_quad_vbo_;
   int window_id_;
 
   double sun_zenith_angle_radians_;
   double sun_azimuth_angle_radians_;
-  double exposure_;
 
   bool is_ctrl_key_pressed_;
 
   // NOTE(guillem): Added by me
-  double m_BottomRadius;
   bool is_mouse_button_pressed_;
-  std::unique_ptr<ShaderProgram> m_meshProgram;
 
   // NEW Parameters
   glm::vec3 m_groundAlbedo;
