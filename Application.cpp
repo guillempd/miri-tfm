@@ -35,14 +35,18 @@ Application::Application(int width, int height, Window* window)
     OnFramebufferSize(width, height);
 
     // FRAMEBUFFER STUFF
-    //glGenFramebuffers(1, &m_hdrFramebuffer);
-    //glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
+    glGenFramebuffers(1, &m_hdrFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
 
-    //glGenTextures(1, &m_hdrTexture);
-    //glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, nullptr); // TODO: Correct width and height parameters
+    glGenTextures(1, &m_hdrTexture);
+    glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, nullptr); // TODO: Correct width and height parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_hdrTexture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_hdrTexture, 0);
 
     // POSTPROCESS STUFF
     ShaderStage vertexShader = ShaderStage(ShaderType::VERTEX);
@@ -139,7 +143,6 @@ void Application::OnUpdate()
 
 void Application::OnRender()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     //switch (m_skyType)
     //{
@@ -152,12 +155,16 @@ void Application::OnRender()
     //} break;
     //case SkyType::PHYSICAL:
     //{
-    /*glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
-    m_physicalSky.Render(m_camera);*/
+    glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_physicalSky.Render(m_camera);
 
-    //glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_postprocessShader.Use();
-
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
+    m_postprocessShader.SetInt("hdrTexture", 0);
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
