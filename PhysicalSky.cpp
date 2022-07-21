@@ -219,8 +219,8 @@ void PhysicalSky::InitShaders()
 {
     ShaderStage meshVertexShader = ShaderStage(ShaderType::VERTEX);
     ShaderStage meshFragmentShader = ShaderStage(ShaderType::FRAGMENT);
-    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.vert", "D:/dev/miri-tfm/resources/shaders/");
-    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/meshNew.frag", "D:/dev/miri-tfm/resources/shaders/");
+    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
+    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
     m_meshShader.AttachShader(meshVertexShader.m_id);
     m_meshShader.AttachShader(meshFragmentShader.m_id);
     m_meshShader.AttachShader(model_->shader());
@@ -228,8 +228,8 @@ void PhysicalSky::InitShaders()
 
     ShaderStage skyVertexShader = ShaderStage(ShaderType::VERTEX);
     ShaderStage skyFragmentShader = ShaderStage(ShaderType::FRAGMENT);
-    skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/skyNew.vert", "D:/dev/miri-tfm/resources/shaders/");
-    skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/skyNew.frag", "D:/dev/miri-tfm/resources/shaders/");
+    skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
+    skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
     m_skyShader.AttachShader(model_->shader());
@@ -277,6 +277,7 @@ void PhysicalSky::RenderMeshes(const Camera& camera)
     m_meshShader.SetVec3("w_LightDir", glm::vec3(sunSin.y * sunSin.x, sunCos.y, sunSin.y * sunCos.x));
     m_meshShader.SetVec3("w_CameraPos", camera.GetPosition());
     m_meshShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_planetRadius, 0.0f));
+    m_meshShader.SetVec3("albedo", m_groundAlbedo);
     model_->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
     m_mesh->JustRender(camera);
 

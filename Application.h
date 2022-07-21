@@ -33,4 +33,5 @@ private:
     ShaderProgram m_postprocessShader;
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
+    float m_exposure;
 };

@@ -18,7 +18,6 @@ void main()
     if (dot(view_direction, sun_direction) > sun_size.y) {
         radiance = radiance + transmittance * GetSolarRadiance();
     }
-    // FragColor.rgb = pow(vec3(1.0) - exp(-radiance / white_point * exposure), vec3(1.0 / 2.2));
-    FragColor.rgb = radiance * 0.000025;
+    FragColor.rgb = radiance;
     FragColor.a = 1.0;
 }

@@ -15,6 +15,7 @@ Application::Application(int width, int height, Window* window)
     , m_previousCursorPosition()
     , m_physicalSky()
     , m_window(window)
+    , m_exposure(5e-5f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -120,6 +121,12 @@ void Application::OnUpdate()
 
     m_camera.OnUpdate();
 
+    if (ImGui::Begin("General Settings"))
+    {
+        ImGui::SliderFloat("Exposure", &m_exposure, 0.0f, 0.001f, "%.6f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+    }
+    ImGui::End();
+
     /*if (ImGui::Begin("Model"))
     {
         nfdfilteritem_t meshFilter = { "3D mesh", "gltf" };
@@ -144,6 +151,7 @@ void Application::OnRender()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
+    m_postprocessShader.SetFloat("exposure", m_exposure);
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

@@ -1,38 +1,36 @@
+#version 330 core
+#include "atmosphere.glsl"
+#define PI 3.14159265
+
 // m_ : Model Space
 // w_ : World Space
 // v_ : View Space
 // t_ : Tangent Space
+// p_ : Planet Space (World space shifted so that planet is at origin)
 
-in vec3 t_LightDir;
-// in vec3 t_CameraPos;
-in vec2 TexCoord;
+uniform vec3 w_LightDir;
+uniform vec3 w_CameraPos;
+uniform vec3 w_PlanetPos;
+uniform vec3 albedo;
 
-uniform vec3 albedoConstant;
-uniform sampler2D albedoTexture;
-uniform bool useAlbedoTexture;
-uniform sampler2D normalTexture;
-uniform bool useNormalTexture;
+in vec3 w_Pos;
+in vec3 v_LightDir;
+in vec3 v_Normal;
+in vec3 w_Normal;
 
 out vec4 FragColor;
 
 void main()
 {
-    vec3 L = t_LightDir;
-    vec3 N = vec3(0.0, 0.0, 1.0);
-    if (useNormalTexture) N = texture(normalTexture, TexCoord).xyz * 2.0 - 1.0;
-    vec3 color = albedoConstant;
-    if (useAlbedoTexture) color = texture(albedoTexture, TexCoord).rgb;
+    vec3 p_CameraPos = w_CameraPos - w_PlanetPos;
+    vec3 p_Pos = w_Pos - w_PlanetPos;
+    vec3 p_LightDir = w_LightDir;
+    vec3 p_Normal = normalize(w_Normal);
 
-    vec3 ambientStrength = vec3(0.3);
-    vec3 ambientTerm = color * ambientStrength;
-
-    vec3 diffuseStrength = vec3(0.7);
-    float diffuseFactor = max(dot(N, L), 0.0);
-    vec3 diffuseTerm = color * diffuseStrength * diffuseFactor;
-
-    vec3 specularTerm = vec3(0.0);
-
-    vec3 result = ambientTerm + diffuseTerm + specularTerm;
-
+    vec3 sky_irradiance;
+    vec3 sun_irradiance = GetSunAndSkyIrradiance(p_Pos, p_Normal, p_LightDir, sky_irradiance);
+    vec3 transmittance;
+    vec3 radiance = GetSkyRadianceToPoint(p_CameraPos, p_Pos, 0.0, p_LightDir, transmittance);
+    vec3 result = albedo * (1 / PI) * (sky_irradiance + sun_irradiance) * transmittance + radiance;
     FragColor = vec4(result, 1.0);
 }
