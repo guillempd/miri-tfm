@@ -236,9 +236,6 @@ void PhysicalSky::InitShaders()
     m_skyShader.Build();
 }
 
-void PhysicalSky::SetRenderingContext(const Camera& camera) const {
-    
-}
 
 /*
 <p>The scene rendering method simply sets the uniforms related to the camera
@@ -249,8 +246,6 @@ optionally a help screen).
 void PhysicalSky::Render(const Camera& camera) {
     RenderUi();
     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After rendering UI." << std::endl;
-    SetRenderingContext(camera);
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After setting context." << std::endl;
 
     // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
     // Might be ok to move these to the camera class
@@ -284,6 +279,7 @@ void PhysicalSky::RenderMeshes(const Camera& camera)
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
     m_meshShader.SetMat4("model", model);
+    m_meshShader.SetVec3("albedo", glm::vec3(0.3f, 0.3f, 0.3f));
     m_mesh->JustRender(camera);
 }
 

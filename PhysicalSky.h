@@ -64,7 +64,6 @@ public:
   void InitResources();
   void InitModel();
   void InitShaders();
-  void SetRenderingContext(const Camera& camera) const;
   void Render(const Camera& camera);
   void RenderMeshes(const Camera& camera);
   void RenderSkyNew(const Camera& camera);
