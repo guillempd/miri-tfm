@@ -54,6 +54,7 @@ Application::Application(int width, int height, Window* window)
     vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert");
     fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag");
 
+    m_postprocessShader.Create();
     m_postprocessShader.AttachShader(vertexShader.m_id);
     m_postprocessShader.AttachShader(fragmentShader.m_id);
     m_postprocessShader.Build();

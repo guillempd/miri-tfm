@@ -126,7 +126,6 @@ void PhysicalSky::Init(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
-    InitShaders();
 }
 
 void PhysicalSky::InitResources() {
@@ -213,6 +212,7 @@ void PhysicalSky::InitModel() {
     because our demo app does not have any texture of its own):
     */
     // SetRenderingContext();
+    InitShaders();
 }
 
 void PhysicalSky::InitShaders()
@@ -221,6 +221,7 @@ void PhysicalSky::InitShaders()
     ShaderStage meshFragmentShader = ShaderStage(ShaderType::FRAGMENT);
     meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
     meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_meshShader.Create();
     m_meshShader.AttachShader(meshVertexShader.m_id);
     m_meshShader.AttachShader(meshFragmentShader.m_id);
     m_meshShader.AttachShader(model_->shader());
@@ -230,6 +231,7 @@ void PhysicalSky::InitShaders()
     ShaderStage skyFragmentShader = ShaderStage(ShaderType::FRAGMENT);
     skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
     skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
     m_skyShader.AttachShader(model_->shader());
