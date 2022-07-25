@@ -49,9 +49,12 @@ Application::Application(int width, int height, Window* window)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER , m_depthRenderbuffer);
 
     // POSTPROCESS STUFF
-    ShaderStage vertexShader = ShaderStage(ShaderType::VERTEX);
-    ShaderStage fragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    ShaderStage vertexShader = ShaderStage();
+    vertexShader.Create(ShaderType::VERTEX);
     vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert");
+
+    ShaderStage fragmentShader = ShaderStage();
+    fragmentShader.Create(ShaderType::FRAGMENT);
     fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag");
 
     m_postprocessShader.Create();

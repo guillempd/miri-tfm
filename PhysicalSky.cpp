@@ -217,20 +217,28 @@ void PhysicalSky::InitModel() {
 
 void PhysicalSky::InitShaders()
 {
-    ShaderStage meshVertexShader = ShaderStage(ShaderType::VERTEX);
-    ShaderStage meshFragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    ShaderStage meshVertexShader = ShaderStage();
+    meshVertexShader.Create(ShaderType::VERTEX);
     meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
+
+    ShaderStage meshFragmentShader = ShaderStage();
+    meshFragmentShader.Create(ShaderType::FRAGMENT);
     meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
+
     m_meshShader.Create();
     m_meshShader.AttachShader(meshVertexShader.m_id);
     m_meshShader.AttachShader(meshFragmentShader.m_id);
     m_meshShader.AttachShader(model_->shader());
     m_meshShader.Build();
 
-    ShaderStage skyVertexShader = ShaderStage(ShaderType::VERTEX);
-    ShaderStage skyFragmentShader = ShaderStage(ShaderType::FRAGMENT);
+    ShaderStage skyVertexShader = ShaderStage();
+    skyVertexShader.Create(ShaderType::VERTEX);
     skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
+
+    ShaderStage skyFragmentShader = ShaderStage();
+    skyFragmentShader.Create(ShaderType::FRAGMENT);
     skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
+
     m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);

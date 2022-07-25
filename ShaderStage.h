@@ -9,8 +9,9 @@ enum class ShaderType {VERTEX, FRAGMENT};
 class ShaderStage
 {
 public:
-    ShaderStage(ShaderType type);
+    ShaderStage();
     ~ShaderStage();
+    void Create(ShaderType type);
     void Compile(const std::string& path, const std::string& includesPath = "");
     GLuint m_id;
 private:

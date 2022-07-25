@@ -4,37 +4,39 @@
 #define STB_INCLUDE_IMPLEMENTATION
 #include <stb_include.h>
 
-#include <glad/glad.h>
-
 #include <iostream>
 #include <vector>
 
 
-ShaderStage::ShaderStage(ShaderType type)
+ShaderStage::ShaderStage()
     : m_id(GL_NONE)
 {
-    switch (type)
-    {
-    case ShaderType::VERTEX:
-    {
-        m_id = glCreateShader(GL_VERTEX_SHADER);
-        break;
-    }
-    case ShaderType::FRAGMENT:
-    {
-        m_id = glCreateShader(GL_FRAGMENT_SHADER);
-        break;
-    }
-    default:
-    {
-        std::cerr << "[ShaderStage] E: Unknown ShaderType " << static_cast<int>(type) << "." << std::endl;
-    }
-    }
 }
 
 ShaderStage::~ShaderStage()
 {
     glDeleteShader(m_id);
+}
+
+void ShaderStage::Create(ShaderType type)
+{
+    if (m_id != GL_NONE) glDeleteShader(m_id);
+
+    switch (type)
+    {
+    case ShaderType::VERTEX:
+    {
+        m_id = glCreateShader(GL_VERTEX_SHADER);
+    } break;
+    case ShaderType::FRAGMENT:
+    {
+        m_id = glCreateShader(GL_FRAGMENT_SHADER);
+    } break;
+    default:
+    {
+        std::cerr << "[ShaderStage] E: Unknown ShaderType " << static_cast<int>(type) << "." << std::endl;
+    }
+    }
 }
 
 void ShaderStage::Compile(const std::string& path, const std::string& includesPath)
