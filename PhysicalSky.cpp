@@ -109,6 +109,9 @@ PhysicalSky::PhysicalSky()
     , m_shouldRecomputeModel            (false)
     , m_mesh()
     , m_meshShader()
+    , m_skyShader()
+    , m_demoShader()
+    , m_useDemo(true)
 {
     m_mesh = std::make_unique<Mesh>("D:/Escritorio/sphere.gltf");
 }
@@ -244,6 +247,15 @@ void PhysicalSky::InitShaders()
     m_skyShader.AttachShader(skyFragmentShader.m_id);
     m_skyShader.AttachShader(model_->shader());
     m_skyShader.Build();
+
+    ShaderStage demoFragmentShader = ShaderStage();
+    demoFragmentShader.Create(ShaderType::FRAGMENT);
+    demoFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/demo.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_demoShader.Create();
+    m_demoShader.AttachShader(skyVertexShader.m_id);
+    m_demoShader.AttachShader(demoFragmentShader.m_id);
+    m_demoShader.AttachShader(model_->shader());
+    m_demoShader.Build();
 }
 
 
@@ -261,9 +273,15 @@ void PhysicalSky::Render(const Camera& camera) {
     // Might be ok to move these to the camera class
     // IDEA: Create a compass widget to know in which direction we are looking at
 
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Pre submitting uniforms." << std::endl;
-    RenderMeshes(camera);
-    RenderSkyNew(camera);
+    if (m_useDemo)
+    {
+        RenderDemo(camera);
+    }
+    else
+    {
+        RenderMeshes(camera);
+        RenderSky(camera);
+    }
 }
 
 void PhysicalSky::RenderMeshes(const Camera& camera)
@@ -289,11 +307,11 @@ void PhysicalSky::RenderMeshes(const Camera& camera)
     model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
     m_meshShader.SetMat4("model", model);
-    m_meshShader.SetVec3("albedo", glm::vec3(0.3f, 0.3f, 0.3f));
+    m_meshShader.SetVec3("albedo", glm::vec3(0.8f, 0.8f, 0.8f));
     m_mesh->JustRender(camera);
 }
 
-void PhysicalSky::RenderSkyNew(const Camera& camera)
+void PhysicalSky::RenderSky(const Camera& camera)
 {
     m_skyShader.Use();
     model_->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
@@ -318,6 +336,47 @@ void PhysicalSky::RenderSkyNew(const Camera& camera)
     glm::vec2 sunSin = glm::sin(sunAngles);
     glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
     m_skyShader.SetVec3("sun_direction", sunDirection);
+
+    GLint previousDepthFunc;
+    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
+    glDepthFunc(GL_LEQUAL);
+    {
+        glBindVertexArray(full_screen_quad_vao_);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
+    glDepthFunc(previousDepthFunc);
+}
+
+void PhysicalSky::RenderDemo(const Camera& camera)
+{
+    m_demoShader.Use();
+    model_->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
+    m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_planetRadius));
+    m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_sunAngularRadius), glm::cos(m_sunAngularRadius), 0.0f));
+    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
+    m_demoShader.SetMat4("view_from_clip", view_from_clip);
+
+    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
+    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
+    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
+    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
+    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
+
+    glm::mat4 model_from_view = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
+
+
+    m_demoShader.SetVec3("camera", cameraPosition);
+    m_demoShader.SetMat4("model_from_view", model_from_view);
+
+    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
+    glm::vec2 sunCos = glm::cos(sunAngles);
+    glm::vec2 sunSin = glm::sin(sunAngles);
+    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
+    m_demoShader.SetVec3("sun_direction", sunDirection);
+    m_demoShader.SetVec3("ground_albedo", m_groundAlbedo);
+
+    if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
+
 
     GLint previousDepthFunc;
     glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
@@ -365,6 +424,12 @@ void PhysicalSky::RenderUi()
 
     if (shouldRecomputeModel) InitModel();
     if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;
+
+    if (ImGui::Begin("Scene Settings"))
+    {
+        ImGui::Checkbox("Use Demo Shader", &m_useDemo);
+    }
+    ImGui::End();
 
     if (ImGui::Begin("Physical Sky Settings New"))
     {

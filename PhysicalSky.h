@@ -66,7 +66,8 @@ public:
   void InitShaders();
   void Render(const Camera& camera);
   void RenderMeshes(const Camera& camera);
-  void RenderSkyNew(const Camera& camera);
+  void RenderSky(const Camera& camera);
+  void RenderDemo(const Camera& camera);
   void OnMouseClick(int button, int action, int mods);
   bool OnCursorMovement(glm::vec2 movement);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
@@ -84,7 +85,6 @@ public:
   std::unique_ptr<atmosphere::Model> model_;
   GLuint full_screen_quad_vao_;
   GLuint full_screen_quad_vbo_;
-  int window_id_;
 
   double sun_zenith_angle_radians_;
   double sun_azimuth_angle_radians_;
@@ -122,4 +122,7 @@ public:
   std::unique_ptr<Mesh> m_mesh;
   ShaderProgram m_meshShader;
   ShaderProgram m_skyShader;
+  ShaderProgram m_demoShader;
+
+  bool m_useDemo;
 };
