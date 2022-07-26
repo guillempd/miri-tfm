@@ -13,6 +13,8 @@ public:
     PhysicalSky();
     ~PhysicalSky();
     void Init();
+    void InitNewParameters();
+    void InitCurrentParameters();
     void InitResources();
     void InitShaders();
     void InitModel();
@@ -22,30 +24,80 @@ public:
 private:
     std::unique_ptr<atmosphere::Model> m_model;
 
-    glm::vec3 m_groundAlbedo;
-    float m_planetRadius;
-    float m_atmosphereHeight;
+    // Model parameters
+    // d: Default
+    // m: New
+    // c: Current
+    glm::vec3 m_dGroundAlbedo;
+    glm::vec3 m_nGroundAlbedo;
+    glm::vec3 m_cGroundAlbedo;
 
-    float m_sunIntensity;
-    float m_sunAngularRadius;
+    float m_dPlanetRadius;
+    float m_nPlanetRadius;
+    float m_cPlanetRadius;
 
-    glm::vec3 m_rayleighScatteringCoefficient;
-    float m_rayleighScatteringScale;
-    float m_rayleighExponentialDistribution;
+    float m_dAtmosphereHeight;
+    float m_nAtmosphereHeight;
+    float m_cAtmosphereHeight;
 
-    glm::vec3 m_mieScatteringCoefficient;
-    float m_mieScatteringScale;
-    glm::vec3 m_mieAbsorptionCoefficient;
-    float m_mieAbsorptionScale;
-    float m_miePhaseFunctionG;
-    float m_mieExponentialDistribution;
+    float m_dSunIntensity;
+    float m_nSunIntensity;
+    float m_cSunIntensity;
 
-    glm::vec3 m_ozoneAbsorptionCoefficient;
-    float m_ozoneAbsorptionScale;
+    float m_dSunAngularRadius;
+    float m_nSunAngularRadius;
+    float m_cSunAngularRadius;
+
+    glm::vec3 m_dRayleighScatteringCoefficient;
+    glm::vec3 m_nRayleighScatteringCoefficient;
+    glm::vec3 m_cRayleighScatteringCoefficient;
+
+    float m_dRayleighScatteringScale;
+    float m_nRayleighScatteringScale;
+    float m_cRayleighScatteringScale;
+
+    float m_dRayleighExponentialDistribution;
+    float m_nRayleighExponentialDistribution;
+    float m_cRayleighExponentialDistribution;
+
+    glm::vec3 m_dMieScatteringCoefficient;
+    glm::vec3 m_nMieScatteringCoefficient;
+    glm::vec3 m_cMieScatteringCoefficient;
+
+    float m_dMieScatteringScale;
+    float m_nMieScatteringScale;
+    float m_cMieScatteringScale;
+
+    glm::vec3 m_dMieAbsorptionCoefficient;
+    glm::vec3 m_nMieAbsorptionCoefficient;
+    glm::vec3 m_cMieAbsorptionCoefficient;
+
+    float m_dMieAbsorptionScale;
+    float m_nMieAbsorptionScale;
+    float m_cMieAbsorptionScale;
+
+    float m_dMiePhaseFunctionG;
+    float m_nMiePhaseFunctionG;
+    float m_cMiePhaseFunctionG;
+
+    float m_dMieExponentialDistribution;
+    float m_nMieExponentialDistribution;
+    float m_cMieExponentialDistribution;
+
+    glm::vec3 m_dOzoneAbsorptionCoefficient;
+    glm::vec3 m_nOzoneAbsorptionCoefficient;
+    glm::vec3 m_cOzoneAbsorptionCoefficient;
+
+    float m_dOzoneAbsorptionScale;
+    float m_nOzoneAbsorptionScale;
+    float m_cOzoneAbsorptionScale;
+
+    int m_dLimbDarkeningStrategy;
+    int m_nLimbDarkeningStrategy;
+    int m_cLimbDarkeningStrategy;
 
     bool m_shouldRecomputeModel;
 
-    int m_limbDarkeningStrategy;
 
 
     ShaderProgram m_skyShader;
