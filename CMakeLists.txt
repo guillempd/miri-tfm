@@ -14,6 +14,7 @@ add_executable(miri-tfm
     ShaderProgram.cpp
     ShaderStage.cpp
     # HdrSky.cpp
+    PhysicalSky.cpp
     Scene.cpp
     Mesh.cpp
     ImGuiNfd.cpp

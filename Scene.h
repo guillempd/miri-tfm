@@ -43,49 +43,31 @@ to render the scene and the help messages:
 #include "ShaderProgram.h"
 class Window;
 #include "Mesh.h"
+#include "PhysicalSky.h"
 
 #include <glad/glad.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
-
-#include <atmosphere/model.h>
 
 class Scene {
 public:
     Scene();
     ~Scene();
 
-  const atmosphere::Model& model() const { return *model_; }
-
   void Init(Window* m_window);
-  void InitResources();
   void InitModel();
   void InitShaders();
+  void Update();
   void Render(const Camera& camera);
   void RenderMeshes(const Camera& camera);
-  void RenderSky(const Camera& camera);
-  void RenderDemo(const Camera& camera);
   void OnMouseClick(int button, int action, int mods);
   bool OnCursorMovement(glm::vec2 movement);
   void SetView(double view_distance_meters, double view_zenith_angle_radians,
       double view_azimuth_angle_radians, double sun_zenith_angle_radians,
       double sun_azimuth_angle_radians);
-
-  void RenderUi();
-
  private:
-
-  // TODO: Remove these parameters
-  bool use_combined_textures_;
-  bool use_half_precision_;
-
-  std::unique_ptr<atmosphere::Model> model_;
-  GLuint full_screen_quad_vao_;
-  GLuint full_screen_quad_vbo_;
-
   double sun_zenith_angle_radians_;
   double sun_azimuth_angle_radians_;
 
@@ -94,37 +76,11 @@ public:
   // NOTE(guillem): Added by me
   bool is_mouse_button_pressed_;
 
-  // NEW Parameters
-  glm::vec3 m_groundAlbedo;
-  float m_planetRadius;
-  float m_atmosphereHeight;
-
-  float m_sunIntensity;
-  float m_sunAngularRadius;
-
-  glm::vec3 m_rayleighScatteringCoefficient;
-  float m_rayleighScatteringScale;
-  float m_rayleighExponentialDistribution;
-
-  glm::vec3 m_mieScatteringCoefficient;
-  float m_mieScatteringScale;
-  glm::vec3 m_mieAbsorptionCoefficient;
-  float m_mieAbsorptionScale;
-  float m_miePhaseFunctionG;
-  float m_mieExponentialDistribution;
-
-  glm::vec3 m_ozoneAbsorptionCoefficient;
-  float m_ozoneAbsorptionScale;
-
-  bool m_shouldRecomputeModel;
-
   // Mesh and shader
   std::unique_ptr<Mesh> m_mesh;
   ShaderProgram m_meshShader;
-  ShaderProgram m_skyShader;
-  ShaderProgram m_demoShader;
 
   bool m_useDemo;
 
-  int m_limbDarkeningStrategy;
+  PhysicalSky m_physicalSky;
 };

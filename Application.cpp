@@ -124,6 +124,7 @@ void Application::OnUpdate()
     ImGui::ShowDemoWindow();
 
     m_camera.OnUpdate();
+    m_scene.Update();
 
     if (ImGui::Begin("General Settings"))
     {

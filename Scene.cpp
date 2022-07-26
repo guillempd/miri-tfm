@@ -45,6 +45,8 @@ independent of our atmosphere model. The only part which is related to it is the
 
 #include <glad/glad.h>
 
+#include <glm/gtc/constants.hpp>
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -65,13 +67,7 @@ separate file <a href="demo.glsl.html">demo.glsl</a> (which is included here as
 a string literal via the generated file <code>demo.glsl.inc</code>):
 */
 
-namespace {
 
-    constexpr double kPi = 3.1415926;
-    //constexpr double kSunAngularRadius = 0.00935 / 2.0;
-    //constexpr double kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius;
-    constexpr double kLengthUnitInMeters = 1000.0;
-}  // anonymous namespace
 
 /*
 <p>The class constructor is straightforward and completely independent of our
@@ -86,33 +82,11 @@ will be used to render the scene and the help messages:
 using namespace atmosphere;
 
 Scene::Scene()
-    : use_combined_textures_(false)
-    , use_half_precision_(false)
-    , sun_zenith_angle_radians_(1.3)
+    : sun_zenith_angle_radians_(1.3)
     , sun_azimuth_angle_radians_(2.9)
-    , m_groundAlbedo                    (0.401978f, 0.401978f, 0.401978f) // unitless
-    , m_sunIntensity                    (100000.000000f) // lux
-    , m_sunAngularRadius                (0.004675f) // !
-    , m_planetRadius                    (6360.0f) // km
-    , m_atmosphereHeight                (60.0f) // km
-    , m_rayleighScatteringCoefficient   (0.175287f, 0.409607f, 1.000000f) // unitless
-    , m_rayleighScatteringScale         (0.033100f) // km^-1
-    , m_rayleighExponentialDistribution (8.000000f) // km
-    , m_mieScatteringCoefficient        (1.000000f, 1.000000f, 1.000000f) // unitless
-    , m_mieScatteringScale              (0.003996f) // km^-1
-    , m_mieAbsorptionCoefficient        (1.000000f, 1.000000f, 1.000000f) // unitless
-    , m_mieAbsorptionScale              (0.000444f) // km^-1
-    , m_miePhaseFunctionG               (0.800000f) // unitless
-    , m_mieExponentialDistribution      (1.200000f) // km
-    , m_ozoneAbsorptionCoefficient      (0.345561f, 1.000000f, 0.045189f) // unitless
-    , m_ozoneAbsorptionScale            (0.001881f) // km^-1
-    , m_shouldRecomputeModel            (false)
     , m_mesh()
     , m_meshShader()
-    , m_skyShader()
-    , m_demoShader()
     , m_useDemo(true)
-    , m_limbDarkeningStrategy(0)
 {
     m_mesh = std::make_unique<Mesh>("D:/Escritorio/sphere.gltf");
 }
@@ -122,38 +96,14 @@ Scene::Scene()
 */
 
 Scene::~Scene() {
-    glDeleteBuffers(1, &full_screen_quad_vbo_);
-    glDeleteVertexArrays(1, &full_screen_quad_vao_);
+
 }
 
 void Scene::Init(Window* window) {
     is_mouse_button_pressed_ = false;
-    InitResources();
     InitModel();
 }
 
-void Scene::InitResources() {
-    glGenVertexArrays(1, &full_screen_quad_vao_);
-    glBindVertexArray(full_screen_quad_vao_);
-    glGenBuffers(1, &full_screen_quad_vbo_);
-    glBindBuffer(GL_ARRAY_BUFFER, full_screen_quad_vbo_);
-    const GLfloat vertices[] = {
-        -1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        +1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        -1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        +1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0
-    };
-    glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
-    constexpr GLuint kAttribIndex = 0;
-    constexpr int kCoordsPerVertex = 4;
-    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 7 * sizeof(float), 0);
-    glEnableVertexAttribArray(kAttribIndex);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, 7 * sizeof(float), (void*)(4 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-}
 
 /*
 <p>The "real" initialization work, which is specific to our atmosphere model,
@@ -163,100 +113,54 @@ atmosphere:
 */
 
 void Scene::InitModel() {
-    const double max_sun_zenith_angle =
-        (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
-
-    int viewportData[4];
-    glGetIntegerv(GL_VIEWPORT, viewportData);
-
-    glm::dvec3 solar_irradiance = glm::dvec3(1.0) * static_cast<double>(m_sunIntensity);
-
-    DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / (static_cast<double>(m_rayleighExponentialDistribution) * 1000.0), 0.0, 0.0);
-    glm::dvec3 rayleigh_scattering = (static_cast<glm::dvec3>(m_rayleighScatteringCoefficient) * static_cast<double>(m_rayleighScatteringScale)) / 1000.0;
-
-    DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / (static_cast<double>(m_mieExponentialDistribution) * 1000.0), 0.0, 0.0);
-    glm::dvec3 mie_scattering = (static_cast<glm::dvec3>(m_mieScatteringCoefficient) * static_cast<double>(m_mieScatteringScale)) / 1000.0;
-    glm::dvec3 mie_extinction = mie_scattering + (static_cast<glm::dvec3>(m_mieAbsorptionCoefficient) * static_cast<double>(m_mieAbsorptionScale)) / 1000.0;
-
-    // Density profile increasing linearly from 0 to 1 between 10 and 25km, and
-    // decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
-    // profile from http://www.kln.ac.lk/science/Chemistry/Teaching_Resources/
-    // Documents/Introduction%20to%20atmospheric%20chemistry.pdf (page 10).
-    // TODO: Add parameters to control this profile layer
-    std::vector<DensityProfileLayer> ozone_density;
-    ozone_density.push_back(DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
-    ozone_density.push_back(DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
-    glm::dvec3 absorption_extinction = (static_cast<glm::dvec3>(m_ozoneAbsorptionCoefficient) * static_cast<double>(m_ozoneAbsorptionScale)) / 1000.0;
-
-    glm::dvec3 ground_albedo = static_cast<glm::dvec3>(m_groundAlbedo);
-    double bottom_radius = static_cast<double>(m_planetRadius) * 1000.0;
-    double top_radius = bottom_radius + static_cast<double>(m_atmosphereHeight) * 1000.0;
-    double mie_phase_function_g = static_cast<double>(m_miePhaseFunctionG);
-    double sun_angular_radius = static_cast<double>(m_sunAngularRadius);
-
-    model_.reset(new Model(solar_irradiance, sun_angular_radius,
-        bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
-        { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
-        ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
-    model_->Init();
-    glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
-
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Initializing model." << std::endl;
-
-    /*
-    <p>Then, it creates and compiles the vertex and fragment shaders used to render
-    our demo scene, and link them with the <code>Model</code>'s atmosphere shader
-    to get the final scene rendering program:
-    */
-
-    /*
-    <p>Finally, it sets the uniforms of this program that can be set once and for
-    all (in our case this includes the <code>Model</code>'s texture uniforms,
-    because our demo app does not have any texture of its own):
-    */
-    // SetRenderingContext();
-    InitShaders();
+    
 }
 
+// TODO
 void Scene::InitShaders()
 {
-    ShaderStage meshVertexShader = ShaderStage();
-    meshVertexShader.Create(ShaderType::VERTEX);
-    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
+    //ShaderStage meshVertexShader = ShaderStage();
+    //meshVertexShader.Create(ShaderType::VERTEX);
+    //meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
 
-    ShaderStage meshFragmentShader = ShaderStage();
-    meshFragmentShader.Create(ShaderType::FRAGMENT);
-    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
+    //ShaderStage meshFragmentShader = ShaderStage();
+    //meshFragmentShader.Create(ShaderType::FRAGMENT);
+    //meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
 
-    m_meshShader.Create();
-    m_meshShader.AttachShader(meshVertexShader.m_id);
-    m_meshShader.AttachShader(meshFragmentShader.m_id);
-    m_meshShader.AttachShader(model_->shader());
-    m_meshShader.Build();
+    //m_meshShader.Create();
+    //m_meshShader.AttachShader(meshVertexShader.m_id);
+    //m_meshShader.AttachShader(meshFragmentShader.m_id);
+    //m_meshShader.AttachShader(model_->shader()); // TODO: Get from m_physicalSky
+    //m_meshShader.Build();
+}
 
-    ShaderStage skyVertexShader = ShaderStage();
-    skyVertexShader.Create(ShaderType::VERTEX);
-    skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
+void Scene::Update()
+{
+    m_physicalSky.Update(); // TODO: If model is recomputed, initshaders again
 
-    ShaderStage skyFragmentShader = ShaderStage();
-    skyFragmentShader.Create(ShaderType::FRAGMENT);
-    skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
-
-    m_skyShader.Create();
-    m_skyShader.AttachShader(skyVertexShader.m_id);
-    m_skyShader.AttachShader(skyFragmentShader.m_id);
-    m_skyShader.AttachShader(model_->shader());
-    m_skyShader.Build();
-
-    ShaderStage demoFragmentShader = ShaderStage();
-    demoFragmentShader.Create(ShaderType::FRAGMENT);
-    demoFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/demo.frag", "D:/dev/miri-tfm/resources/shaders/");
-    m_demoShader.Create();
-    m_demoShader.AttachShader(skyVertexShader.m_id);
-    m_demoShader.AttachShader(demoFragmentShader.m_id);
-    m_demoShader.AttachShader(model_->shader());
-    m_demoShader.Build();
+    if (ImGui::Begin("Scene Settings"))
+    {
+        ImGui::Checkbox("Use Demo Shader", &m_useDemo);
+        ImGui::Text("Predefined Views");
+        if (ImGui::Button("1")) SetView(9000.0, 1.47, 0.0, 1.3, 3.0);
+        ImGui::SameLine();
+        if (ImGui::Button("2")) SetView(9000.0, 1.47, 0.0, 1.564, -3.0);
+        ImGui::SameLine();
+        if (ImGui::Button("3")) SetView(7000.0, 1.57, 0.0, 1.54, -2.96);
+        ImGui::SameLine();
+        if (ImGui::Button("4")) SetView(7000.0, 1.57, 0.0, 1.328, -3.044);
+        ImGui::SameLine();
+        if (ImGui::Button("5")) SetView(9000.0, 1.39, 0.0, 1.2, 0.7);
+        ImGui::SameLine();
+        if (ImGui::Button("6")) SetView(9000.0, 1.5, 0.0, 1.628, 1.05);
+        ImGui::SameLine();
+        if (ImGui::Button("7")) SetView(7000.0, 1.43, 0.0, 1.57, 1.34);
+        ImGui::SameLine();
+        if (ImGui::Button("8")) SetView(2.7e6, 0.81, 0.0, 1.57, 2.0);
+        ImGui::SameLine();
+        if (ImGui::Button("9")) SetView(1.2e7, 0.0, 0.0, 0.93, -2.0);
+    }
+    ImGui::End();
 }
 
 
@@ -267,27 +171,27 @@ optionally a help screen).
 */
 
 void Scene::Render(const Camera& camera) {
-    RenderUi();
-    if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After rendering UI." << std::endl;
+    // if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After rendering UI." << std::endl;
 
     // NOTE: Transform from our camera approach (classical opengl) to their camera approach (mathematical approach)
     // Might be ok to move these to the camera class
     // IDEA: Create a compass widget to know in which direction we are looking at
-
+    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_); // TODO: Make member of the class
     if (m_useDemo)
     {
-        RenderDemo(camera);
+        m_physicalSky.RenderDemo(camera, sunAngles);
     }
     else
     {
         RenderMeshes(camera);
-        RenderSky(camera);
+        m_physicalSky.Render(camera, sunAngles);
     }
 }
 
+// TODO
 void Scene::RenderMeshes(const Camera& camera)
 {
-    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
+   /* glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
     glm::vec2 sunCos = glm::cos(sunAngles);
     glm::vec2 sunSin = glm::sin(sunAngles);
     m_meshShader.Use();
@@ -309,189 +213,13 @@ void Scene::RenderMeshes(const Camera& camera)
     model = glm::translate(model, glm::vec3(0.0f, 1.0f, 0.0f));
     m_meshShader.SetMat4("model", model);
     m_meshShader.SetVec3("albedo", glm::vec3(0.8f, 0.8f, 0.8f));
-    m_mesh->JustRender(camera);
-}
-
-void Scene::RenderSky(const Camera& camera)
-{
-    m_skyShader.Use();
-    model_->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
-    m_skyShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_planetRadius));
-    m_skyShader.SetVec3("sun_size", glm::vec3(glm::tan(m_sunAngularRadius), glm::cos(m_sunAngularRadius), 0.0f));
-    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
-    m_skyShader.SetMat4("view_from_clip", view_from_clip);
-
-    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
-    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
-    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
-    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
-    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
-
-    glm::mat4 model_from_view = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
-
-    m_skyShader.SetVec3("camera", cameraPosition);
-    m_skyShader.SetMat4("model_from_view", model_from_view);
-
-    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
-    glm::vec2 sunCos = glm::cos(sunAngles);
-    glm::vec2 sunSin = glm::sin(sunAngles);
-    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
-    m_skyShader.SetVec3("sun_direction", sunDirection);
-
-    GLint previousDepthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-    glDepthFunc(GL_LEQUAL);
-    {
-        glBindVertexArray(full_screen_quad_vao_);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    }
-    glDepthFunc(previousDepthFunc);
-}
-
-void Scene::RenderDemo(const Camera& camera)
-{
-    m_demoShader.Use();
-    model_->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
-    m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_planetRadius));
-    m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_sunAngularRadius), glm::cos(m_sunAngularRadius), 0.0f));
-    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
-    m_demoShader.SetMat4("view_from_clip", view_from_clip);
-
-    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
-    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
-    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
-    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
-    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
-
-    glm::mat4 model_from_view = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
-
-
-    m_demoShader.SetVec3("camera", cameraPosition);
-    m_demoShader.SetMat4("model_from_view", model_from_view);
-
-    glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
-    glm::vec2 sunCos = glm::cos(sunAngles);
-    glm::vec2 sunSin = glm::sin(sunAngles);
-    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
-    m_demoShader.SetVec3("sun_direction", sunDirection);
-    m_demoShader.SetVec3("ground_albedo", m_groundAlbedo);
-    m_demoShader.SetInt("limb_darkening_strategy", m_limbDarkeningStrategy);
-
-    if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
-
-
-    GLint previousDepthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-    glDepthFunc(GL_LEQUAL);
-    {
-        glBindVertexArray(full_screen_quad_vao_);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    }
-    glDepthFunc(previousDepthFunc);
+    m_mesh->JustRender(camera);*/
 }
 
 /*
 <p>The other event handling methods are also straightforward, and do not
 interact with the atmosphere model:
 */
-
-void Scene::RenderUi()
-{
-    bool shouldRecomputeModel = false;
-    if (ImGui::Begin("Physical Sky Settings"))
-    {
-        shouldRecomputeModel |= ImGui::Checkbox("Use combined textures", &use_combined_textures_);
-        shouldRecomputeModel |= ImGui::Checkbox("Use half precision", &use_half_precision_);
-
-        ImGui::Text("Predefined Views");
-        if (ImGui::Button("1")) SetView(9000.0, 1.47, 0.0, 1.3, 3.0);
-        ImGui::SameLine();
-        if (ImGui::Button("2")) SetView(9000.0, 1.47, 0.0, 1.564, -3.0);
-        ImGui::SameLine();
-        if (ImGui::Button("3")) SetView(7000.0, 1.57, 0.0, 1.54, -2.96);
-        ImGui::SameLine();
-        if (ImGui::Button("4")) SetView(7000.0, 1.57, 0.0, 1.328, -3.044);
-        ImGui::SameLine();
-        if (ImGui::Button("5")) SetView(9000.0, 1.39, 0.0, 1.2, 0.7);
-        ImGui::SameLine();
-        if (ImGui::Button("6")) SetView(9000.0, 1.5, 0.0, 1.628, 1.05);
-        ImGui::SameLine();
-        if (ImGui::Button("7")) SetView(7000.0, 1.43, 0.0, 1.57, 1.34);
-        ImGui::SameLine();
-        if (ImGui::Button("8")) SetView(2.7e6, 0.81, 0.0, 1.57, 2.0);
-        ImGui::SameLine();
-        if (ImGui::Button("9")) SetView(1.2e7, 0.0, 0.0, 0.93, -2.0);
-    }
-    ImGui::End();
-
-    if (shouldRecomputeModel) InitModel();
-    if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;
-
-    if (ImGui::Begin("Scene Settings"))
-    {
-        ImGui::Checkbox("Use Demo Shader", &m_useDemo);
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Physical Sky Settings New"))
-    {
-        m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_groundAlbedo), ImGuiColorEditFlags_Float);
-
-        // TODO: Sun Color
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Intensity", &m_sunIntensity, 0.0f, 150000.0f);
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Angular Radius", &m_sunAngularRadius, 0.0f, 0.1f); // Change to angular diameter/size (?) This is in degrees convert to radians
-
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_planetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_atmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-
-
-        ImGui::RadioButton("None", &m_limbDarkeningStrategy, 0); ImGui::SameLine();
-        ImGui::RadioButton("Nec96", &m_limbDarkeningStrategy, 1); ImGui::SameLine();
-        ImGui::RadioButton("HM98", &m_limbDarkeningStrategy, 2); ImGui::SameLine();
-        ImGui::RadioButton("Other", &m_limbDarkeningStrategy, 3); ImGui::SameLine();
-        ImGui::RadioButton("Invalid", &m_limbDarkeningStrategy, 4);
-
-        if (ImGui::CollapsingHeader("Rayleigh"))
-        {
-            ImGui::PushID("Rayleigh");
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_rayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_rayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_rayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::PopID();
-        }
-
-        if (ImGui::CollapsingHeader("Mie"))
-        {
-            ImGui::PushID("Mie");
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_mieScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_mieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_mieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_mieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Phase Function G", &m_miePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_mieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::PopID();
-        }
-
-        if (ImGui::CollapsingHeader("Ozone"))
-        {
-            ImGui::PushID("Ozone");
-            // TODO: Layer
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_ozoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_ozoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::PopID();
-        }
-
-        if (m_shouldRecomputeModel)
-        {
-            if (ImGui::Button("Recompute Model"))
-            {
-                InitModel();
-                m_shouldRecomputeModel = false;
-            }
-        }
-    }
-    ImGui::End();
-}
 
 void Scene::OnMouseClick(int button, int action, int mods) {
     is_mouse_button_pressed_ = (action == GLFW_PRESS);
@@ -505,7 +233,7 @@ bool Scene::OnCursorMovement(glm::vec2 movement) {
     if (is_ctrl_key_pressed_)
     {
         sun_zenith_angle_radians_ -= movement.y / kScale;
-        sun_zenith_angle_radians_ = std::max(0.0, std::min(kPi, sun_zenith_angle_radians_));
+        sun_zenith_angle_radians_ = glm::max(0.0f, glm::min(glm::pi<float>(), static_cast<float>(sun_zenith_angle_radians_)));
         sun_azimuth_angle_radians_ += movement.x / kScale;
         return true;
     }
