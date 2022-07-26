@@ -125,4 +125,6 @@ public:
   ShaderProgram m_demoShader;
 
   bool m_useDemo;
+
+  int m_limbDarkeningStrategy;
 };

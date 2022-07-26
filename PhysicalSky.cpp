@@ -112,6 +112,7 @@ PhysicalSky::PhysicalSky()
     , m_skyShader()
     , m_demoShader()
     , m_useDemo(true)
+    , m_limbDarkeningStrategy(0)
 {
     m_mesh = std::make_unique<Mesh>("D:/Escritorio/sphere.gltf");
 }
@@ -374,6 +375,7 @@ void PhysicalSky::RenderDemo(const Camera& camera)
     glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
     m_demoShader.SetVec3("sun_direction", sunDirection);
     m_demoShader.SetVec3("ground_albedo", m_groundAlbedo);
+    m_demoShader.SetInt("limb_darkening_strategy", m_limbDarkeningStrategy);
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 
@@ -441,6 +443,13 @@ void PhysicalSky::RenderUi()
 
         m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_planetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
         m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_atmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+
+
+        ImGui::RadioButton("None", &m_limbDarkeningStrategy, 0); ImGui::SameLine();
+        ImGui::RadioButton("Nec96", &m_limbDarkeningStrategy, 1); ImGui::SameLine();
+        ImGui::RadioButton("HM98", &m_limbDarkeningStrategy, 2); ImGui::SameLine();
+        ImGui::RadioButton("Other", &m_limbDarkeningStrategy, 3); ImGui::SameLine();
+        ImGui::RadioButton("Invalid", &m_limbDarkeningStrategy, 4);
 
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
