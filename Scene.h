@@ -53,10 +53,10 @@ class Window;
 
 #include <atmosphere/model.h>
 
-class PhysicalSky {
+class Scene {
 public:
-    PhysicalSky();
-    ~PhysicalSky();
+    Scene();
+    ~Scene();
 
   const atmosphere::Model& model() const { return *model_; }
 

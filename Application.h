@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.h"
-#include "PhysicalSky.h"
+#include "Scene.h"
 class Window;
 #include "ShaderProgram.h"
 
@@ -23,7 +23,7 @@ public:
 private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
-    PhysicalSky m_physicalSky;
+    Scene m_scene;
     Window* m_window;
 
     // POSTPROCESS STUFF

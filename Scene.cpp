@@ -37,7 +37,7 @@ independent of our atmosphere model. The only part which is related to it is the
 <code>InitModel</code> method).
 */
 
-#include "PhysicalSky.h"
+#include "Scene.h"
 
 #include "Window.h"
 
@@ -85,7 +85,7 @@ will be used to render the scene and the help messages:
 
 using namespace atmosphere;
 
-PhysicalSky::PhysicalSky()
+Scene::Scene()
     : use_combined_textures_(false)
     , use_half_precision_(false)
     , sun_zenith_angle_radians_(1.3)
@@ -121,18 +121,18 @@ PhysicalSky::PhysicalSky()
 <p>The destructor is even simpler:
 */
 
-PhysicalSky::~PhysicalSky() {
+Scene::~Scene() {
     glDeleteBuffers(1, &full_screen_quad_vbo_);
     glDeleteVertexArrays(1, &full_screen_quad_vao_);
 }
 
-void PhysicalSky::Init(Window* window) {
+void Scene::Init(Window* window) {
     is_mouse_button_pressed_ = false;
     InitResources();
     InitModel();
 }
 
-void PhysicalSky::InitResources() {
+void Scene::InitResources() {
     glGenVertexArrays(1, &full_screen_quad_vao_);
     glBindVertexArray(full_screen_quad_vao_);
     glGenBuffers(1, &full_screen_quad_vbo_);
@@ -162,7 +162,7 @@ is done in the following method. It starts with the creation of an atmosphere
 atmosphere:
 */
 
-void PhysicalSky::InitModel() {
+void Scene::InitModel() {
     const double max_sun_zenith_angle =
         (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
 
@@ -219,7 +219,7 @@ void PhysicalSky::InitModel() {
     InitShaders();
 }
 
-void PhysicalSky::InitShaders()
+void Scene::InitShaders()
 {
     ShaderStage meshVertexShader = ShaderStage();
     meshVertexShader.Create(ShaderType::VERTEX);
@@ -266,7 +266,7 @@ position and to the Sun direction, and then draws a full screen quad (and
 optionally a help screen).
 */
 
-void PhysicalSky::Render(const Camera& camera) {
+void Scene::Render(const Camera& camera) {
     RenderUi();
     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: After rendering UI." << std::endl;
 
@@ -285,7 +285,7 @@ void PhysicalSky::Render(const Camera& camera) {
     }
 }
 
-void PhysicalSky::RenderMeshes(const Camera& camera)
+void Scene::RenderMeshes(const Camera& camera)
 {
     glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_);
     glm::vec2 sunCos = glm::cos(sunAngles);
@@ -312,7 +312,7 @@ void PhysicalSky::RenderMeshes(const Camera& camera)
     m_mesh->JustRender(camera);
 }
 
-void PhysicalSky::RenderSky(const Camera& camera)
+void Scene::RenderSky(const Camera& camera)
 {
     m_skyShader.Use();
     model_->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
@@ -348,7 +348,7 @@ void PhysicalSky::RenderSky(const Camera& camera)
     glDepthFunc(previousDepthFunc);
 }
 
-void PhysicalSky::RenderDemo(const Camera& camera)
+void Scene::RenderDemo(const Camera& camera)
 {
     m_demoShader.Use();
     model_->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
@@ -395,7 +395,7 @@ void PhysicalSky::RenderDemo(const Camera& camera)
 interact with the atmosphere model:
 */
 
-void PhysicalSky::RenderUi()
+void Scene::RenderUi()
 {
     bool shouldRecomputeModel = false;
     if (ImGui::Begin("Physical Sky Settings"))
@@ -493,12 +493,12 @@ void PhysicalSky::RenderUi()
     ImGui::End();
 }
 
-void PhysicalSky::OnMouseClick(int button, int action, int mods) {
+void Scene::OnMouseClick(int button, int action, int mods) {
     is_mouse_button_pressed_ = (action == GLFW_PRESS);
     is_ctrl_key_pressed_ = (mods & GLFW_MOD_CONTROL);
 }
 
-bool PhysicalSky::OnCursorMovement(glm::vec2 movement) {
+bool Scene::OnCursorMovement(glm::vec2 movement) {
     if (!is_mouse_button_pressed_) return false;
 
     constexpr double kScale = 500.0;
@@ -512,7 +512,7 @@ bool PhysicalSky::OnCursorMovement(glm::vec2 movement) {
     return false;
 }
 
-void PhysicalSky::SetView(double view_distance_meters,
+void Scene::SetView(double view_distance_meters,
     double view_zenith_angle_radians, double view_azimuth_angle_radians,
     double sun_zenith_angle_radians, double sun_azimuth_angle_radians) {
     // NOTE: This should set the camera settings
