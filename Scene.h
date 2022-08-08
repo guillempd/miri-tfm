@@ -44,6 +44,7 @@ to render the scene and the help messages:
 class Window;
 #include "Mesh.h"
 #include "PhysicalSky.h"
+#include "Coordinates.h"
 
 #include <glad/glad.h>
 
@@ -83,4 +84,5 @@ public:
   bool m_useDemo;
 
   PhysicalSky m_physicalSky;
+  Coordinates m_coordinates;
 };

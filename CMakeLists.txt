@@ -10,6 +10,7 @@ add_executable(miri-tfm
     Application.cpp
     Window.cpp
     Camera.cpp
+    Coordinates.cpp
     Texture.cpp
     ShaderProgram.cpp
     ShaderStage.cpp

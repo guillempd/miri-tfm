@@ -138,6 +138,8 @@ void Scene::Update()
 {
     m_physicalSky.Update(); // TODO: If model is recomputed, initshaders again
 
+    m_coordinates.Update();
+
     if (ImGui::Begin("Scene Settings"))
     {
         ImGui::Checkbox("Use Demo Shader", &m_useDemo);
@@ -162,7 +164,6 @@ void Scene::Update()
     }
     ImGui::End();
 }
-
 
 /*
 <p>The scene rendering method simply sets the uniforms related to the camera
