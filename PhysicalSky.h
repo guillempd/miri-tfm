@@ -111,4 +111,8 @@ private:
     // TODO: Remove these parameters
     bool use_combined_textures_;
     bool use_half_precision_;
+
+    // NEW MEMBER VARIABLES
+    ShaderProgram m_moonShader;
+    bool m_showBillboard;
 };

@@ -155,11 +155,9 @@ void PhysicalSky::InitShaders()
     ShaderStage skyVertexShader = ShaderStage();
     skyVertexShader.Create(ShaderType::VERTEX);
     skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
-
     ShaderStage skyFragmentShader = ShaderStage();
     skyFragmentShader.Create(ShaderType::FRAGMENT);
     skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
-
     m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
@@ -174,6 +172,17 @@ void PhysicalSky::InitShaders()
     m_demoShader.AttachShader(demoFragmentShader.m_id);
     m_demoShader.AttachShader(m_model->shader());
     m_demoShader.Build();
+
+    ShaderStage moonVertexShader = ShaderStage();
+    moonVertexShader.Create(ShaderType::VERTEX);
+    moonVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/moon.vert", "D:/dev/miri-tfm/resources/shaders/");
+    ShaderStage moonFragmentShader = ShaderStage();
+    moonFragmentShader.Create(ShaderType::FRAGMENT);
+    moonFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/moon.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_moonShader.Create();
+    m_moonShader.AttachShader(moonVertexShader.m_id);
+    m_moonShader.AttachShader(moonFragmentShader.m_id);
+    m_moonShader.Build();
 }
 
 void PhysicalSky::InitResources()
@@ -222,6 +231,7 @@ void PhysicalSky::Update()
 
     if (ImGui::Begin("Physical Sky Settings New"))
     {
+        ImGui::Checkbox("Show Billboard", &m_showBillboard);
         /*int popStyle = 0;
         if (m_cGroundAlbedo != m_nGroundAlbedo)
         {
@@ -370,4 +380,28 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     glDepthFunc(previousDepthFunc);
+
+    // NEW CODE
+    if (m_showBillboard)
+    {
+        m_moonShader.Use();
+
+        //glm::mat4 horizon_to_ogl = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        glm::mat4 horizon_to_ogl = glm::transpose(permutation);
+        sunDirection = glm::vec3(horizon_to_ogl * glm::vec4(sunDirection, 0.0f));
+
+        glm::vec3 position = camera.GetPosition() + 10.0f * sunDirection;
+        glm::vec3 forward = glm::normalize(sunDirection);
+        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        glm::vec3 up = glm::cross(right, forward);
+        glm::mat4 model = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-forward, 0.0), glm::vec4(position, 1.0));
+        //glm::mat4 model = glm::mat4(1.0f);
+        //model = glm::translate(model, camera.GetPosition() + glm::vec3(1.0f, 0.0f, -1.0f));
+
+        m_moonShader.SetMat4("model", model);
+        m_moonShader.SetMat4("view", camera.GetViewMatrix());
+        m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
+        glBindVertexArray(m_fullScreenQuadVao);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    }
 }

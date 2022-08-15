@@ -82,8 +82,8 @@ will be used to render the scene and the help messages:
 using namespace atmosphere;
 
 Scene::Scene()
-    : sun_zenith_angle_radians_(1.3)
-    , sun_azimuth_angle_radians_(2.9)
+    : sun_zenith_angle_radians_(glm::half_pi<float>())
+    , sun_azimuth_angle_radians_(glm::pi<float>())
     , m_mesh()
     , m_meshShader()
     , m_useDemo(true)
