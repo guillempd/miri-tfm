@@ -229,6 +229,8 @@ void PhysicalSky::Update()
     if (shouldRecomputeModel) InitModel();
     if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;*/
 
+    m_coordinates.Update();
+
     if (ImGui::Begin("Physical Sky Settings New"))
     {
         ImGui::Checkbox("Show Billboard", &m_showBillboard);
@@ -362,9 +364,12 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
     m_demoShader.SetVec3("camera", cameraPosition);
     m_demoShader.SetMat4("model_from_view", model_from_view);
 
-    glm::vec2 sunCos = glm::cos(sunAngles);
-    glm::vec2 sunSin = glm::sin(sunAngles);
-    glm::vec3 sunDirection = glm::vec3(sunCos.x * sunSin.y, sunSin.x * sunSin.y, sunCos.y);
+    glm::vec3 newSunAngles = m_coordinates.GetSunPosition();
+
+    glm::vec2 sunCos = glm::cos(newSunAngles);
+    glm::vec2 sunSin = glm::sin(newSunAngles);
+    glm::vec3 sunDirection = glm::vec3(sunCos.y * sunCos.x, sunCos.y * sunSin.x, sunSin.y);
+    
     m_demoShader.SetVec3("sun_direction", sunDirection);
     m_demoShader.SetVec3("ground_albedo", m_cGroundAlbedo);
     m_demoShader.SetInt("limb_darkening_strategy", m_cLimbDarkeningStrategy);

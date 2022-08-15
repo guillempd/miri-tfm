@@ -138,8 +138,6 @@ void Scene::Update()
 {
     m_physicalSky.Update(); // TODO: If model is recomputed, initshaders again
 
-    m_coordinates.Update();
-
     if (ImGui::Begin("Scene Settings"))
     {
         ImGui::Checkbox("Use Demo Shader", &m_useDemo);

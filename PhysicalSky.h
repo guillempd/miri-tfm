@@ -2,6 +2,7 @@
 
 #include "ShaderProgram.h"
 #include "Camera.h"
+#include "Coordinates.h"
 
 #include <glm/glm.hpp>
 
@@ -115,4 +116,5 @@ private:
     // NEW MEMBER VARIABLES
     ShaderProgram m_moonShader;
     bool m_showBillboard;
+    Coordinates m_coordinates;
 };

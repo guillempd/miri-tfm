@@ -10,6 +10,8 @@ public:
     Coordinates();
     ~Coordinates() = default;
     void Update();
+    glm::vec3 GetSunPosition();
+private:
     static void PrintJulianDate(double JD);
     static void PrintSunPosition(double T, double T_, double lon, double lat);
     static void PrintMoonPosition(double T, double T_, double lon, double lat);
@@ -24,7 +26,6 @@ public:
     static glm::mat3 Rz(float theta);
     static double GetJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT); // JD
     static double GetJulianCenturies(double JD); // T
-private:
     glm::vec3 m_sphericalCoordinates;
     glm::vec3 m_rectangularCoordinates;
     int m_M;
