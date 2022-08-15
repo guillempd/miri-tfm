@@ -11,6 +11,7 @@ public:
     ~Coordinates() = default;
     void Update();
     glm::vec3 GetSunPosition();
+    glm::vec3 GetMoonPosition();
 private:
     static void PrintJulianDate(double JD);
     static void PrintSunPosition(double T, double T_, double lon, double lat);

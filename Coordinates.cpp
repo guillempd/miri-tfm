@@ -81,6 +81,18 @@ glm::vec3 Coordinates::GetSunPosition()
     return sphericalHorizon;
 }
 
+glm::vec3 Coordinates::GetMoonPosition()
+{
+    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
+    double T = GetJulianCenturies(JD);
+    glm::vec3 sphericalEcliptic = GetMoonPosition(T);
+    glm::vec3 rectangularEcliptic = SphericalToRectangular(sphericalEcliptic);
+    glm::vec3 rectangulatEquatorial = RectangularEclipticToRectangularEquatorial(rectangularEcliptic, T);
+    glm::vec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEcliptic, T, T, m_lon, m_lat);
+    glm::vec3 sphericalHorizon = RectangularToSpherical(rectangularHorizon);
+    return sphericalHorizon;
+}
+
 void Coordinates::PrintJulianDate(double JD)
 {
     ImGui::Text("Julian Date (JD): %f", JD);

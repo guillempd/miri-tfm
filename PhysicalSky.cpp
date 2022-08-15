@@ -184,11 +184,14 @@ void PhysicalSky::InitShaders()
     m_moonShader.AttachShader(moonFragmentShader.m_id);
     m_moonShader.Build();
 
+    ShaderStage sunVertexShader = ShaderStage();
+    sunVertexShader.Create(ShaderType::VERTEX);
+    sunVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sun.vert", "D:/dev/miri-tfm/resources/shaders/");
     ShaderStage sunFragmentShader = ShaderStage();
     sunFragmentShader.Create(ShaderType::FRAGMENT);
     sunFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sun.frag", "D:/dev/miri-tfm/resources/shaders/");
     m_sunShader.Create();
-    m_sunShader.AttachShader(moonVertexShader.m_id);
+    m_sunShader.AttachShader(sunVertexShader.m_id);
     m_sunShader.AttachShader(sunFragmentShader.m_id);
     m_sunShader.AttachShader(m_model->shader());
     m_sunShader.Build();
@@ -426,6 +429,31 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 
-        // TODO: RENDER MOON AS BILLBOARD
+        // RENDER MOON AS BILLBOARD
+        m_moonShader.Use();
+        m_model->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
+
+        glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
+        glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
+        glm::vec2 moonHorizonSin = glm::sin(moonHorizonCoordinates);
+        glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);
+        glm::vec3 moonWorldDirection = glm::vec3(horizon_to_ogl * glm::vec4(moonHorizonDirection, 0.0));
+
+        glm::vec3 moonPosition = camera.GetPosition() + 10.0f * moonWorldDirection;
+        glm::vec3 moonForward = glm::normalize(moonWorldDirection);
+        glm::vec3 moonRight = glm::normalize(glm::cross(moonForward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        glm::vec3 moonUp = glm::cross(moonRight, moonForward);
+        glm::mat4 moonModel = glm::mat4(glm::vec4(moonRight, 0.0f), glm::vec4(moonUp, 0.0f), glm::vec4(-moonForward, 0.0), glm::vec4(moonPosition, 1.0));
+
+        m_moonShader.SetMat4("model", moonModel);
+        m_moonShader.SetMat4("view", camera.GetViewMatrix());
+        m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
+
+        glBindVertexArray(m_fullScreenQuadVao);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+        /*m_sunShader.SetVec3("w_CameraPos", camera.GetPosition());
+        m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+        m_sunShader.SetVec3("w_SunDirection", sunDirection);*/
     }
 }
