@@ -114,6 +114,7 @@ private:
     bool use_half_precision_;
 
     // NEW MEMBER VARIABLES
+    ShaderProgram m_sunShader;
     ShaderProgram m_moonShader;
     bool m_showBillboard;
     Coordinates m_coordinates;

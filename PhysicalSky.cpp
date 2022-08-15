@@ -183,6 +183,15 @@ void PhysicalSky::InitShaders()
     m_moonShader.AttachShader(moonVertexShader.m_id);
     m_moonShader.AttachShader(moonFragmentShader.m_id);
     m_moonShader.Build();
+
+    ShaderStage sunFragmentShader = ShaderStage();
+    sunFragmentShader.Create(ShaderType::FRAGMENT);
+    sunFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sun.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_sunShader.Create();
+    m_sunShader.AttachShader(moonVertexShader.m_id);
+    m_sunShader.AttachShader(sunFragmentShader.m_id);
+    m_sunShader.AttachShader(m_model->shader());
+    m_sunShader.Build();
 }
 
 void PhysicalSky::InitResources()
@@ -389,7 +398,9 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
     // NEW CODE
     if (m_showBillboard)
     {
-        m_moonShader.Use();
+        // RENDER SUN AS BILLBOARD
+        m_sunShader.Use();
+        m_model->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
 
         //glm::mat4 horizon_to_ogl = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         glm::mat4 horizon_to_ogl = glm::transpose(permutation);
@@ -403,10 +414,18 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         //glm::mat4 model = glm::mat4(1.0f);
         //model = glm::translate(model, camera.GetPosition() + glm::vec3(1.0f, 0.0f, -1.0f));
 
-        m_moonShader.SetMat4("model", model);
-        m_moonShader.SetMat4("view", camera.GetViewMatrix());
-        m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
+        m_sunShader.SetMat4("model", model);
+        m_sunShader.SetMat4("view", camera.GetViewMatrix());
+        m_sunShader.SetMat4("projection", camera.GetProjectionMatrix());
+
+        m_sunShader.SetVec3("w_CameraPos", camera.GetPosition());
+        m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+        m_sunShader.SetVec3("w_SunDirection", sunDirection);
+
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+
+        // TODO: RENDER MOON AS BILLBOARD
     }
 }
