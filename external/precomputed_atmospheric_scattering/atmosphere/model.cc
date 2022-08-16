@@ -519,6 +519,8 @@ initialize them), as well as a vertex buffer object to render a full screen quad
 Model::Model(
     const glm::dvec3& solar_irradiance,
     const double sun_angular_radius,
+    const glm::dvec3& moon_irradiance,
+    const double moon_angular_radius,
     double bottom_radius,
     double top_radius,
     const std::vector<DensityProfileLayer>& rayleigh_density,
@@ -625,6 +627,8 @@ Model::Model(
       "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(\n" +
           to_string(solar_irradiance, 1.0) + ",\n" +
           std::to_string(sun_angular_radius) + ",\n" +
+          to_string(moon_irradiance, 1.0) + ",\n" +
+          std::to_string(moon_angular_radius) + ",\n" +
           std::to_string(bottom_radius / length_unit_in_meters) + ",\n" +
           std::to_string(top_radius / length_unit_in_meters) + ",\n" +
           density_profile(rayleigh_density) + ",\n" +

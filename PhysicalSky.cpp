@@ -124,14 +124,17 @@ void PhysicalSky::InitModel()
     double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
     double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
 
-    m_sunModel.reset(new Model(solar_irradiance, sun_angular_radius,
+    glm::dvec3 moon_irradiance = solar_irradiance;
+    double moon_angular_radius = sun_angular_radius;
+
+    m_sunModel.reset(new Model(solar_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
     m_sunModel->Init();
 
-    m_moonModel.reset(new Model(solar_irradiance, sun_angular_radius,
+    m_moonModel.reset(new Model(solar_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,

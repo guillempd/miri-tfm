@@ -208,6 +208,11 @@ struct AtmosphereParameters {
   // The sun's angular radius. Warning: the implementation uses approximations
   // that are valid only if this angle is smaller than 0.1 radians.
   Angle sun_angular_radius;
+  // The moon irradiance (where?).
+  IrradianceSpectrum solar_irradiance;
+  // The moon's angular radius. Warning: the implementation uses approximations
+  // that are valid only if this angle is smaller than 0.1 radians.
+  Angle moon_angular_radius;
   // The distance between the planet center and the bottom of the atmosphere.
   Length bottom_radius;
   // The distance between the planet center and the top of the atmosphere.

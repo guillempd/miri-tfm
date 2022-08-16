@@ -188,6 +188,10 @@ class Model {
     // The sun's angular radius, in radians. Warning: the implementation uses
     // approximations that are valid only if this value is smaller than 0.1.
     double sun_angular_radius,
+    // NEW The moon irradiance (where?)
+    const glm::dvec3& moon_irradiance,
+    // NEW The moon angular radius, in radians
+    double moon_angular_radius,
     // The distance between the planet center and the bottom of the atmosphere,
     // in m.
     double bottom_radius,
