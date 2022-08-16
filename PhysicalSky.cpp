@@ -19,7 +19,7 @@ using namespace atmosphere;
 PhysicalSky::PhysicalSky()
     : m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
     , m_dSunIntensity(100000.000000f) // lux
-    , m_dSunAngularRadius(0.004675f) // !
+    , m_dSunAngularRadius(0.004675f) // rad
     , m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
@@ -409,7 +409,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glm::mat4 horizon_to_ogl = glm::transpose(permutation);
         sunDirection = glm::vec3(horizon_to_ogl * glm::vec4(sunDirection, 0.0f));
 
-        glm::vec3 position = camera.GetPosition() + 10.0f * sunDirection;
+        glm::vec3 position = camera.GetPosition() + sunDirection;
         glm::vec3 forward = glm::normalize(sunDirection);
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
         glm::vec3 up = glm::cross(right, forward);
@@ -417,7 +417,8 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         //glm::mat4 model = glm::mat4(1.0f);
         //model = glm::translate(model, camera.GetPosition() + glm::vec3(1.0f, 0.0f, -1.0f));
 
-        m_sunShader.SetMat4("model", model);
+        glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius)));
+        m_sunShader.SetMat4("model", model * scale);
         m_sunShader.SetMat4("view", camera.GetViewMatrix());
         m_sunShader.SetMat4("projection", camera.GetProjectionMatrix());
 
@@ -439,13 +440,14 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);
         glm::vec3 moonWorldDirection = glm::vec3(horizon_to_ogl * glm::vec4(moonHorizonDirection, 0.0));
 
-        glm::vec3 moonPosition = camera.GetPosition() + 10.0f * moonWorldDirection;
+        glm::vec3 moonPosition = camera.GetPosition() + moonWorldDirection;
         glm::vec3 moonForward = glm::normalize(moonWorldDirection);
         glm::vec3 moonRight = glm::normalize(glm::cross(moonForward, glm::vec3(0.0f, 1.0f, 0.0f)));
         glm::vec3 moonUp = glm::cross(moonRight, moonForward);
         glm::mat4 moonModel = glm::mat4(glm::vec4(moonRight, 0.0f), glm::vec4(moonUp, 0.0f), glm::vec4(-moonForward, 0.0), glm::vec4(moonPosition, 1.0));
+        glm::mat4 moonScale = scale; // TODO: Get moon angular size correctly
 
-        m_moonShader.SetMat4("model", moonModel);
+        m_moonShader.SetMat4("model", moonModel * scale);
         m_moonShader.SetMat4("view", camera.GetViewMatrix());
         m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
 
