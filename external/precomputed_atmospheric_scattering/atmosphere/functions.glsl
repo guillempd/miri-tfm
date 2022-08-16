@@ -1443,7 +1443,7 @@ equations can be simplified as follows:
 IrradianceSpectrum ComputeDirectIrradiance(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
-    Length r, Number mu_s, Angle source_angular_radius) {
+    Length r, Number mu_s, Angle source_angular_radius, IrradianceSpectrum source_irradiance) {
   assert(r >= atmosphere.bottom_radius && r <= atmosphere.top_radius);
   assert(mu_s >= -1.0 && mu_s <= 1.0);
 
@@ -1454,7 +1454,7 @@ IrradianceSpectrum ComputeDirectIrradiance(
     mu_s < -alpha_s ? 0.0 : (mu_s > alpha_s ? mu_s :
         (mu_s + alpha_s) * (mu_s + alpha_s) / (4.0 * alpha_s));
 
-  return atmosphere.solar_irradiance *
+  return source_irradiance *
       GetTransmittanceToTopAtmosphereBoundary(
           atmosphere, transmittance_texture, r, mu_s) * average_cosine_factor;
 
@@ -1559,12 +1559,13 @@ IrradianceSpectrum ComputeDirectIrradianceTexture(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     IN(Angle) source_angular_radius,
+    IN(IrradianceSpectrum) source_irradiance,
     IN(vec2) frag_coord) {
   Length r;
   Number mu_s;
   GetRMuSFromIrradianceTextureUv(
       atmosphere, frag_coord / IRRADIANCE_TEXTURE_SIZE, r, mu_s);
-  return ComputeDirectIrradiance(atmosphere, transmittance_texture, r, mu_s, source_angular_radius);
+  return ComputeDirectIrradiance(atmosphere, transmittance_texture, r, mu_s, source_angular_radius, source_irradiance);
 }
 
 /*

@@ -136,9 +136,14 @@ const char kComputeDirectIrradianceShader[] = R"(
     uniform int source;
     void main() {
       Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
-      if (source != 0) source_angular_radius = ATMOSPHERE.moon_angular_radius;
+      IrradianceSpectrum source_irradiance = ATMOSPHERE.solar_irradiance;
+      if (source != 0)
+      {
+          source_angular_radius = ATMOSPHERE.moon_angular_radius;
+          source_irradiance = ATMOSPHERE.moon_irradiance;
+      }
       delta_irradiance = ComputeDirectIrradianceTexture(
-          ATMOSPHERE, transmittance_texture, source_angular_radius, gl_FragCoord.xy);
+          ATMOSPHERE, transmittance_texture, source_angular_radius, source_irradiance, gl_FragCoord.xy);
       irradiance = vec3(0.0);
     })";
 
