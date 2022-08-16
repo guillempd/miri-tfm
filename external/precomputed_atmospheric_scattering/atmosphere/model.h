@@ -157,6 +157,9 @@ parameter):
 
 #include <glm/glm.hpp>
 
+#define SOURCE_SUN 0
+#define SOURCE_MOON 1
+
 namespace atmosphere {
 
 // An atmosphere layer of width 'width' (in m), and whose density is defined as
@@ -262,7 +265,8 @@ class Model {
     // Whether to use half precision floats (16 bits) or single precision floats
     // (32 bits) for the precomputed textures. Half precision is sufficient for
     // most cases, except for very high exposure values.
-    bool half_precision);
+    bool half_precision,
+    int light_source);
 
   ~Model();
 
@@ -307,6 +311,7 @@ class Model {
   GLuint atmosphere_shader_;
   GLuint full_screen_quad_vao_;
   GLuint full_screen_quad_vbo_;
+  int light_source_;
 };
 
 }  // namespace atmosphere

@@ -1443,11 +1443,11 @@ equations can be simplified as follows:
 IrradianceSpectrum ComputeDirectIrradiance(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
-    Length r, Number mu_s) {
+    Length r, Number mu_s, Angle source_angular_radius) {
   assert(r >= atmosphere.bottom_radius && r <= atmosphere.top_radius);
   assert(mu_s >= -1.0 && mu_s <= 1.0);
 
-  Number alpha_s = atmosphere.sun_angular_radius / rad;
+  Number alpha_s = source_angular_radius / rad;
   // Approximate average of the cosine factor mu_s over the visible fraction of
   // the Sun disc.
   Number average_cosine_factor =
@@ -1558,12 +1558,13 @@ const vec2 IRRADIANCE_TEXTURE_SIZE =
 IrradianceSpectrum ComputeDirectIrradianceTexture(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
+    IN(Angle) source_angular_radius,
     IN(vec2) frag_coord) {
   Length r;
   Number mu_s;
   GetRMuSFromIrradianceTextureUv(
       atmosphere, frag_coord / IRRADIANCE_TEXTURE_SIZE, r, mu_s);
-  return ComputeDirectIrradiance(atmosphere, transmittance_texture, r, mu_s);
+  return ComputeDirectIrradiance(atmosphere, transmittance_texture, r, mu_s, source_angular_radius);
 }
 
 /*

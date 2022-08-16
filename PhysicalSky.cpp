@@ -131,14 +131,14 @@ void PhysicalSky::InitModel()
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
+        kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_SUN));
     m_sunModel->Init();
 
     m_moonModel.reset(new Model(solar_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
+        kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_MOON));
     m_moonModel->Init();
 
 

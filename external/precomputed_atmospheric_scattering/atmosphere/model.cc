@@ -133,9 +133,12 @@ const char kComputeDirectIrradianceShader[] = R"(
     layout(location = 0) out vec3 delta_irradiance;
     layout(location = 1) out vec3 irradiance;
     uniform sampler2D transmittance_texture;
+    uniform int source;
     void main() {
+      Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
+      if (source != 0) source_angular_radius = ATMOSPHERE.moon_angular_radius;
       delta_irradiance = ComputeDirectIrradianceTexture(
-          ATMOSPHERE, transmittance_texture, gl_FragCoord.xy);
+          ATMOSPHERE, transmittance_texture, source_angular_radius, gl_FragCoord.xy);
       irradiance = vec3(0.0);
     })";
 
@@ -535,9 +538,11 @@ Model::Model(
     double max_sun_zenith_angle,
     double length_unit_in_meters,
     bool combine_scattering_textures,
-    bool half_precision) :
+    bool half_precision,
+    int light_source) :
         half_precision_(half_precision),
-        rgb_format_supported_(IsFramebufferRgbFormatSupported(half_precision)) {
+        rgb_format_supported_(IsFramebufferRgbFormatSupported(half_precision)),
+        light_source_(light_source) {
     auto to_string = [](const glm::dvec3& v, double scale)
     {
         double r = v.r * scale;
@@ -649,7 +654,7 @@ Model::Model(
           std::to_string(sun_k_r) + "," +
           std::to_string(sun_k_g) + "," +
           std::to_string(sun_k_b) + ");\n" +
-      functions_glsl;
+      functions_glsl0 + functions_glsl1 + functions_glsl2 + functions_glsl3;
   };
 
   // Allocate the precomputed textures, but don't precompute them yet.
@@ -987,6 +992,7 @@ void Model::Precompute(
   compute_direct_irradiance.Use();
   compute_direct_irradiance.BindTexture2d(
       "transmittance_texture", transmittance_texture_, 0);
+  compute_direct_irradiance.BindInt("source", light_source_);
   DrawQuad({false, blend}, full_screen_quad_vao_);
 
   // Compute the rayleigh and mie single scattering, store them in
