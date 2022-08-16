@@ -549,7 +549,7 @@ function of its <a href="https://en.wikipedia.org/wiki/Sagitta_(geometry)"
 approximate the transmittance to the Sun with the following function:
 */
 
-DimensionlessSpectrum GetTransmittanceToSun(
+DimensionlessSpectrum GetTransmittanceToSource(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     Length r, Number mu_s, Angle source_angular_radius) {
@@ -659,7 +659,7 @@ void ComputeSingleScatteringIntegrand(
       GetTransmittance(
           atmosphere, transmittance_texture, r, mu, d,
           ray_r_mu_intersects_ground) *
-      GetTransmittanceToSun(
+      GetTransmittanceToSource(
           atmosphere, transmittance_texture, r_d, mu_s_d, source_angular_radius);
   rayleigh = transmittance * GetProfileDensity(
       atmosphere.rayleigh_density, r_d - atmosphere.bottom_radius);
@@ -1877,22 +1877,22 @@ the irradiance for horizontal surfaces; we use the approximation defined in our
 The function below returns the direct and indirect irradiances separately:
 */
 
-IrradianceSpectrum GetSunAndSkyIrradiance(
+IrradianceSpectrum GetSourceAndSkyIrradiance(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     IN(IrradianceTexture) irradiance_texture,
-    IN(Position) point, IN(Direction) normal, IN(Direction) sun_direction, IN(Angle) source_angular_radius,
+    IN(Position) point, IN(Direction) normal, IN(Direction) source_direction, IN(Angle) source_angular_radius, IN(IrradianceSpectrum) source_irradiance,
     OUT(IrradianceSpectrum) sky_irradiance) {
   Length r = length(point);
-  Number mu_s = dot(point, sun_direction) / r;
+  Number mu_s = dot(point, source_direction) / r;
 
   // Indirect irradiance (approximated if the surface is not horizontal).
   sky_irradiance = GetIrradiance(atmosphere, irradiance_texture, r, mu_s) *
       (1.0 + dot(normal, point) / r) * 0.5;
 
   // Direct irradiance.
-  return atmosphere.solar_irradiance *
-      GetTransmittanceToSun(
+  return source_irradiance *
+      GetTransmittanceToSource(
           atmosphere, transmittance_texture, r, mu_s, source_angular_radius) *
-      max(dot(normal, sun_direction), 0.0);
+      max(dot(normal, source_direction), 0.0);
 }

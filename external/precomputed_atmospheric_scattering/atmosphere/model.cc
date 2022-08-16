@@ -256,8 +256,8 @@ const char kAtmosphereShader[] = R"(
     IrradianceSpectrum GetSunAndSunSkyIrradiance(
        Position p, Direction normal, Direction sun_direction,
        out IrradianceSpectrum sky_irradiance) {
-      return GetSunAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
-          sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, sky_irradiance);
+      return GetSourceAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
+          sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, ATMOSPHERE.solar_irradiance, sky_irradiance);
     }
 /*
     RadianceSpectrum GetSunRadiance() {
