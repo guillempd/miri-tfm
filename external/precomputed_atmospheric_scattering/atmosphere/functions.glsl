@@ -696,7 +696,7 @@ void ComputeSingleScattering(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     Length r, Number mu, Number mu_s, Number nu,
-    bool ray_r_mu_intersects_ground, Angle source_angular_radius,
+    bool ray_r_mu_intersects_ground, Angle source_angular_radius, IrradianceSpectrum source_irradiance,
     OUT(IrradianceSpectrum) rayleigh, OUT(IrradianceSpectrum) mie) {
   assert(r >= atmosphere.bottom_radius && r <= atmosphere.top_radius);
   assert(mu >= -1.0 && mu <= 1.0);
@@ -724,9 +724,9 @@ void ComputeSingleScattering(
     rayleigh_sum += rayleigh_i * weight_i;
     mie_sum += mie_i * weight_i;
   }
-  rayleigh = rayleigh_sum * dx * atmosphere.solar_irradiance *
+  rayleigh = rayleigh_sum * dx * source_irradiance *
       atmosphere.rayleigh_scattering;
-  mie = mie_sum * dx * atmosphere.solar_irradiance * atmosphere.mie_scattering;
+  mie = mie_sum * dx * source_irradiance * atmosphere.mie_scattering;
 }
 
 /*
@@ -931,7 +931,7 @@ the single scattering in a 3D texture:
 */
 
 void ComputeSingleScatteringTexture(IN(AtmosphereParameters) atmosphere,
-    IN(TransmittanceTexture) transmittance_texture, IN(Angle) source_angular_radius, IN(vec3) frag_coord,
+    IN(TransmittanceTexture) transmittance_texture, IN(Angle) source_angular_radius, IN(IrradianceSpectrum) source_irradiance, IN(vec3) frag_coord,
     OUT(IrradianceSpectrum) rayleigh, OUT(IrradianceSpectrum) mie) {
   Length r;
   Number mu;
@@ -941,7 +941,7 @@ void ComputeSingleScatteringTexture(IN(AtmosphereParameters) atmosphere,
   GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
       r, mu, mu_s, nu, ray_r_mu_intersects_ground);
   ComputeSingleScattering(atmosphere, transmittance_texture,
-      r, mu, mu_s, nu, ray_r_mu_intersects_ground, source_angular_radius, rayleigh, mie);
+      r, mu, mu_s, nu, ray_r_mu_intersects_ground, source_angular_radius, source_irradiance, rayleigh, mie);
 }
 
 /*

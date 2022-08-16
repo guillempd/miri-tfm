@@ -158,9 +158,14 @@ const char kComputeSingleScatteringShader[] = R"(
     uniform int source;
     void main() {
       Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
-      if (source != 0) source_angular_radius = ATMOSPHERE.sun_angular_radius;
+      IrradianceSpectrum source_irradiance = ATMOSPHERE.solar_irradiance;
+      if (source != 0)
+      {
+          source_angular_radius = ATMOSPHERE.moon_angular_radius;
+          source_irradiance = ATMOSPHERE.moon_irradiance;
+      }
       ComputeSingleScatteringTexture(
-          ATMOSPHERE, transmittance_texture, source_angular_radius, vec3(gl_FragCoord.xy, layer + 0.5),
+          ATMOSPHERE, transmittance_texture, source_angular_radius, source_irradiance, vec3(gl_FragCoord.xy, layer + 0.5),
           delta_rayleigh, delta_mie);
       scattering = vec4(luminance_from_radiance * delta_rayleigh.rgb,
           (luminance_from_radiance * delta_mie).r);
