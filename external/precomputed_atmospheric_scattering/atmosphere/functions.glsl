@@ -552,13 +552,13 @@ approximate the transmittance to the Sun with the following function:
 DimensionlessSpectrum GetTransmittanceToSun(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
-    Length r, Number mu_s) {
+    Length r, Number mu_s, Angle source_angular_radius) {
   Number sin_theta_h = atmosphere.bottom_radius / r;
   Number cos_theta_h = -sqrt(max(1.0 - sin_theta_h * sin_theta_h, 0.0));
   return GetTransmittanceToTopAtmosphereBoundary(
           atmosphere, transmittance_texture, r, mu_s) *
-      smoothstep(-sin_theta_h * atmosphere.sun_angular_radius / rad,
-                 sin_theta_h * atmosphere.sun_angular_radius / rad,
+      smoothstep(-sin_theta_h * source_angular_radius / rad,
+                 sin_theta_h * source_angular_radius / rad,
                  mu_s - cos_theta_h);
 }
 
@@ -651,7 +651,7 @@ void ComputeSingleScatteringIntegrand(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     Length r, Number mu, Number mu_s, Number nu, Length d,
-    bool ray_r_mu_intersects_ground,
+    bool ray_r_mu_intersects_ground, Angle source_angular_radius,
     OUT(DimensionlessSpectrum) rayleigh, OUT(DimensionlessSpectrum) mie) {
   Length r_d = ClampRadius(atmosphere, sqrt(d * d + 2.0 * r * mu * d + r * r));
   Number mu_s_d = ClampCosine((r * mu_s + d * nu) / r_d);
@@ -660,7 +660,7 @@ void ComputeSingleScatteringIntegrand(
           atmosphere, transmittance_texture, r, mu, d,
           ray_r_mu_intersects_ground) *
       GetTransmittanceToSun(
-          atmosphere, transmittance_texture, r_d, mu_s_d);
+          atmosphere, transmittance_texture, r_d, mu_s_d, source_angular_radius);
   rayleigh = transmittance * GetProfileDensity(
       atmosphere.rayleigh_density, r_d - atmosphere.bottom_radius);
   mie = transmittance * GetProfileDensity(
@@ -696,7 +696,7 @@ void ComputeSingleScattering(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     Length r, Number mu, Number mu_s, Number nu,
-    bool ray_r_mu_intersects_ground,
+    bool ray_r_mu_intersects_ground, Angle source_angular_radius,
     OUT(IrradianceSpectrum) rayleigh, OUT(IrradianceSpectrum) mie) {
   assert(r >= atmosphere.bottom_radius && r <= atmosphere.top_radius);
   assert(mu >= -1.0 && mu <= 1.0);
@@ -718,7 +718,7 @@ void ComputeSingleScattering(
     DimensionlessSpectrum rayleigh_i;
     DimensionlessSpectrum mie_i;
     ComputeSingleScatteringIntegrand(atmosphere, transmittance_texture,
-        r, mu, mu_s, nu, d_i, ray_r_mu_intersects_ground, rayleigh_i, mie_i);
+        r, mu, mu_s, nu, d_i, ray_r_mu_intersects_ground, source_angular_radius, rayleigh_i, mie_i);
     // Sample weight (from the trapezoidal rule).
     Number weight_i = (i == 0 || i == SAMPLE_COUNT) ? 0.5 : 1.0;
     rayleigh_sum += rayleigh_i * weight_i;
@@ -931,7 +931,7 @@ the single scattering in a 3D texture:
 */
 
 void ComputeSingleScatteringTexture(IN(AtmosphereParameters) atmosphere,
-    IN(TransmittanceTexture) transmittance_texture, IN(vec3) frag_coord,
+    IN(TransmittanceTexture) transmittance_texture, IN(Angle) source_angular_radius, IN(vec3) frag_coord,
     OUT(IrradianceSpectrum) rayleigh, OUT(IrradianceSpectrum) mie) {
   Length r;
   Number mu;
@@ -941,7 +941,7 @@ void ComputeSingleScatteringTexture(IN(AtmosphereParameters) atmosphere,
   GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
       r, mu, mu_s, nu, ray_r_mu_intersects_ground);
   ComputeSingleScattering(atmosphere, transmittance_texture,
-      r, mu, mu_s, nu, ray_r_mu_intersects_ground, rayleigh, mie);
+      r, mu, mu_s, nu, ray_r_mu_intersects_ground, source_angular_radius, rayleigh, mie);
 }
 
 /*
@@ -1881,7 +1881,7 @@ IrradianceSpectrum GetSunAndSkyIrradiance(
     IN(AtmosphereParameters) atmosphere,
     IN(TransmittanceTexture) transmittance_texture,
     IN(IrradianceTexture) irradiance_texture,
-    IN(Position) point, IN(Direction) normal, IN(Direction) sun_direction,
+    IN(Position) point, IN(Direction) normal, IN(Direction) sun_direction, IN(Angle) source_angular_radius,
     OUT(IrradianceSpectrum) sky_irradiance) {
   Length r = length(point);
   Number mu_s = dot(point, sun_direction) / r;
@@ -1893,6 +1893,6 @@ IrradianceSpectrum GetSunAndSkyIrradiance(
   // Direct irradiance.
   return atmosphere.solar_irradiance *
       GetTransmittanceToSun(
-          atmosphere, transmittance_texture, r, mu_s) *
+          atmosphere, transmittance_texture, r, mu_s, source_angular_radius) *
       max(dot(normal, sun_direction), 0.0);
 }

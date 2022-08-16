@@ -155,9 +155,12 @@ const char kComputeSingleScatteringShader[] = R"(
     uniform mat3 luminance_from_radiance;
     uniform sampler2D transmittance_texture;
     uniform int layer;
+    uniform int source;
     void main() {
+      Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
+      if (source != 0) source_angular_radius = ATMOSPHERE.sun_angular_radius;
       ComputeSingleScatteringTexture(
-          ATMOSPHERE, transmittance_texture, vec3(gl_FragCoord.xy, layer + 0.5),
+          ATMOSPHERE, transmittance_texture, source_angular_radius, vec3(gl_FragCoord.xy, layer + 0.5),
           delta_rayleigh, delta_mie);
       scattering = vec4(luminance_from_radiance * delta_rayleigh.rgb,
           (luminance_from_radiance * delta_mie).r);
@@ -254,7 +257,7 @@ const char kAtmosphereShader[] = R"(
        Position p, Direction normal, Direction sun_direction,
        out IrradianceSpectrum sky_irradiance) {
       return GetSunAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
-          sun_irradiance_texture, p, normal, sun_direction, sky_irradiance);
+          sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, sky_irradiance);
     }
 /*
     RadianceSpectrum GetSunRadiance() {
@@ -1023,6 +1026,7 @@ void Model::Precompute(
       "luminance_from_radiance", luminance_from_radiance);
   compute_single_scattering.BindTexture2d(
       "transmittance_texture", transmittance_texture_, 0);
+  compute_single_scattering.BindInt("source", light_source_);
   for (unsigned int layer = 0; layer < SCATTERING_TEXTURE_DEPTH; ++layer) {
     compute_single_scattering.BindInt("layer", layer);
     DrawQuad({false, false, blend, blend}, full_screen_quad_vao_);
