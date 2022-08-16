@@ -45,6 +45,7 @@ view ray with the shadow volume of S, in order to compute light shafts.
 uniform vec3 camera;
 uniform vec3 earth_center;
 uniform vec3 sun_direction;
+uniform vec3 moon_direction;
 uniform vec3 sun_size;
 uniform vec3 ground_albedo;
 uniform int limb_darkening_strategy;
@@ -70,20 +71,7 @@ const vec3 kSphereCenter = vec3(0.0, 0.0, 1000.0) / kLengthUnitInMeters;
 const float kSphereRadius = 1000.0 / kLengthUnitInMeters;
 const vec3 kSphereAlbedo = vec3(0.8);
 
-#ifdef USE_LUMINANCE
-#define GetSolarRadiance GetSolarLuminance
-#define GetSkyRadiance GetSkyLuminance
-#define GetSkyRadianceToPoint GetSkyLuminanceToPoint
-#define GetSunAndSkyIrradiance GetSunAndSkyIlluminance
-#endif
-
-vec3 GetSolarRadiance();
-vec3 GetSkyRadiance(vec3 camera, vec3 view_ray, float shadow_length,
-    vec3 sun_direction, out vec3 transmittance);
-vec3 GetSkyRadianceToPoint(vec3 camera, vec3 point, float shadow_length,
-    vec3 sun_direction, out vec3 transmittance);
-vec3 GetSunAndSkyIrradiance(
-    vec3 p, vec3 normal, vec3 sun_direction, out vec3 sky_irradiance);
+#include "atmosphere.glsl"
 
 /*<h3>Shadows and light shafts</h3>
 
@@ -364,10 +352,12 @@ follows, by multiplying the irradiance with the sphere BRDF:
 
     // Compute the radiance reflected by the sphere.
     vec3 sky_irradiance;
-    vec3 sun_irradiance = GetSunAndSkyIrradiance(
+    vec3 sun_irradiance = GetSunAndSunSkyIrradiance(
         point - earth_center, normal, sun_direction, sky_irradiance);
+    vec3 moon_irradiance = GetSunAndSunSkyIrradiance(
+        point - earth_center, normal, moon_direction, sky_irradiance);
     sphere_radiance =
-        kSphereAlbedo * (1.0 / PI) * (sun_irradiance + sky_irradiance);
+        kSphereAlbedo * (1.0 / PI) * (sun_irradiance + moon_irradiance + sky_irradiance);
 
 /*
 <p>Finally, we take into account the aerial perspective between the camera and
@@ -377,7 +367,7 @@ the sphere, which depends on the length of this segment which is in shadow:
         max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) *
         lightshaft_fadein_hack;
     vec3 transmittance;
-    vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center,
+    vec3 in_scatter = GetSunSkyRadianceToPoint(camera - earth_center,
         point - earth_center, shadow_length, sun_direction, transmittance);
     sphere_radiance = sphere_radiance * transmittance + in_scatter;
   }
@@ -408,7 +398,7 @@ on the ground by the sun and sky visibility factors):
 
     // Compute the radiance reflected by the ground.
     vec3 sky_irradiance;
-    vec3 sun_irradiance = GetSunAndSkyIrradiance(
+    vec3 sun_irradiance = GetSunAndSunSkyIrradiance(
         point - earth_center, normal, sun_direction, sky_irradiance);
     ground_radiance = ground_albedo * (1.0 / PI) * (
         sun_irradiance * GetSunVisibility(point, sun_direction) +
@@ -418,7 +408,7 @@ on the ground by the sun and sky visibility factors):
         max(0.0, min(shadow_out, distance_to_intersection) - shadow_in) *
         lightshaft_fadein_hack;
     vec3 transmittance;
-    vec3 in_scatter = GetSkyRadianceToPoint(camera - earth_center,
+    vec3 in_scatter = GetSunSkyRadianceToPoint(camera - earth_center,
         point - earth_center, shadow_length, sun_direction, transmittance);
     ground_radiance = ground_radiance * transmittance + in_scatter;
     ground_alpha = 1.0;
@@ -434,7 +424,7 @@ the scene:
   float shadow_length = max(0.0, shadow_out - shadow_in) *
       lightshaft_fadein_hack;
   vec3 transmittance;
-  vec3 radiance = GetSkyRadiance(
+  vec3 radiance = GetSunSkyRadiance(
       camera - earth_center, view_direction, shadow_length, sun_direction,
       transmittance);
 
@@ -452,7 +442,7 @@ the scene:
   float sun_visibility_factor = step(0.0, cos_phi - cos_omega); // NOTE: This might be changed to a smoothstep for some cheap antialiasing
   // float sun_visibility_factor = smoothstep(-aa * 1.0, 0.0, cos_phi - cos_omega);
   vec3 sun_limb_darkening_factor = max(vec3(0.0), GetLimbDarkeningFactor(centerToEdge)); // NOTE: limb_darkening_factor might incorporate sun_visibility_factor
-  radiance = radiance + sun_visibility_factor * sun_limb_darkening_factor * transmittance * GetSolarRadiance();
+  radiance = radiance + sun_visibility_factor * sun_limb_darkening_factor * transmittance * GetSunRadiance();
 
 
   radiance = mix(radiance, ground_radiance, ground_alpha);

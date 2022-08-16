@@ -23,7 +23,8 @@ public:
     void Render(const Camera& camera, const glm::vec2& sunAngles);
     void RenderDemo(const Camera& camera, const glm::vec2& sunAngles);
 private:
-    std::unique_ptr<atmosphere::Model> m_model;
+    std::unique_ptr<atmosphere::Model> m_sunModel;
+    std::unique_ptr<atmosphere::Model> m_moonModel;
 
     // Model parameters
     // d: Default

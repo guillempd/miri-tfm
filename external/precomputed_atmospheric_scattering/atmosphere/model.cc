@@ -219,66 +219,61 @@ shader).
 */
 
 const char kAtmosphereShader[] = R"(
-    uniform sampler2D transmittance_texture;
-    uniform sampler3D scattering_texture;
-    uniform sampler3D single_mie_scattering_texture;
-    uniform sampler2D irradiance_texture;
-    #ifdef RADIANCE_API_ENABLED
-    RadianceSpectrum GetSolarRadiance() {
+    uniform sampler2D sun_transmittance_texture;
+    uniform sampler3D sun_scattering_texture;
+    uniform sampler3D sun_single_mie_scattering_texture;
+    uniform sampler2D sun_irradiance_texture;
+
+    RadianceSpectrum GetSunRadiance() {
       return ATMOSPHERE.solar_irradiance /
           (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius);
     }
-    RadianceSpectrum GetSkyRadiance(
+    RadianceSpectrum GetSunSkyRadiance(
         Position camera, Direction view_ray, Length shadow_length,
         Direction sun_direction, out DimensionlessSpectrum transmittance) {
-      return GetSkyRadiance(ATMOSPHERE, transmittance_texture,
-          scattering_texture, single_mie_scattering_texture,
+      return GetSkyRadiance(ATMOSPHERE, sun_transmittance_texture,
+          sun_scattering_texture, sun_single_mie_scattering_texture,
           camera, view_ray, shadow_length, sun_direction, transmittance);
     }
-    RadianceSpectrum GetSkyRadianceToPoint(
+    RadianceSpectrum GetSunSkyRadianceToPoint(
         Position camera, Position point, Length shadow_length,
         Direction sun_direction, out DimensionlessSpectrum transmittance) {
-      return GetSkyRadianceToPoint(ATMOSPHERE, transmittance_texture,
-          scattering_texture, single_mie_scattering_texture,
+      return GetSkyRadianceToPoint(ATMOSPHERE, sun_transmittance_texture,
+          sun_scattering_texture, sun_single_mie_scattering_texture,
           camera, point, shadow_length, sun_direction, transmittance);
     }
-    IrradianceSpectrum GetSunAndSkyIrradiance(
+    IrradianceSpectrum GetSunAndSunSkyIrradiance(
        Position p, Direction normal, Direction sun_direction,
        out IrradianceSpectrum sky_irradiance) {
-      return GetSunAndSkyIrradiance(ATMOSPHERE, transmittance_texture,
-          irradiance_texture, p, normal, sun_direction, sky_irradiance);
+      return GetSunAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
+          sun_irradiance_texture, p, normal, sun_direction, sky_irradiance);
     }
-    #endif
-    Luminance3 GetSolarLuminance() {
+/*
+    RadianceSpectrum GetSunRadiance() {
       return ATMOSPHERE.solar_irradiance /
-          (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius) *
-          SUN_SPECTRAL_RADIANCE_TO_LUMINANCE;
+          (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius);
     }
-    Luminance3 GetSkyLuminance(
+    RadianceSpectrum GetMoonSkyRadiance(
         Position camera, Direction view_ray, Length shadow_length,
-        Direction sun_direction, out DimensionlessSpectrum transmittance) {
-      return GetSkyRadiance(ATMOSPHERE, transmittance_texture,
-          scattering_texture, single_mie_scattering_texture,
-          camera, view_ray, shadow_length, sun_direction, transmittance) *
-          SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+        Direction moon_direction, out DimensionlessSpectrum transmittance) {
+      return GetSkyRadiance(ATMOSPHERE, moon_transmittance_texture,
+          moon_scattering_texture, moon_single_mie_scattering_texture,
+          camera, view_ray, shadow_length, moon_direction, transmittance);
     }
-    Luminance3 GetSkyLuminanceToPoint(
+    RadianceSpectrum GetMoonSkyRadianceToPoint(
         Position camera, Position point, Length shadow_length,
-        Direction sun_direction, out DimensionlessSpectrum transmittance) {
-      return GetSkyRadianceToPoint(ATMOSPHERE, transmittance_texture,
-          scattering_texture, single_mie_scattering_texture,
-          camera, point, shadow_length, sun_direction, transmittance) *
-          SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
+        Direction moon_direction, out DimensionlessSpectrum transmittance) {
+      return GetSkyRadianceToPoint(ATMOSPHERE, moon_transmittance_texture,
+          moon_scattering_texture, moon_single_mie_scattering_texture,
+          camera, point, shadow_length, moon_direction, transmittance);
     }
-    Illuminance3 GetSunAndSkyIlluminance(
-       Position p, Direction normal, Direction sun_direction,
+    IrradianceSpectrum GetMoonAndMoonSkyIrradiance(
+       Position p, Direction normal, Direction moon_direction,
        out IrradianceSpectrum sky_irradiance) {
-      IrradianceSpectrum sun_irradiance = GetSunAndSkyIrradiance(
-          ATMOSPHERE, transmittance_texture, irradiance_texture, p, normal,
-          sun_direction, sky_irradiance);
-      sky_irradiance *= SKY_SPECTRAL_RADIANCE_TO_LUMINANCE;
-      return sun_irradiance * SUN_SPECTRAL_RADIANCE_TO_LUMINANCE;
-    })";
+      return GetSunAndSkyIrradiance(ATMOSPHERE, moon_transmittance_texture,
+          moon_irradiance_texture, p, normal, moon_direction, sky_irradiance);
+    }*/
+)";
 
 /*<h3 id="utilities">Utility classes and functions</h3>
 
@@ -903,23 +898,23 @@ void Model::SetProgramUniforms(
     GLuint single_mie_scattering_texture_unit) const {
   glActiveTexture(GL_TEXTURE0 + transmittance_texture_unit);
   glBindTexture(GL_TEXTURE_2D, transmittance_texture_);
-  glUniform1i(glGetUniformLocation(program, "transmittance_texture"),
+  glUniform1i(glGetUniformLocation(program, "sun_transmittance_texture"),
       transmittance_texture_unit);
 
   glActiveTexture(GL_TEXTURE0 + scattering_texture_unit);
   glBindTexture(GL_TEXTURE_3D, scattering_texture_);
-  glUniform1i(glGetUniformLocation(program, "scattering_texture"),
+  glUniform1i(glGetUniformLocation(program, "sun_scattering_texture"),
       scattering_texture_unit);
 
   glActiveTexture(GL_TEXTURE0 + irradiance_texture_unit);
   glBindTexture(GL_TEXTURE_2D, irradiance_texture_);
-  glUniform1i(glGetUniformLocation(program, "irradiance_texture"),
+  glUniform1i(glGetUniformLocation(program, "sun_irradiance_texture"),
       irradiance_texture_unit);
 
   if (optional_single_mie_scattering_texture_ != 0) {
     glActiveTexture(GL_TEXTURE0 + single_mie_scattering_texture_unit);
     glBindTexture(GL_TEXTURE_3D, optional_single_mie_scattering_texture_);
-    glUniform1i(glGetUniformLocation(program, "single_mie_scattering_texture"),
+    glUniform1i(glGetUniformLocation(program, "sun_single_mie_scattering_texture"),
         single_mie_scattering_texture_unit);
   }
 }

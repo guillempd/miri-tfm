@@ -124,12 +124,21 @@ void PhysicalSky::InitModel()
     double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
     double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
 
-    m_model.reset(new Model(solar_irradiance, sun_angular_radius,
+    m_sunModel.reset(new Model(solar_irradiance, sun_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
-    m_model->Init();
+    m_sunModel->Init();
+
+    m_moonModel.reset(new Model(solar_irradiance, sun_angular_radius,
+        bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
+        { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
+        ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
+        kLengthUnitInMeters, use_combined_textures_, use_half_precision_));
+    m_moonModel->Init();
+
+
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "[OpenGL] E: Initializing model." << std::endl;
@@ -155,14 +164,14 @@ void PhysicalSky::InitShaders()
     ShaderStage skyVertexShader = ShaderStage();
     skyVertexShader.Create(ShaderType::VERTEX);
     skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
-    ShaderStage skyFragmentShader = ShaderStage();
+    /*ShaderStage skyFragmentShader = ShaderStage();
     skyFragmentShader.Create(ShaderType::FRAGMENT);
     skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
     m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
-    m_skyShader.AttachShader(m_model->shader());
-    m_skyShader.Build();
+    m_skyShader.AttachShader(m_sunModel->shader());
+    m_skyShader.Build();*/
 
     ShaderStage demoFragmentShader = ShaderStage();
     demoFragmentShader.Create(ShaderType::FRAGMENT);
@@ -170,7 +179,8 @@ void PhysicalSky::InitShaders()
     m_demoShader.Create();
     m_demoShader.AttachShader(skyVertexShader.m_id);
     m_demoShader.AttachShader(demoFragmentShader.m_id);
-    m_demoShader.AttachShader(m_model->shader());
+    m_demoShader.AttachShader(m_sunModel->shader());
+    //m_demoShader.AttachShader(m_moonModel->shader());
     m_demoShader.Build();
 
     ShaderStage moonVertexShader = ShaderStage();
@@ -193,7 +203,7 @@ void PhysicalSky::InitShaders()
     m_sunShader.Create();
     m_sunShader.AttachShader(sunVertexShader.m_id);
     m_sunShader.AttachShader(sunFragmentShader.m_id);
-    m_sunShader.AttachShader(m_model->shader());
+    m_sunShader.AttachShader(m_sunModel->shader());
     m_sunShader.Build();
 }
 
@@ -323,7 +333,7 @@ void PhysicalSky::Update()
 void PhysicalSky::Render(const Camera& camera, const glm::vec2& sunAngles)
 {
     m_skyShader.Use();
-    m_model->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
+    m_sunModel->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
     m_skyShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
     m_skyShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
@@ -358,7 +368,7 @@ void PhysicalSky::Render(const Camera& camera, const glm::vec2& sunAngles)
 void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 {
     m_demoShader.Use();
-    m_model->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
+    m_sunModel->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
     m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
     m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
@@ -383,6 +393,14 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
     glm::vec3 sunDirection = glm::vec3(sunCos.y * sunCos.x, sunCos.y * sunSin.x, sunSin.y);
     
     m_demoShader.SetVec3("sun_direction", sunDirection);
+
+    glm::vec3 newMoonAngles = m_coordinates.GetMoonPosition();
+
+    glm::vec2 moonCos = glm::cos(newMoonAngles);
+    glm::vec2 moonSin = glm::sin(newMoonAngles);
+    glm::vec3 moonDirection = glm::vec3(moonCos.y * moonCos.x, moonCos.y * moonSin.x, moonSin.y);
+    m_demoShader.SetVec3("moon_direction", moonDirection);
+
     m_demoShader.SetVec3("ground_albedo", m_cGroundAlbedo);
     m_demoShader.SetInt("limb_darkening_strategy", m_cLimbDarkeningStrategy);
 
@@ -403,7 +421,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
     {
         // RENDER SUN AS BILLBOARD
         m_sunShader.Use();
-        m_model->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
+        m_sunModel->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
 
         //glm::mat4 horizon_to_ogl = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         glm::mat4 horizon_to_ogl = glm::transpose(permutation);
@@ -432,7 +450,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 
         // RENDER MOON AS BILLBOARD
         m_moonShader.Use();
-        m_model->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
+        m_sunModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
 
         glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
         glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
