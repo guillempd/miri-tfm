@@ -372,6 +372,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 {
     m_demoShader.Use();
     m_sunModel->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
+    m_moonModel->SetProgramUniforms(m_demoShader.m_id, 4, 5, 6, 7);
     m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
     m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();

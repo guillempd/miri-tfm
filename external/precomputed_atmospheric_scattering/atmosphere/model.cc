@@ -240,6 +240,11 @@ const char kAtmosphereShader[] = R"(
     uniform sampler3D sun_single_mie_scattering_texture;
     uniform sampler2D sun_irradiance_texture;
 
+    uniform sampler2D moon_transmittance_texture;
+    uniform sampler3D moon_scattering_texture;
+    uniform sampler3D moon_single_mie_scattering_texture;
+    uniform sampler2D moon_irradiance_texture;
+
     RadianceSpectrum GetSunRadiance() {
       return ATMOSPHERE.solar_irradiance /
           (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius);
@@ -264,31 +269,31 @@ const char kAtmosphereShader[] = R"(
       return GetSourceAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
           sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, ATMOSPHERE.solar_irradiance, sky_irradiance);
     }
-/*
-    RadianceSpectrum GetSunRadiance() {
-      return ATMOSPHERE.solar_irradiance /
-          (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius);
+
+    RadianceSpectrum GetMoonRadiance() {
+      return ATMOSPHERE.moon_irradiance /
+          (PI * ATMOSPHERE.moon_angular_radius * ATMOSPHERE.moon_angular_radius);
     }
-    RadianceSpectrum GetMoonSkyRadiance(
+    RadianceSpectrum GetLunarSkyRadiance(
         Position camera, Direction view_ray, Length shadow_length,
         Direction moon_direction, out DimensionlessSpectrum transmittance) {
       return GetSkyRadiance(ATMOSPHERE, moon_transmittance_texture,
           moon_scattering_texture, moon_single_mie_scattering_texture,
           camera, view_ray, shadow_length, moon_direction, transmittance);
     }
-    RadianceSpectrum GetMoonSkyRadianceToPoint(
+    RadianceSpectrum GetLunarSkyRadianceToPoint(
         Position camera, Position point, Length shadow_length,
         Direction moon_direction, out DimensionlessSpectrum transmittance) {
       return GetSkyRadianceToPoint(ATMOSPHERE, moon_transmittance_texture,
           moon_scattering_texture, moon_single_mie_scattering_texture,
           camera, point, shadow_length, moon_direction, transmittance);
     }
-    IrradianceSpectrum GetMoonAndMoonSkyIrradiance(
+    IrradianceSpectrum GetMoonAndLunarSkyIrradiance(
        Position p, Direction normal, Direction moon_direction,
        out IrradianceSpectrum sky_irradiance) {
-      return GetSunAndSkyIrradiance(ATMOSPHERE, moon_transmittance_texture,
-          moon_irradiance_texture, p, normal, moon_direction, sky_irradiance);
-    }*/
+      return GetSourceAndSkyIrradiance(ATMOSPHERE, moon_transmittance_texture,
+          moon_irradiance_texture, p, normal, moon_direction, ATMOSPHERE.moon_angular_radius, ATMOSPHERE.moon_irradiance, sky_irradiance);
+    }
 )";
 
 /*<h3 id="utilities">Utility classes and functions</h3>
@@ -918,27 +923,32 @@ void Model::SetProgramUniforms(
     GLuint scattering_texture_unit,
     GLuint irradiance_texture_unit,
     GLuint single_mie_scattering_texture_unit) const {
-  glActiveTexture(GL_TEXTURE0 + transmittance_texture_unit);
-  glBindTexture(GL_TEXTURE_2D, transmittance_texture_);
-  glUniform1i(glGetUniformLocation(program, "sun_transmittance_texture"),
-      transmittance_texture_unit);
 
-  glActiveTexture(GL_TEXTURE0 + scattering_texture_unit);
-  glBindTexture(GL_TEXTURE_3D, scattering_texture_);
-  glUniform1i(glGetUniformLocation(program, "sun_scattering_texture"),
-      scattering_texture_unit);
+    std::string source_prefix = "sun_";
+    if (light_source_ != SOURCE_SUN) source_prefix = "moon_";
 
-  glActiveTexture(GL_TEXTURE0 + irradiance_texture_unit);
-  glBindTexture(GL_TEXTURE_2D, irradiance_texture_);
-  glUniform1i(glGetUniformLocation(program, "sun_irradiance_texture"),
-      irradiance_texture_unit);
+    std::string transmittance_texture_name = source_prefix + "transmittance_texture";
+    glActiveTexture(GL_TEXTURE0 + transmittance_texture_unit);
+    glBindTexture(GL_TEXTURE_2D, transmittance_texture_);
+    glUniform1i(glGetUniformLocation(program, transmittance_texture_name.c_str()), transmittance_texture_unit);
 
-  if (optional_single_mie_scattering_texture_ != 0) {
-    glActiveTexture(GL_TEXTURE0 + single_mie_scattering_texture_unit);
-    glBindTexture(GL_TEXTURE_3D, optional_single_mie_scattering_texture_);
-    glUniform1i(glGetUniformLocation(program, "sun_single_mie_scattering_texture"),
-        single_mie_scattering_texture_unit);
-  }
+    std::string scattering_texture_name = source_prefix + "scattering_texture";
+    glActiveTexture(GL_TEXTURE0 + scattering_texture_unit);
+    glBindTexture(GL_TEXTURE_3D, scattering_texture_);
+    glUniform1i(glGetUniformLocation(program, scattering_texture_name.c_str()), scattering_texture_unit);
+
+    std::string irradiance_texture_name = source_prefix + "irradiance_texture";
+    glActiveTexture(GL_TEXTURE0 + irradiance_texture_unit);
+    glBindTexture(GL_TEXTURE_2D, irradiance_texture_);
+    glUniform1i(glGetUniformLocation(program, irradiance_texture_name.c_str()), irradiance_texture_unit);
+
+    if (optional_single_mie_scattering_texture_ != 0)
+    {
+        std::string single_mie_scattering_texture_name = source_prefix + "single_mie_scattering_texture";
+        glActiveTexture(GL_TEXTURE0 + single_mie_scattering_texture_unit);
+        glBindTexture(GL_TEXTURE_3D, optional_single_mie_scattering_texture_);
+        glUniform1i(glGetUniformLocation(program, single_mie_scattering_texture_name.c_str()), single_mie_scattering_texture_unit);
+    }
 }
 
 /*

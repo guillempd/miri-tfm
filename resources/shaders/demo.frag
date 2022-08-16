@@ -351,13 +351,10 @@ follows, by multiplying the irradiance with the sphere BRDF:
     vec3 normal = normalize(point - kSphereCenter);
 
     // Compute the radiance reflected by the sphere.
-    vec3 sky_irradiance;
-    vec3 sun_irradiance = GetSunAndSunSkyIrradiance(
-        point - earth_center, normal, sun_direction, sky_irradiance);
-    vec3 moon_irradiance = GetSunAndSunSkyIrradiance(
-        point - earth_center, normal, moon_direction, sky_irradiance);
-    sphere_radiance =
-        kSphereAlbedo * (1.0 / PI) * (sun_irradiance + moon_irradiance + sky_irradiance);
+    vec3 solar_sky_irradiance, lunar_sky_irradiance;
+    vec3 sun_irradiance = GetSunAndSunSkyIrradiance(point - earth_center, normal, sun_direction, solar_sky_irradiance);
+    vec3 moon_irradiance = GetMoonAndLunarSkyIrradiance(point - earth_center, normal, moon_direction, lunar_sky_irradiance);
+    sphere_radiance = kSphereAlbedo * (1.0 / PI) * (sun_irradiance + moon_irradiance + solar_sky_irradiance + lunar_sky_irradiance);
 
 /*
 <p>Finally, we take into account the aerial perspective between the camera and
@@ -424,9 +421,8 @@ the scene:
   float shadow_length = max(0.0, shadow_out - shadow_in) *
       lightshaft_fadein_hack;
   vec3 transmittance;
-  vec3 radiance = GetSunSkyRadiance(
-      camera - earth_center, view_direction, shadow_length, sun_direction,
-      transmittance);
+  vec3 radiance = GetSunSkyRadiance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
+  radiance += GetLunarSkyRadiance(camera - earth_center, view_direction, 0.0, moon_direction, transmittance); // TODO: Compute shadow_length for moon (?) // NOTE: transmittance is the same for both sun and moon (same atmosphere)
 
   // If the view ray intersects the Sun, add the Sun radiance.
 
