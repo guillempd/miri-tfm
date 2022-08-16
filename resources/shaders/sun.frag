@@ -25,7 +25,7 @@ void main()
     vec3 p_ViewDirection = normalize(p_Pos - p_CameraPos);
     vec3 p_SunDirection = w_SunDirection;
     vec3 transmittance;
-    vec3 inscatter = GetSunSkyRadiance(p_CameraPos, p_ViewDirection, 0.0, p_SunDirection, transmittance);
+    vec3 inscatter = GetSolarSkyRadiance(p_CameraPos, p_ViewDirection, 0.0, p_SunDirection, transmittance);
     vec3 radiance = GetSunRadiance();
     vec3 result = radiance * transmittance + inscatter;
     FragColor = vec4(result, 1.0);   

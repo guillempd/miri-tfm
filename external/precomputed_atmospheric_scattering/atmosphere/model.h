@@ -187,7 +187,7 @@ class Model {
   Model(
     // The solar irradiance at the top of the atmosphere, in W/m^2/nm. This
     // vector must have the same size as the wavelengths parameter.
-    const glm::dvec3& solar_irradiance,
+    const glm::dvec3& sun_irradiance,
     // The sun's angular radius, in radians. Warning: the implementation uses
     // approximations that are valid only if this value is smaller than 0.1.
     double sun_angular_radius,

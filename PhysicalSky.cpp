@@ -99,7 +99,7 @@ void PhysicalSky::InitModel()
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
-    glm::dvec3 solar_irradiance = glm::dvec3(1.0) * static_cast<double>(m_cSunIntensity);
+    glm::dvec3 sun_irradiance = glm::dvec3(1.0) * static_cast<double>(m_cSunIntensity);
 
     DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / (static_cast<double>(m_cRayleighExponentialDistribution) * 1000.0), 0.0, 0.0);
     glm::dvec3 rayleigh_scattering = (static_cast<glm::dvec3>(m_cRayleighScatteringCoefficient) * static_cast<double>(m_cRayleighScatteringScale)) / 1000.0;
@@ -124,22 +124,22 @@ void PhysicalSky::InitModel()
     double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
     double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
 
-    glm::dvec3 moon_irradiance = solar_irradiance;
+    glm::dvec3 moon_irradiance = sun_irradiance;
     double moon_angular_radius = sun_angular_radius;
 
-    m_sunModel.reset(new Model(solar_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
+    m_solarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_SUN));
-    m_sunModel->Init();
+    m_solarModel->Init();
 
-    m_moonModel.reset(new Model(solar_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
+    m_lunarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_MOON));
-    m_moonModel->Init();
+    m_lunarModel->Init();
 
 
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
@@ -182,7 +182,7 @@ void PhysicalSky::InitShaders()
     m_demoShader.Create();
     m_demoShader.AttachShader(skyVertexShader.m_id);
     m_demoShader.AttachShader(demoFragmentShader.m_id);
-    m_demoShader.AttachShader(m_sunModel->shader());
+    m_demoShader.AttachShader(m_solarModel->shader());
     //m_demoShader.AttachShader(m_moonModel->shader());
     m_demoShader.Build();
 
@@ -206,7 +206,7 @@ void PhysicalSky::InitShaders()
     m_sunShader.Create();
     m_sunShader.AttachShader(sunVertexShader.m_id);
     m_sunShader.AttachShader(sunFragmentShader.m_id);
-    m_sunShader.AttachShader(m_sunModel->shader());
+    m_sunShader.AttachShader(m_solarModel->shader());
     m_sunShader.Build();
 }
 
@@ -336,7 +336,7 @@ void PhysicalSky::Update()
 void PhysicalSky::Render(const Camera& camera, const glm::vec2& sunAngles)
 {
     m_skyShader.Use();
-    m_sunModel->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
+    m_solarModel->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
     m_skyShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
     m_skyShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
@@ -371,8 +371,8 @@ void PhysicalSky::Render(const Camera& camera, const glm::vec2& sunAngles)
 void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 {
     m_demoShader.Use();
-    m_sunModel->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
-    m_moonModel->SetProgramUniforms(m_demoShader.m_id, 4, 5, 6, 7);
+    m_solarModel->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
+    m_lunarModel->SetProgramUniforms(m_demoShader.m_id, 4, 5, 6, 7);
     m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
     m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
     glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
@@ -425,7 +425,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
     {
         // RENDER SUN AS BILLBOARD
         m_sunShader.Use();
-        m_sunModel->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
+        m_solarModel->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
 
         //glm::mat4 horizon_to_ogl = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
         glm::mat4 horizon_to_ogl = glm::transpose(permutation);
@@ -454,7 +454,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 
         // RENDER MOON AS BILLBOARD
         m_moonShader.Use();
-        m_sunModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
+        m_solarModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
 
         glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
         glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);

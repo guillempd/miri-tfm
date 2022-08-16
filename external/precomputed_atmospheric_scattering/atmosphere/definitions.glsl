@@ -204,12 +204,12 @@ The atmosphere parameters are then defined by the following struct:
 
 struct AtmosphereParameters {
   // The solar irradiance at the top of the atmosphere.
-  IrradianceSpectrum solar_irradiance;
+  IrradianceSpectrum sun_irradiance;
   // The sun's angular radius. Warning: the implementation uses approximations
   // that are valid only if this angle is smaller than 0.1 radians.
   Angle sun_angular_radius;
   // The moon irradiance (where?).
-  IrradianceSpectrum solar_irradiance;
+  IrradianceSpectrum moon_irradiance;
   // The moon's angular radius. Warning: the implementation uses approximations
   // that are valid only if this angle is smaller than 0.1 radians.
   Angle moon_angular_radius;

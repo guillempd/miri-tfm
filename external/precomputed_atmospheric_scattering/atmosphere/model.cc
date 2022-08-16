@@ -136,7 +136,7 @@ const char kComputeDirectIrradianceShader[] = R"(
     uniform int source;
     void main() {
       Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
-      IrradianceSpectrum source_irradiance = ATMOSPHERE.solar_irradiance;
+      IrradianceSpectrum source_irradiance = ATMOSPHERE.sun_irradiance;
       if (source != 0)
       {
           source_angular_radius = ATMOSPHERE.moon_angular_radius;
@@ -158,7 +158,7 @@ const char kComputeSingleScatteringShader[] = R"(
     uniform int source;
     void main() {
       Angle source_angular_radius = ATMOSPHERE.sun_angular_radius;
-      IrradianceSpectrum source_irradiance = ATMOSPHERE.solar_irradiance;
+      IrradianceSpectrum source_irradiance = ATMOSPHERE.sun_irradiance;
       if (source != 0)
       {
           source_angular_radius = ATMOSPHERE.moon_angular_radius;
@@ -246,28 +246,28 @@ const char kAtmosphereShader[] = R"(
     uniform sampler2D moon_irradiance_texture;
 
     RadianceSpectrum GetSunRadiance() {
-      return ATMOSPHERE.solar_irradiance /
+      return ATMOSPHERE.sun_irradiance /
           (PI * ATMOSPHERE.sun_angular_radius * ATMOSPHERE.sun_angular_radius);
     }
-    RadianceSpectrum GetSunSkyRadiance(
+    RadianceSpectrum GetSolarSkyRadiance(
         Position camera, Direction view_ray, Length shadow_length,
         Direction sun_direction, out DimensionlessSpectrum transmittance) {
       return GetSkyRadiance(ATMOSPHERE, sun_transmittance_texture,
           sun_scattering_texture, sun_single_mie_scattering_texture,
           camera, view_ray, shadow_length, sun_direction, transmittance);
     }
-    RadianceSpectrum GetSunSkyRadianceToPoint(
+    RadianceSpectrum GetSolarSkyRadianceToPoint(
         Position camera, Position point, Length shadow_length,
         Direction sun_direction, out DimensionlessSpectrum transmittance) {
       return GetSkyRadianceToPoint(ATMOSPHERE, sun_transmittance_texture,
           sun_scattering_texture, sun_single_mie_scattering_texture,
           camera, point, shadow_length, sun_direction, transmittance);
     }
-    IrradianceSpectrum GetSunAndSunSkyIrradiance(
+    IrradianceSpectrum GetSunAndSolarSkyIrradiance(
        Position p, Direction normal, Direction sun_direction,
        out IrradianceSpectrum sky_irradiance) {
       return GetSourceAndSkyIrradiance(ATMOSPHERE, sun_transmittance_texture,
-          sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, ATMOSPHERE.solar_irradiance, sky_irradiance);
+          sun_irradiance_texture, p, normal, sun_direction, ATMOSPHERE.sun_angular_radius, ATMOSPHERE.sun_irradiance, sky_irradiance);
     }
 
     RadianceSpectrum GetMoonRadiance() {
@@ -538,7 +538,7 @@ initialize them), as well as a vertex buffer object to render a full screen quad
 */
 
 Model::Model(
-    const glm::dvec3& solar_irradiance,
+    const glm::dvec3& sun_irradiance,
     const double sun_angular_radius,
     const glm::dvec3& moon_irradiance,
     const double moon_angular_radius,
@@ -648,7 +648,7 @@ Model::Model(
           "#define COMBINED_SCATTERING_TEXTURES\n" : "") +
       definitions_glsl +
       "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(\n" +
-          to_string(solar_irradiance, 1.0) + ",\n" +
+          to_string(sun_irradiance, 1.0) + ",\n" +
           std::to_string(sun_angular_radius) + ",\n" +
           to_string(moon_irradiance, 1.0) + ",\n" +
           std::to_string(moon_angular_radius) + ",\n" +
