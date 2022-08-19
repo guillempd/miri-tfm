@@ -472,10 +472,10 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         m_moonShader.SetMat4("model", moonModel * scale);
         m_moonShader.SetMat4("view", camera.GetViewMatrix());
         m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
+        m_moonShader.SetVec3("w_SunDirection", sunDirection);
 
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
         /*m_sunShader.SetVec3("w_CameraPos", camera.GetPosition());
         m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
         m_sunShader.SetVec3("w_SunDirection", sunDirection);*/
