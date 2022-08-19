@@ -8,12 +8,14 @@
 // l_ : Lunar Space (Equivalent to model space)
 
 const float PI = 3.14159265358979;
-const vec3 Irradiance = vec3(10000.0, 10000.0, 10000.0);
+const vec3 SunIrradiance = vec3(500.0, 500.0, 500.0);
+const vec3 EarthIrradiance = vec3(1.0, 1.0, 1.0);
 
 in vec2 TexCoord;
 
 uniform mat4 Model;
 uniform vec3 w_SunDir;
+uniform vec3 w_EarthDir;
 uniform vec3 w_CameraPos;
 
 out vec4 FragColor;
@@ -60,20 +62,32 @@ float S(float phi)
     return (sinPhi + (PI - phi) * cosPhi) / PI + t * pow(1.0 - 0.5 * cosPhi, 2.0);
 }
 
+// TODO: Apply transmittance and inscatter for both sky models
 void main()
 {
     if (length(TexCoord) > 1.0) discard;
 
     vec3 N = GetN();
-    vec3 L = GetL();
     vec3 V = GetV();
+
+    vec3 radiance = vec3(0.0);
+    // SUN LIGHT CONTRIBUTION
+    vec3 L = normalize(w_SunDir);
 
     float phi = acos(dot(L, V));
     float cthetar = dot(N, V);
     float cthetai = max(dot(N, L), 0.0);
 
     float brdf = 2 / (3 * PI) * B(phi) * S(phi) / (1 + cthetar / cthetai);
-    vec3 radiance = brdf * Irradiance * cthetai;
+    radiance += brdf * SunIrradiance * cthetai;
+
+    // EARTH LIGHT CONTRIBUTION
+    L = normalize(w_EarthDir);
+    phi = 0.0;
+    cthetar = dot(N, V);
+    cthetai = max(dot(N, L), 0.0);
+    brdf = 2 / (3 * PI) * B(phi) * S(phi) / (1 + cthetar / cthetai);
+    radiance += brdf * EarthIrradiance * cthetar;
 
     FragColor = vec4(radiance, 1.0);
 }

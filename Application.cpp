@@ -15,7 +15,7 @@ Application::Application(int width, int height, Window* window)
     , m_previousCursorPosition()
     , m_scene()
     , m_window(window)
-    , m_exposure(5e-5f)
+    , m_exposure(0.02f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -128,7 +128,7 @@ void Application::OnUpdate()
 
     if (ImGui::Begin("General Settings"))
     {
-        ImGui::SliderFloat("Exposure", &m_exposure, 0.0f, 0.001f, "%.6f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat("Exposure", &m_exposure, 0.001f, 1.0f, "%.6f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
     }
     ImGui::End();
 

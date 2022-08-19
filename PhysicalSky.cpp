@@ -18,7 +18,7 @@ using namespace atmosphere;
 // TODO: Put units in the ImGui interface
 PhysicalSky::PhysicalSky()
     : m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
-    , m_dSunIntensity(100000.000000f) // lux
+    , m_dSunIntensity(500.000000f) // W*m^-2, for a total irradiance of 1500 W*m^-2
     , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
     , m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
@@ -474,6 +474,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
         m_moonShader.SetVec3("w_SunDir", sunDirection);
         m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
+        m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
 
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
