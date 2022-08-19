@@ -19,7 +19,7 @@ using namespace atmosphere;
 PhysicalSky::PhysicalSky()
     : m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
     , m_dSunIntensity(100000.000000f) // lux
-    , m_dSunAngularRadius(0.004675f) // rad
+    , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
     , m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
@@ -469,10 +469,11 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glm::mat4 moonModel = glm::mat4(glm::vec4(moonRight, 0.0f), glm::vec4(moonUp, 0.0f), glm::vec4(-moonForward, 0.0), glm::vec4(moonPosition, 1.0));
         glm::mat4 moonScale = scale; // TODO: Get moon angular size correctly
 
-        m_moonShader.SetMat4("model", moonModel * scale);
-        m_moonShader.SetMat4("view", camera.GetViewMatrix());
-        m_moonShader.SetMat4("projection", camera.GetProjectionMatrix());
-        m_moonShader.SetVec3("w_SunDirection", sunDirection);
+        m_moonShader.SetMat4("Model", moonModel * scale);
+        m_moonShader.SetMat4("View", camera.GetViewMatrix());
+        m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
+        m_moonShader.SetVec3("w_SunDir", sunDirection);
+        m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
 
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
