@@ -17,6 +17,7 @@ uniform mat4 Model;
 uniform vec3 w_SunDir;
 uniform vec3 w_EarthDir;
 uniform vec3 w_CameraPos;
+uniform float EarthshineIntensity;
 
 out vec4 FragColor;
 
@@ -82,6 +83,7 @@ void main()
     radiance += brdf * SunIrradiance * cthetai;
 
     // EARTH LIGHT CONTRIBUTION
+    vec3 EarthIrradiance = vec3(1.0, 1.0, 1.0) * EarthshineIntensity / 3.0;
     L = normalize(w_EarthDir);
     phi = 0.0;
     cthetar = dot(N, V);

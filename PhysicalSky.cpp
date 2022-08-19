@@ -469,12 +469,19 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         glm::mat4 moonModel = glm::mat4(glm::vec4(moonRight, 0.0f), glm::vec4(moonUp, 0.0f), glm::vec4(-moonForward, 0.0), glm::vec4(moonPosition, 1.0));
         glm::mat4 moonScale = scale; // TODO: Get moon angular size correctly
 
+        // COMPUTE EARTHSHINE
+        float phi = m_coordinates.GetEarthPhaseAngle();
+        float earthLitFraction = 0.5f * (1.0f - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0f / glm::tan(0.25 * phi))); // NOTE: Use the other formula for better numerical stability (?)
+        constexpr float fullEarthshineIntensity = 0.19f;
+        float earthshineIntensity = fullEarthshineIntensity * earthLitFraction;
+
         m_moonShader.SetMat4("Model", moonModel * scale);
         m_moonShader.SetMat4("View", camera.GetViewMatrix());
         m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
         m_moonShader.SetVec3("w_SunDir", sunDirection);
         m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
         m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
+        m_moonShader.SetFloat("EarthshineIntensity", earthshineIntensity);
 
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

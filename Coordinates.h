@@ -12,10 +12,13 @@ public:
     void Update();
     glm::vec3 GetSunPosition();
     glm::vec3 GetMoonPosition();
+    float GetMoonPhaseAngle();
+    float GetEarthPhaseAngle();
 private:
     static void PrintJulianDate(double JD);
-    static void PrintSunPosition(double T, double T_, double lon, double lat);
-    static void PrintMoonPosition(double T, double T_, double lon, double lat);
+    static glm::vec3 PrintSunPosition(double T, double T_, double lon, double lat);
+    static glm::vec3 PrintMoonPosition(double T, double T_, double lon, double lat);
+    static void PrintPhaseAngles(glm::vec3 rectangularSun, glm::vec3 rectangularMoon);
     static glm::vec3 SphericalToRectangular(glm::vec3 spherical);
     static glm::vec3 RectangularToSpherical(glm::vec3 rectangular);
     static glm::vec3 RectangularEclipticToRectangularEquatorial(glm::vec3 rectangularEcliptic, double T);
