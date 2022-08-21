@@ -15,7 +15,7 @@ Application::Application(int width, int height, Window* window)
     , m_previousCursorPosition()
     , m_scene()
     , m_window(window)
-    , m_exposure(0.02f)
+    , m_exposure(-2.0f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -128,7 +128,7 @@ void Application::OnUpdate()
 
     if (ImGui::Begin("General Settings"))
     {
-        ImGui::SliderFloat("Exposure", &m_exposure, 0.001f, 100.0f, "%.6f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Exposure", &m_exposure, -5.0f, 5.0f);
     }
     ImGui::End();
 
@@ -156,7 +156,7 @@ void Application::OnRender()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
-    m_postprocessShader.SetFloat("exposure", m_exposure);
+    m_postprocessShader.SetFloat("exposure", glm::pow(10.0f, m_exposure));
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
