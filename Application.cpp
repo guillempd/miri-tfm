@@ -128,7 +128,7 @@ void Application::OnUpdate()
 
     if (ImGui::Begin("General Settings"))
     {
-        ImGui::SliderFloat("Exposure", &m_exposure, 0.001f, 1.0f, "%.6f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_AlwaysClamp);
+        ImGui::SliderFloat("Exposure", &m_exposure, 0.001f, 100.0f, "%.6f", ImGuiSliderFlags_Logarithmic);
     }
     ImGui::End();
 

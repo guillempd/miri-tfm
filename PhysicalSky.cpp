@@ -124,8 +124,19 @@ void PhysicalSky::InitModel()
     double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
     double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
 
-    glm::dvec3 moon_irradiance = sun_irradiance;
+    // Compute lunar model parameters
     double moon_angular_radius = sun_angular_radius;
+    glm::dvec3 moon_irradiance = sun_irradiance;
+    double C = 0.072;
+    double r_m = 1737.4; // Distance in km
+    double d = 0.002 * 149.6e6; // TODO // Get from m_coordinates
+    double E_sm = 1500.0;
+    double E_em = 0.19 * 0.5; // TODO: Compute
+    double phi = m_coordinates.GetMoonPhaseAngle();
+    double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
+    double E_m = (2.0 * C * r_m * r_m) / (3.0 * d * d) * (E_em + 2.0 * E_sm * moonLitFraction);
+    moon_irradiance = glm::dvec3(E_m) / 3.0;
+    
 
     m_solarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
@@ -140,7 +151,6 @@ void PhysicalSky::InitModel()
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
         kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_MOON));
     m_lunarModel->Init();
-
 
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
 
@@ -471,7 +481,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
 
         // COMPUTE EARTHSHINE
         float phi = m_coordinates.GetEarthPhaseAngle();
-        float earthLitFraction = 0.5f * (1.0f - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0f / glm::tan(0.25 * phi))); // NOTE: Use the other formula for better numerical stability (?)
+        float earthLitFraction = VisibleLitFractionFromPhaseAngle(phi); // NOTE: Use the other formula for better numerical stability (?)
         constexpr float fullEarthshineIntensity = 0.19f;
         float earthshineIntensity = fullEarthshineIntensity * earthLitFraction;
 
@@ -489,4 +499,9 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
         m_sunShader.SetVec3("w_SunDirection", sunDirection);*/
     }
+}
+
+double PhysicalSky::VisibleLitFractionFromPhaseAngle(double phi)
+{
+    return 0.5 * (1.0 - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0 / glm::tan(0.25 * phi)));
 }

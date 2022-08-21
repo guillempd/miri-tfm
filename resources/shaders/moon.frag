@@ -83,7 +83,7 @@ void main()
     radiance += brdf * SunIrradiance * cthetai;
 
     // EARTH LIGHT CONTRIBUTION
-    vec3 EarthIrradiance = vec3(1.0, 1.0, 1.0) * EarthshineIntensity / 3.0;
+    vec3 EarthIrradiance = vec3(EarthshineIntensity) / 3.0;
     L = normalize(w_EarthDir);
     phi = 0.0;
     cthetar = dot(N, V);
