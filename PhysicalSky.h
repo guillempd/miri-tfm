@@ -3,6 +3,7 @@
 #include "ShaderProgram.h"
 #include "Camera.h"
 #include "Coordinates.h"
+#include "Texture.h"
 
 #include <glm/glm.hpp>
 
@@ -121,4 +122,7 @@ private:
     ShaderProgram m_moonShader;
     bool m_showBillboard;
     Coordinates m_coordinates;
+
+    Texture m_moonNormalMap;
+    ShaderProgram m_testShader;
 };

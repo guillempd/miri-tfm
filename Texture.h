@@ -8,6 +8,7 @@ class Texture
 {
 public:
     Texture();
+    ~Texture();
     void Load(std::string_view path);
     void SetUnit(unsigned int unit);
     GLuint m_id;

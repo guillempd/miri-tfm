@@ -136,6 +136,7 @@ void PhysicalSky::InitModel()
     double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
     double E_m = (2.0 * C * r_m * r_m) / (3.0 * d * d) * (E_em + 2.0 * E_sm * moonLitFraction);
     moon_irradiance = glm::dvec3(E_m) / 3.0;
+     // moon_irradiance *= glm::dvec3(1.0, 0.0, 0.0);
     
 
     m_solarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
@@ -205,6 +206,7 @@ void PhysicalSky::InitShaders()
     m_moonShader.Create();
     m_moonShader.AttachShader(moonVertexShader.m_id);
     m_moonShader.AttachShader(moonFragmentShader.m_id);
+    m_moonShader.AttachShader(m_solarModel->shader());
     m_moonShader.Build();
 
     ShaderStage sunVertexShader = ShaderStage();
@@ -218,6 +220,17 @@ void PhysicalSky::InitShaders()
     m_sunShader.AttachShader(sunFragmentShader.m_id);
     m_sunShader.AttachShader(m_solarModel->shader());
     m_sunShader.Build();
+
+    ShaderStage testVertexShader = ShaderStage();
+    testVertexShader.Create(ShaderType::VERTEX);
+    testVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/test.vert", "D:/dev/miri-tfm/resources/shaders/");
+    ShaderStage testFragmentShader = ShaderStage();
+    testFragmentShader.Create(ShaderType::FRAGMENT);
+    testFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/test.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_testShader.Create();
+    m_testShader.AttachShader(testVertexShader.m_id);
+    m_testShader.AttachShader(testFragmentShader.m_id);
+    m_testShader.Build();
 }
 
 void PhysicalSky::InitResources()
@@ -243,6 +256,7 @@ void PhysicalSky::InitResources()
 
     glBindVertexArray(0);
 
+    m_moonNormalMap.Load("D:/Google Drive/Moon.Normal_8192x4096.jpg");
 }
 
 PhysicalSky::~PhysicalSky()
@@ -465,6 +479,7 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         // RENDER MOON AS BILLBOARD
         m_moonShader.Use();
         m_solarModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
+        m_lunarModel->SetProgramUniforms(m_moonShader.m_id, 4, 5, 6, 7);
 
         glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
         glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
@@ -485,19 +500,32 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec2& sunAngles)
         constexpr float fullEarthshineIntensity = 0.19f;
         float earthshineIntensity = fullEarthshineIntensity * earthLitFraction;
 
-        m_moonShader.SetMat4("Model", moonModel * scale);
+        m_moonShader.SetMat4("Model", moonModel * moonScale);
         m_moonShader.SetMat4("View", camera.GetViewMatrix());
         m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
         m_moonShader.SetVec3("w_SunDir", sunDirection);
         m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
         m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
         m_moonShader.SetFloat("EarthshineIntensity", earthshineIntensity);
+        m_moonShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+        m_moonShader.SetVec3("w_MoonDir", moonWorldDirection);
+        m_moonShader.SetTexture("NormalMap", 8, m_moonNormalMap);
 
         glBindVertexArray(m_fullScreenQuadVao);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         /*m_sunShader.SetVec3("w_CameraPos", camera.GetPosition());
         m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
         m_sunShader.SetVec3("w_SunDirection", sunDirection);*/
+
+        // Render test quad
+        /*m_testShader.Use();
+        m_testShader.SetMat4("Model", glm::mat4(1.0));
+        m_testShader.SetMat4("View", camera.GetViewMatrix());
+        m_testShader.SetMat4("Projection", camera.GetProjectionMatrix());
+        m_testShader.SetTexture("AlbedoMap", 0, m_moonNormalMap);
+
+        glBindVertexArray(m_fullScreenQuadVao);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);*/
     }
 }
 

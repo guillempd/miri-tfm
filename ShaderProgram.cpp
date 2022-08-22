@@ -79,3 +79,10 @@ void ShaderProgram::SetMat4(std::string_view key, const glm::mat4& value)
 {
     glUniformMatrix4fv(glGetUniformLocation(m_id, key.data()), 1, GL_FALSE, glm::value_ptr(value));
 }
+
+void ShaderProgram::SetTexture(std::string_view key, unsigned int unit, const Texture& value)
+{
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, value.m_id);
+    glUniform1i(glGetUniformLocation(m_id, key.data()), unit);
+}

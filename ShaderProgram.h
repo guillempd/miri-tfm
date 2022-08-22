@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ShaderStage.h"
+#include "Texture.h"
 
 #include <glad/glad.h>
 
@@ -23,6 +24,7 @@ public:
     void SetBool(std::string_view, bool value);
     void SetVec3(std::string_view, const glm::vec3& value);
     void SetMat4(std::string_view, const glm::mat4& value);
+    void SetTexture(std::string_view, unsigned int unit, const Texture& value);
     GLuint m_id;
 private:
     std::vector<GLuint> m_attachedShaders;
