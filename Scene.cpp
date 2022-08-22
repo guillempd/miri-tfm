@@ -176,15 +176,8 @@ void Scene::Render(const Camera& camera) {
     // Might be ok to move these to the camera class
     // IDEA: Create a compass widget to know in which direction we are looking at
     glm::vec2 sunAngles = glm::vec2(sun_azimuth_angle_radians_, sun_zenith_angle_radians_); // TODO: Make member of the class
-    if (m_useDemo)
-    {
-        m_physicalSky.RenderDemo(camera, sunAngles);
-    }
-    else
-    {
-        RenderMeshes(camera);
-        m_physicalSky.Render(camera, sunAngles);
-    }
+    m_physicalSky.Render(camera);
+
 }
 
 // TODO

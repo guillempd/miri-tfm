@@ -21,9 +21,11 @@ public:
     void InitShaders();
     void InitModel();
     void Update();
-    void Render(const Camera& camera, const glm::vec2& sunAngles);
-    void RenderDemo(const Camera& camera, const glm::vec2& sunAngles);
+    void Render(const Camera& camera);
 private:
+    void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
+    void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
+    void RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDirection, const glm::vec3& moonHorizonDirection);
     static double VisibleLitFractionFromPhaseAngle(double phi);
 private:
     std::unique_ptr<atmosphere::Model> m_solarModel;

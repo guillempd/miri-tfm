@@ -48,14 +48,9 @@ uniform vec3 sun_direction;
 uniform vec3 moon_direction;
 uniform vec3 sun_size;
 uniform vec3 ground_albedo;
-uniform int limb_darkening_strategy;
+
 in vec3 view_ray;
 layout(location = 0) out vec4 color;
-
-#define LIMB_DARKENING_NONE 0
-#define LIMB_DARKENING_NEC96 1
-#define LIMB_DARKENING_HM98 2
-#define LIMB_DARKENING_OTHER 3
 
 /*
 <p>It uses the following constants, as well as the following atmosphere
@@ -225,62 +220,6 @@ void GetSphereShadowInOut(vec3 view_direction, vec3 sun_direction,
   }
 }
 
-vec3 GetNEC96LimbDarkeningFactor(float centerToEdge)
-{
-  vec3 u = vec3(1.000, 1.000, 1.000);
-  vec3 a = vec3(0.397, 0.503, 0.652); // Coefficients for RGB wavelength (680, 550, 440)
-
-  // centerToEdge = 1.0 - centerToEdge;
-  // float mu = sqrt(1.0 - centerToEdge * centerToEdge);
-  float mu = centerToEdge;
-
-  vec3 factor = 1.0 - u * (1.0 - pow(vec3(mu), a));
-  return factor;
-}
-
-vec3 GetHM98LimbDarkeningFactor(float centerToEdge)
-{
-  // Coefficients for RGB wavelength (680, 550, 440)
-  vec3 a0 = vec3( 0.34685, 0.26073, 0.15248);
-  vec3 a1 = vec3( 1.37539, 1.27428, 1.38517);
-  vec3 a2 = vec3(-2.04425,-1.30352,-1.49615);
-  vec3 a3 = vec3( 2.70493, 1.47085, 1.99886);
-  vec3 a4 = vec3(-1.94290,-0.96618,-1.48155);
-  vec3 a5 = vec3( 0.55999, 0.26384, 0.44119);
-
-  // centerToEdge = 1.0 - centerToEdge;
-  // float mu = sqrt(1.0 - centerToEdge * centerToEdge);
-  float mu = centerToEdge;
-  float mu2 = mu * mu;
-  float mu3 = mu2 * mu;
-  float mu4 = mu2 * mu2;
-  float mu5 = mu4 * mu;
-
-  vec3 factor = a0 + a1*mu + a2*mu2 + a3*mu3 + a4*mu4 + a5*mu5;
-  return factor;
-}
-
-vec3 GetOtherLimbDarkeningFactor(float centerToEdge)
-{
-  vec3 u = vec3(0.9, 0.9, 0.9);
-  float mu = centerToEdge;
-  vec3 factor = 1.0 - u * (1.0 - mu);
-  return factor;
-}
-
-vec3 GetLimbDarkeningFactor(float centerToEdge)
-{
-  switch (limb_darkening_strategy)
-  {
-    case LIMB_DARKENING_NONE:   return vec3(1.0);
-    case LIMB_DARKENING_NEC96:  return GetNEC96LimbDarkeningFactor(centerToEdge);
-    case LIMB_DARKENING_HM98:   return GetHM98LimbDarkeningFactor(centerToEdge);
-    case LIMB_DARKENING_OTHER:  return GetOtherLimbDarkeningFactor(centerToEdge);
-    default:                    return vec3(1.0, 0.0, 1.0);
-  }
-}
-
-
 /*<h3>Main shading function</h3>
 
 <p>Using these functions we can now implement the main shader function, which
@@ -418,29 +357,10 @@ the scene:
 */
 
   // Compute the radiance of the sky.
-  float shadow_length = max(0.0, shadow_out - shadow_in) *
-      lightshaft_fadein_hack;
+  float shadow_length = max(0.0, shadow_out - shadow_in) * lightshaft_fadein_hack;
   vec3 transmittance;
   vec3 radiance = GetSolarSkyRadiance(camera - earth_center, view_direction, shadow_length, sun_direction, transmittance);
   radiance += GetLunarSkyRadiance(camera - earth_center, view_direction, 0.0, moon_direction, transmittance); // TODO: Compute shadow_length for moon (?) // NOTE: transmittance is the same for both sun and moon (same atmosphere)
-
-  // If the view ray intersects the Sun, add the Sun radiance.
-
-  float cos_phi = dot(view_direction, sun_direction);
-  float sin_phi = sqrt(1.0 - cos_phi * cos_phi);
-  float tan_phi = sin_phi / cos_phi;
-  float cos_omega = sun_size.y;
-  float sin_omega = sqrt(1.0 - cos_omega * cos_omega);
-  float sin_theta = (1.0 / sin_omega - 1.0) * tan_phi;
-  float cos_theta = sqrt(1.0 - sin_theta * sin_theta);
-  float centerToEdge = cos_theta;
-
-  float sun_visibility_factor = step(0.0, cos_phi - cos_omega); // NOTE: This might be changed to a smoothstep for some cheap antialiasing
-  // float sun_visibility_factor = smoothstep(-aa * 1.0, 0.0, cos_phi - cos_omega);
-  vec3 sun_limb_darkening_factor = max(vec3(0.0), GetLimbDarkeningFactor(centerToEdge)); // NOTE: limb_darkening_factor might incorporate sun_visibility_factor
-  radiance = radiance + sun_visibility_factor * sun_limb_darkening_factor * transmittance * GetSunRadiance();
-
-
   radiance = mix(radiance, ground_radiance, ground_alpha);
   radiance = mix(radiance, sphere_radiance, sphere_alpha);
   color.rgb = radiance;
