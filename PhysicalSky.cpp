@@ -220,17 +220,6 @@ void PhysicalSky::InitShaders()
     m_sunShader.AttachShader(sunFragmentShader.m_id);
     m_sunShader.AttachShader(m_solarModel->shader());
     m_sunShader.Build();
-
-    ShaderStage testVertexShader = ShaderStage();
-    testVertexShader.Create(ShaderType::VERTEX);
-    testVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/test.vert", "D:/dev/miri-tfm/resources/shaders/");
-    ShaderStage testFragmentShader = ShaderStage();
-    testFragmentShader.Create(ShaderType::FRAGMENT);
-    testFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/test.frag", "D:/dev/miri-tfm/resources/shaders/");
-    m_testShader.Create();
-    m_testShader.AttachShader(testVertexShader.m_id);
-    m_testShader.AttachShader(testFragmentShader.m_id);
-    m_testShader.Build();
 }
 
 void PhysicalSky::InitResources()
@@ -388,15 +377,10 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
     m_solarModel->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_sunShader.m_id, 4, 5, 6, 7);
 
-    // TODO: Extract function to obtain model given the billboard direction and size
-    glm::vec3 position = camera.GetPosition() + sunWorldDirection;
-    glm::vec3 forward = glm::normalize(sunWorldDirection);
-    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-    glm::vec3 up = glm::cross(right, forward);
-    glm::mat4 model = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-forward, 0.0), glm::vec4(position, 1.0));
-
+    glm::mat4 sunBillboardModel = BillboardModelFromCamera(camera.GetPosition(), sunWorldDirection);
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius)));
-    m_sunShader.SetMat4("Model", model * scale);
+
+    m_sunShader.SetMat4("Model", sunBillboardModel * scale);
     m_sunShader.SetMat4("View", camera.GetViewMatrix());
     m_sunShader.SetMat4("Projection", camera.GetProjectionMatrix());
 
@@ -416,11 +400,7 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_lunarModel->SetProgramUniforms(m_moonShader.m_id, 4, 5, 6, 7);
 
     // TODO: Extract function to obtain model given the billboard direction and size
-    glm::vec3 moonPosition = camera.GetPosition() + moonWorldDirection;
-    glm::vec3 moonForward = glm::normalize(moonWorldDirection);
-    glm::vec3 moonRight = glm::normalize(glm::cross(moonForward, glm::vec3(0.0f, 1.0f, 0.0f)));
-    glm::vec3 moonUp = glm::cross(moonRight, moonForward);
-    glm::mat4 moonModel = glm::mat4(glm::vec4(moonRight, 0.0f), glm::vec4(moonUp, 0.0f), glm::vec4(-moonForward, 0.0), glm::vec4(moonPosition, 1.0));
+    glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
     glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius))); // TODO: Get moon angular size correctly
 
     // COMPUTE EARTHSHINE
@@ -429,7 +409,7 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     constexpr float fullEarthshineIntensity = 0.19f;
     float earthshineIntensity = fullEarthshineIntensity * earthLitFraction;
 
-    m_moonShader.SetMat4("Model", moonModel * moonScale);
+    m_moonShader.SetMat4("Model", moonBillboardModel * moonScale);
     m_moonShader.SetMat4("View", camera.GetViewMatrix());
     m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
     m_moonShader.SetVec3("w_SunDir", sunWorldDirection);
@@ -482,6 +462,16 @@ void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDi
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     }
     glDepthFunc(previousDepthFunc);
+}
+
+glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection)
+{
+    glm::vec3 position = cameraPosition + billboardDirection;
+    glm::vec3 forward = glm::normalize(billboardDirection);
+    glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+    glm::vec3 up = glm::cross(right, forward);
+    glm::mat4 model = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-forward, 0.0), glm::vec4(position, 1.0));
+    return model;
 }
 
 double PhysicalSky::VisibleLitFractionFromPhaseAngle(double phi)

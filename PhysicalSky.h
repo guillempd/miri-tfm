@@ -23,6 +23,7 @@ public:
     void Update();
     void Render(const Camera& camera);
 private:
+    static glm::mat4 BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection);
     void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDirection, const glm::vec3& moonHorizonDirection);
@@ -126,5 +127,4 @@ private:
     Coordinates m_coordinates;
 
     Texture m_moonNormalMap;
-    ShaderProgram m_testShader;
 };
