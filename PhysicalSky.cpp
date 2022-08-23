@@ -396,13 +396,14 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
     glm::mat4 model = glm::mat4(glm::vec4(right, 0.0f), glm::vec4(up, 0.0f), glm::vec4(-forward, 0.0), glm::vec4(position, 1.0));
 
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius)));
-    m_sunShader.SetMat4("model", model * scale);
-    m_sunShader.SetMat4("view", camera.GetViewMatrix());
-    m_sunShader.SetMat4("projection", camera.GetProjectionMatrix());
+    m_sunShader.SetMat4("Model", model * scale);
+    m_sunShader.SetMat4("View", camera.GetViewMatrix());
+    m_sunShader.SetMat4("Projection", camera.GetProjectionMatrix());
 
     m_sunShader.SetVec3("w_CameraPos", camera.GetPosition());
-    m_sunShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
-    m_sunShader.SetVec3("w_SunDirection", sunWorldDirection);
+    m_sunShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+    m_sunShader.SetVec3("w_SunDir", sunWorldDirection);
+    m_sunShader.SetVec3("w_MoonDir", moonWorldDirection);
 
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -443,7 +444,6 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-// TODO: remove dependency from m_coordinates
 void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDirection, const glm::vec3& moonHorizonDirection)
 {
     m_demoShader.Use();

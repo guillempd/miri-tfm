@@ -1,34 +1,38 @@
 #version 330 core
 #include "atmosphere.glsl"
 
-in vec3 w_Pos;
-in vec2 TexCoord;
+// m_ : Model coordinate system
+// w_ : World coordinate system
+// v_ : View coordinate system
+// t_ : Tangent coordinate system
+// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin)
 
-// m_ : Model Space
-// w_ : World Space
-// v_ : View Space
-// t_ : Tangent Space
-// p_ : Planet Space (World space shifted so that planet is at origin)
+in vec2 TexCoord;
+in vec3 w_Pos;
 
 uniform vec3 w_CameraPos;
-uniform vec3 w_PlanetPos;
-uniform vec3 w_SunDirection;
+uniform vec3 w_EarthCenterPos;
+uniform vec3 w_SunDir;
+uniform vec3 w_MoonDir;
 
-out vec4 FragColor;
+out vec4 Color;
 
 void main()
 {
     if (length(TexCoord) > 1.0) discard;
-
-    vec3 p_CameraPos = w_CameraPos - w_PlanetPos;
-    vec3 p_Pos = w_Pos - w_PlanetPos;
-    vec3 p_ViewDirection = normalize(p_Pos - p_CameraPos);
-    vec3 p_SunDirection = w_SunDirection;
+    
+    vec3 e_CameraPos = w_CameraPos - w_EarthCenterPos;
+    vec3 e_Pos = w_Pos - w_EarthCenterPos;
+    vec3 e_ViewDir = normalize(e_Pos - e_CameraPos);
+    vec3 e_SunDir = w_SunDir;
+    vec3 e_MoonDir = w_MoonDir;
     vec3 transmittance;
-    vec3 inscatter = GetSolarSkyRadiance(p_CameraPos, p_ViewDirection, 0.0, p_SunDirection, transmittance);
+    vec3 solarSkyInscatter = GetSolarSkyRadiance(e_CameraPos, e_ViewDir, 0.0, e_SunDir, transmittance);
+    vec3 lunarSkyInscatter = GetLunarSkyRadiance(e_CameraPos, e_ViewDir, 0.0, e_MoonDir, transmittance);
+    vec3 inscatter = solarSkyInscatter + lunarSkyInscatter;
     vec3 radiance = GetSunRadiance();
     vec3 result = radiance * transmittance + inscatter;
-    FragColor = vec4(result, 1.0);   
+    Color = vec4(result, 1.0);
 }
 
 // LIMB DARKENING STUFF TO BE IMPLEMENTED
