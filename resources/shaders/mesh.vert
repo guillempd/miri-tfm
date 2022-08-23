@@ -1,29 +1,24 @@
 #version 330 core
 
-// m_ : Model Space
-// w_ : World Space
-// v_ : View Space
-// t_ : Tangent Space
+// m_ : Model coordinate system
+// w_ : World coordinate system
+// v_ : View coordinate system
+// t_ : Tangent coordinate system
+// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin, this is the one that has to be used for atmospheric functions)
 
 layout (location = 0) in vec3 m_Pos;
 layout (location = 1) in vec3 m_Normal;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-uniform vec3 w_LightDir;
+uniform mat4 Model;
+uniform mat4 View;
+uniform mat4 Projection;
 
 out vec3 w_Pos;
-out vec3 v_LightDir;
-out vec3 v_Normal;
 out vec3 w_Normal;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(m_Pos, 1.0);
-    w_Pos = (model * vec4(m_Pos, 1.0)).xyz;
-    v_LightDir = (view * vec4(w_LightDir, 0.0)).xyz;
-    v_Normal = mat3(inverse(transpose(view * model))) * m_Normal;
-    w_Normal = mat3(inverse(transpose(model))) * m_Normal;
+    w_Pos = (Model * vec4(m_Pos, 1.0)).xyz;
+    w_Normal = inverse(transpose(mat3(Model))) * m_Normal;
+    gl_Position = Projection * View * vec4(w_Pos, 1.0);
 }

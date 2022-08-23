@@ -13,10 +13,6 @@
 
 Mesh::Mesh()
 {
-    /*ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
-    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
-    m_program.Build(vertexShaderSource, fragmentShaderSource);*/
-
     // TODO: Use a sphere instead
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
@@ -59,9 +55,6 @@ Mesh::Mesh()
 
 Mesh::Mesh(std::string_view path)
 {
-    /*ShaderStage vertexShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.vert");
-    ShaderStage fragmentShaderSource = ShaderStage("D:/dev/miri-tfm/resources/shaders/mesh.frag");
-    m_program.Build(vertexShaderSource, fragmentShaderSource);*/
     Assimp::Importer importer = Assimp::Importer();
     const aiScene* scene = importer.ReadFile(path.data(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes); // NOTE: Be careful, path.data() might be an error: https://en.cppreference.com/w/cpp/string/basic_string_view/data#Notes
     if (scene) ProcessScene(scene);
@@ -161,86 +154,17 @@ void Mesh::Upload(const std::vector<glm::vec3>& positions, const std::vector<glm
     }
 }
 
-void Mesh::Render(const Camera &camera)
-{
-    m_program.Use();
-    glm::mat4 model = glm::mat4(1.0f);
-    // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0));
-    model = glm::scale(model, glm::vec3(1.0f));
-    //model = glm::rotate(model, -glm::half_pi<float>(), glm::vec3(1.0f, 0.0f, 0.0));
-    m_program.SetMat4("model", model);
-    m_program.SetMat4("view", camera.GetViewMatrix());
-    m_program.SetMat4("projection", camera.GetProjectionMatrix());
-    m_program.SetVec3("albedoConstant", m_albedo);
-    m_program.SetBool("useAlbedoTexture", m_useAlbedoTexture);
-    m_albedoTexture.SetUnit(0);
-    m_program.SetInt("albedoTexture", 0);
-    m_program.SetBool("useNormalTexture", m_useNormalTexture);
-    m_normalTexture.SetUnit(1);
-    m_program.SetInt("normalTexture", 1);
-    m_program.SetVec3("w_LightDir", -camera.GetForward());
-    glBindVertexArray(m_vao);
-    glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
 
-    if (glGetError() != GL_NO_ERROR)
-    {
-        std::cerr << "[OpenGL] E: Rendering mesh." << std::endl;
-    }
-}
 
-void Mesh::JustRender(const Camera& camera)
+void Mesh::Render()
 {
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_numElements, GL_UNSIGNED_INT, 0);
 }
-
-void Mesh::SetAlbedo(const glm::vec3& albedo)
-{
-    m_albedo = albedo;
-}
-
-void Mesh::LoadAlbedoTexture(std::string_view path)
-{
-    m_albedoTexture.Load(path);
-    m_useAlbedoTexture = true;
-}
-
-void Mesh::LoadNormalTexture(std::string_view path)
-{
-    m_normalTexture.Load(path);
-    m_useNormalTexture = true;
-}
-
 
 Mesh::~Mesh()
 {
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_ebo);
     glDeleteVertexArrays(1, &m_vao);
-}
-
-void Mesh::OnUpdate()
-{
-    /*static glm::vec4 albedo = glm::vec4(1.0);
-    ImGui::ColorEdit4("Albedo", glm::value_ptr(albedo), 0);
-    m_mesh->SetAlbedo(albedo);*/
-
-    if (ImGui::Begin("Mesh"))
-    {
-        nfdfilteritem_t imageFilter = { "Image", "png,jpg,hdr" };
-
-        if (ImGui::Button("Load albedo texture..."))
-        {
-
-            std::string path = ImGuiNfd::Load(&imageFilter, 1);
-            if (path != "") LoadAlbedoTexture(path);
-        }
-
-        if (ImGui::Button("Load normal texture..."))
-        {
-            std::string path = ImGuiNfd::Load(&imageFilter, 1);
-            if (path != "") LoadNormalTexture(path);
-        }
-    }
-    ImGui::End();
 }

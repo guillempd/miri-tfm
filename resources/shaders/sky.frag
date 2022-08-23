@@ -5,7 +5,7 @@
 // w_ : World coordinate system
 // v_ : View coordinate system
 // t_ : Tangent coordinate system
-// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin)
+// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin, this is the one that has to be used for atmospheric functions)
 
 in vec3 w_ViewDir;
 

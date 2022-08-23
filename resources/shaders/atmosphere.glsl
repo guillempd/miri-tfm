@@ -19,3 +19,5 @@ vec3 GetMoonRadiance();
 vec3 GetLunarSkyRadiance(vec3 camera, vec3 view_ray, float shadow_length, vec3 moon_direction, out vec3 transmittance);
 vec3 GetLunarSkyRadianceToPoint(vec3 camera, vec3 point, float shadow_length, vec3 moon_direction, out vec3 transmittance);
 vec3 GetMoonAndLunarSkyIrradiance(vec3 p, vec3 normal, vec3 moon_direction, out vec3 sky_irradiance);
+
+const float PI = 3.14159265358979;

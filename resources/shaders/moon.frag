@@ -9,7 +9,6 @@
 
 #include "atmosphere.glsl"
 
-const float PI = 3.14159265358979;
 const vec3 SunIrradiance = vec3(1500.0) / 3.0; // Make uniform
 const vec3 EarthIrradiance = vec3(0.05) / 3.0; // Make uniform
 const vec3 Albedo = 0.072 * vec3(1.2525, 1.04125, 0.8625);

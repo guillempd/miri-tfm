@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Coordinates.h"
 #include "Texture.h"
+#include "Mesh.h"
 
 #include <glm/glm.hpp>
 
@@ -128,4 +129,7 @@ private:
     Coordinates m_coordinates;
 
     Texture m_moonNormalMap;
+
+    Mesh m_mesh;
+    ShaderProgram m_meshShader;
 };

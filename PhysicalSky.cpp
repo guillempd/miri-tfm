@@ -37,6 +37,7 @@ PhysicalSky::PhysicalSky()
     , m_shouldRecomputeModel(false)
     , use_combined_textures_(false)
     , use_half_precision_(false)
+    , m_mesh("D:/Escritorio/Monkey.glb")
 {
     Init();
 }
@@ -210,6 +211,18 @@ void PhysicalSky::InitShaders()
     m_sunShader.AttachShader(sunFragmentShader.m_id);
     m_sunShader.AttachShader(m_solarModel->shader());
     m_sunShader.Build();
+
+    ShaderStage meshVertexShader = ShaderStage();
+    meshVertexShader.Create(ShaderType::VERTEX);
+    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
+    ShaderStage meshFragmentShader = ShaderStage();
+    meshFragmentShader.Create(ShaderType::FRAGMENT);
+    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_meshShader.Create();
+    m_meshShader.AttachShader(meshVertexShader.m_id);
+    m_meshShader.AttachShader(meshFragmentShader.m_id);
+    m_meshShader.AttachShader(m_solarModel->shader());
+    m_meshShader.Build();
 }
 
 void PhysicalSky::InitResources()
@@ -437,8 +450,20 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
 
 void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
 {
-    // TODO: Load mesh, then render it
+    m_meshShader.Use();
+    m_solarModel->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
+    m_lunarModel->SetProgramUniforms(m_meshShader.m_id, 4, 5, 6, 7);
 
+    m_meshShader.SetMat4("Model", glm::mat4(1.0f));
+    m_meshShader.SetMat4("View", camera.GetViewMatrix());
+    m_meshShader.SetMat4("Projection", camera.GetProjectionMatrix());
+
+    m_meshShader.SetVec3("w_CameraPos", camera.GetPosition());
+    m_meshShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+    m_meshShader.SetVec3("w_SunDir", sunWorldDirection);
+    m_meshShader.SetVec3("w_MoonDir", moonWorldDirection);
+
+    m_mesh.Render();
 }
 
 glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection)
