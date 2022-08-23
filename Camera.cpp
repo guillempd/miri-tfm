@@ -107,7 +107,7 @@ glm::mat4 Camera::GetProjectionMatrix() const
 glm::mat4 Camera::GetViewFromClipMatrix() const
 {
     float tanFov = glm::tan(m_verticalFov / 2.0f);
-    return glm::mat4(glm::vec4(tanFov * m_aspectRatio, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, tanFov, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    return glm::mat4(glm::vec4(tanFov * m_aspectRatio, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, tanFov, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 0.0f, -1.0f, 1.0f));
 }
 
 glm::mat4 Camera::GetWorldFromViewMatrix() const

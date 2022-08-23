@@ -1,23 +1,30 @@
 #version 330 core
 #include "atmosphere.glsl"
 
-in vec3 view_ray;
+// m_ : Model coordinate system
+// w_ : World coordinate system
+// v_ : View coordinate system
+// t_ : Tangent coordinate system
+// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin)
 
-uniform vec3 camera;
-uniform vec3 earth_center;
-uniform vec3 sun_direction;
-uniform vec3 sun_size;
+in vec3 w_ViewDir;
 
-out vec4 FragColor;
+uniform vec3 w_CameraPos;
+uniform vec3 w_EarthCenterPos;
+uniform vec3 w_SunDir;
+uniform vec3 w_MoonDir;
+
+out vec4 Color;
 
 void main()
 {
-    vec3 view_direction = normalize(view_ray);
+    vec3 e_CameraPos = w_CameraPos - w_EarthCenterPos;
+    vec3 e_ViewDir = normalize(w_ViewDir);
+    vec3 e_SunDir = w_SunDir;
+    vec3 e_MoonDir = w_MoonDir;
     vec3 transmittance;
-    vec3 radiance = GetSkyRadiance(camera - earth_center, view_direction, 0.0, sun_direction, transmittance);
-    if (dot(view_direction, sun_direction) > sun_size.y) {
-        radiance = radiance + transmittance * GetSolarRadiance();
-    }
-    FragColor.rgb = radiance;
-    FragColor.a = 1.0;
+    vec3 solarSkyInscatter = GetSolarSkyRadiance(e_CameraPos, e_ViewDir, 0.0, e_SunDir, transmittance);
+    vec3 lunarSkyInscatter = GetLunarSkyRadiance(e_CameraPos, e_ViewDir, 0.0, e_MoonDir, transmittance);
+    vec3 result = solarSkyInscatter + lunarSkyInscatter;
+    Color = vec4(result, 1.0);
 }

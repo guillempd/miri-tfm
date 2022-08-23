@@ -1,14 +1,20 @@
 #version 330 core
 
-layout(location = 0) in vec4 vertex;
+// m_ : Model coordinate system
+// w_ : World coordinate system
+// v_ : View coordinate system
+// t_ : Tangent coordinate system
+// e_ : Earth coordinate system (Earth centric coordinate space, analogous to world space shifted so that the earth center is at the origin)
 
-uniform mat4 model_from_view;
-uniform mat4 view_from_clip;
+layout(location = 0) in vec4 Pos;
 
-out vec3 view_ray;
+uniform mat4 WorldFromView;
+uniform mat4 ViewFromClip;
+
+out vec3 w_ViewDir;
 
 void main()
 {
-    view_ray = (model_from_view * vec4((view_from_clip * vec4(vertex.xy, 1.0, 0.0)).xyz, 0.0)).xyz;
-    gl_Position = vertex;
+    w_ViewDir = (WorldFromView * vec4((ViewFromClip * Pos).xyz, 0.0)).xyz;
+    gl_Position = Pos;
 }

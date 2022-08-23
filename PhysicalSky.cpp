@@ -178,24 +178,14 @@ void PhysicalSky::InitShaders()
     ShaderStage skyVertexShader = ShaderStage();
     skyVertexShader.Create(ShaderType::VERTEX);
     skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
-    /*ShaderStage skyFragmentShader = ShaderStage();
+    ShaderStage skyFragmentShader = ShaderStage();
     skyFragmentShader.Create(ShaderType::FRAGMENT);
     skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
     m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
-    m_skyShader.AttachShader(m_sunModel->shader());
-    m_skyShader.Build();*/
-
-    ShaderStage demoFragmentShader = ShaderStage();
-    demoFragmentShader.Create(ShaderType::FRAGMENT);
-    demoFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/demo.frag", "D:/dev/miri-tfm/resources/shaders/");
-    m_demoShader.Create();
-    m_demoShader.AttachShader(skyVertexShader.m_id);
-    m_demoShader.AttachShader(demoFragmentShader.m_id);
-    m_demoShader.AttachShader(m_solarModel->shader());
-    //m_demoShader.AttachShader(m_moonModel->shader());
-    m_demoShader.Build();
+    m_skyShader.AttachShader(m_solarModel->shader());
+    m_skyShader.Build();
 
     ShaderStage moonVertexShader = ShaderStage();
     moonVertexShader.Create(ShaderType::VERTEX);
@@ -229,21 +219,17 @@ void PhysicalSky::InitResources()
     glGenBuffers(1, &m_fullScreenQuadVbo);
     glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenQuadVbo);
     const GLfloat vertices[] = {
-        -1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        +1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        -1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
-        +1.0, +1.0, 1.0, 1.0, 0.0, 0.0, 1.0
+        -1.0, -1.0, 0.0, 1.0,
+        +1.0, -1.0, 0.0, 1.0,
+        -1.0, +1.0, 0.0, 1.0,
+        +1.0, +1.0, 0.0, 1.0
     };
     glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
     constexpr GLuint kAttribIndex = 0;
     constexpr int kCoordsPerVertex = 4;
-    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 7 * sizeof(float), 0);
+    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
     glEnableVertexAttribArray(kAttribIndex);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, false, 7 * sizeof(float), (void*)(4 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
+    glBindVertexArray(GL_NONE);
 
     m_moonNormalMap.Load("D:/Google Drive/Moon.Normal_8192x4096.jpg");
 }
@@ -362,13 +348,18 @@ void PhysicalSky::Render(const Camera& camera)
     glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);
     glm::vec3 moonWorldDirection = glm::vec3(horizonToWorld * glm::vec4(moonHorizonDirection, 0.0));
 
-    if (m_showBillboard)
+    glDisable(GL_DEPTH_TEST);
     {
-        RenderSun(camera, sunWorldDirection, moonWorldDirection);
-        RenderMoon(camera, sunWorldDirection, moonWorldDirection);
+        RenderSky(camera, sunWorldDirection, moonWorldDirection);
+        if (m_showBillboard)
+        {
+            RenderSun(camera, sunWorldDirection, moonWorldDirection);
+            RenderMoon(camera, sunWorldDirection, moonWorldDirection);
+        }
     }
+    glEnable(GL_DEPTH_TEST);
 
-    RenderDemo(camera, sunHorizonDirection, moonHorizonDirection);
+    RenderScene(camera, sunWorldDirection, moonWorldDirection);
 }
 
 void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
@@ -424,44 +415,30 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void PhysicalSky::RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDirection, const glm::vec3& moonHorizonDirection)
+void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
 {
-    m_demoShader.Use();
-    m_solarModel->SetProgramUniforms(m_demoShader.m_id, 0, 1, 2, 3);
-    m_lunarModel->SetProgramUniforms(m_demoShader.m_id, 4, 5, 6, 7);
+    m_skyShader.Use();
+    m_solarModel->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
+    m_lunarModel->SetProgramUniforms(m_skyShader.m_id, 4, 5, 6, 7);
 
-    m_demoShader.SetVec3("earth_center", glm::vec3(0.0f, 0.0f, -m_cPlanetRadius));
-    m_demoShader.SetVec3("sun_size", glm::vec3(glm::tan(m_cSunAngularRadius), glm::cos(m_cSunAngularRadius), 0.0f));
-    glm::mat4 view_from_clip = camera.GetViewFromClipMatrix();
-    m_demoShader.SetMat4("view_from_clip", view_from_clip);
+    m_skyShader.SetVec3("w_CameraPos", camera.GetPosition());
+    m_skyShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
+    m_skyShader.SetMat4("WorldFromView", camera.GetWorldFromViewMatrix());
+    m_skyShader.SetMat4("ViewFromClip", camera.GetViewFromClipMatrix());
 
-    glm::mat4 permutation = glm::mat4(glm::vec4(0, 1, 0, 0), glm::vec4(0, 0, 1, 0), glm::vec4(1, 0, 0, 0), glm::vec4(0, 0, 0, 1));
-    glm::vec4 cameraRight = permutation * glm::vec4(camera.GetRight(), 0.0f);
-    glm::vec4 cameraForward = permutation * glm::vec4(camera.GetForward(), 0.0f);
-    glm::vec4 cameraUp = permutation * glm::vec4(camera.GetUp(), 0.0f);
-    glm::vec4 cameraPosition = permutation * glm::vec4(camera.GetPosition(), 1.0f);
-
-    glm::mat4 model_from_view = glm::mat4(cameraRight, cameraUp, -cameraForward, cameraPosition);
-
-    m_demoShader.SetVec3("camera", cameraPosition);
-    m_demoShader.SetMat4("model_from_view", model_from_view);
-
-    m_demoShader.SetVec3("sun_direction", sunHorizonDirection);
-    m_demoShader.SetVec3("moon_direction", moonHorizonDirection);
-
-    m_demoShader.SetVec3("ground_albedo", m_cGroundAlbedo);
-    m_demoShader.SetInt("limb_darkening_strategy", m_cLimbDarkeningStrategy);
+    m_skyShader.SetVec3("w_SunDir", sunWorldDirection);
+    m_skyShader.SetVec3("w_MoonDir", moonWorldDirection);
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 
-    GLint previousDepthFunc;
-    glGetIntegerv(GL_DEPTH_FUNC, &previousDepthFunc);
-    glDepthFunc(GL_LEQUAL);
-    {
-        glBindVertexArray(m_fullScreenQuadVao);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    }
-    glDepthFunc(previousDepthFunc);
+    glBindVertexArray(m_fullScreenQuadVao);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
+{
+    // TODO: Load mesh, then render it
+
 }
 
 glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection)

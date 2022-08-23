@@ -26,7 +26,8 @@ private:
     static glm::mat4 BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection);
     void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
-    void RenderDemo(const Camera& camera, const glm::vec3& sunHorizonDirection, const glm::vec3& moonHorizonDirection);
+    void RenderSky(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
+    void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     static double VisibleLitFractionFromPhaseAngle(double phi);
 private:
     std::unique_ptr<atmosphere::Model> m_solarModel;
@@ -109,7 +110,7 @@ private:
 
 
     ShaderProgram m_skyShader;
-    ShaderProgram m_demoShader;
+    // ShaderProgram m_demoShader;
 
     // Full screen quad resources
     // TODO: Make these a proper mesh object
