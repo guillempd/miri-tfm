@@ -272,25 +272,25 @@ glm::vec3 Coordinates::GetMoonPosition(double T)
     return sphericalEcliptic;
 }
 
-glm::mat3 Coordinates::Rx(float theta)
+glm::mat3 Coordinates::Rx(float a)
 {
-    float stheta = glm::sin(theta);
-    float ctheta = glm::cos(theta);
-    return glm::mat3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, ctheta, stheta), glm::vec3(0.0f, -stheta, ctheta));
+    float sa = glm::sin(a);
+    float ca = glm::cos(a);
+    return glm::mat3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, ca, sa), glm::vec3(0.0f, -sa, ca));
 }
 
-glm::mat3 Coordinates::Ry(float theta)
+glm::mat3 Coordinates::Ry(float a)
 {
-    float stheta = glm::sin(theta);
-    float ctheta = glm::cos(theta);
-    return glm::mat3(glm::vec3(ctheta, 0.0f, -stheta), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(stheta, 0.0f, ctheta));
+    float sa = glm::sin(a);
+    float ca = glm::cos(a);
+    return glm::mat3(glm::vec3(ca, 0.0f, -sa), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(sa, 0.0f, ca));
 }
 
-glm::mat3 Coordinates::Rz(float theta)
+glm::mat3 Coordinates::Rz(float a)
 {
-    float stheta = glm::sin(theta);
-    float ctheta = glm::cos(theta);
-    return glm::mat3(glm::vec3(ctheta, stheta, 0.0f), glm::vec3(-stheta, ctheta, 0.0), glm::vec3(0.0f, 0.0f, 1.0f));
+    float sa = glm::sin(a);
+    float ca = glm::cos(a);
+    return glm::mat3(glm::vec3(ca, sa, 0.0f), glm::vec3(-sa, ca, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 // TODO: Check if something has to be added to the seconds (see: Jensen 2001 Appendix Time Conversion)
@@ -315,4 +315,21 @@ double Coordinates::GetJulianCenturies(double JD)
 {
     double T = (JD - 2451545.0) / 36525.0;
     return T;
+}
+
+float Coordinates::GetLon()
+{
+    return m_lon;
+}
+
+float Coordinates::GetLat()
+{
+    return m_lat;
+}
+
+float Coordinates::GetT()
+{
+    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
+    double T = GetJulianCenturies(JD);
+    return static_cast<float>(T);
 }

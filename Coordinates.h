@@ -14,6 +14,9 @@ public:
     glm::vec3 GetMoonPosition();
     float GetMoonPhaseAngle();
     float GetEarthPhaseAngle();
+    float GetLon();
+    float GetLat();
+    float GetT();
 private:
     static void PrintJulianDate(double JD);
     static glm::vec3 PrintSunPosition(double T, double T_, double lon, double lat);
@@ -25,9 +28,9 @@ private:
     static glm::vec3 RectangularEquatorialToRectangularHorizon(glm::vec3 rectangularEquatorial, double T, double T_, double lat, double lon);
     static glm::vec3 GetSunPosition(double T);
     static glm::vec3 GetMoonPosition(double T);
-    static glm::mat3 Rx(float theta);
-    static glm::mat3 Ry(float theta);
-    static glm::mat3 Rz(float theta);
+    static glm::mat3 Rx(float a);
+    static glm::mat3 Ry(float a);
+    static glm::mat3 Rz(float a);
     static double GetJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT); // JD
     static double GetJulianCenturies(double JD); // T
     glm::vec3 m_sphericalCoordinates;

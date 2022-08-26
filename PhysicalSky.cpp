@@ -448,6 +448,10 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
     m_skyShader.SetTexture("StarsMap", 8, m_starsMap);
     m_skyShader.SetFloat("StarsMapIntensity", glm::pow(10.0f, m_starsMapIntensity));
 
+    m_skyShader.SetFloat("lon", m_coordinates.GetLon());
+    m_skyShader.SetFloat("lat", m_coordinates.GetLat());
+    m_skyShader.SetFloat("T", m_coordinates.GetT());
+
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 
     glBindVertexArray(m_fullScreenQuadVao);
