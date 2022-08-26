@@ -132,4 +132,7 @@ private:
 
     Mesh m_mesh;
     ShaderProgram m_meshShader;
+
+    Texture m_starsMap;
+    float m_starsMapIntensity;
 };

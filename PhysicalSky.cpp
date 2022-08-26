@@ -38,6 +38,7 @@ PhysicalSky::PhysicalSky()
     , use_combined_textures_(false)
     , use_half_precision_(false)
     , m_mesh("D:/Escritorio/Monkey.glb")
+    , m_starsMapIntensity(0.0f)
 {
     Init();
 }
@@ -245,6 +246,7 @@ void PhysicalSky::InitResources()
     glBindVertexArray(GL_NONE);
 
     m_moonNormalMap.Load("D:/Google Drive/Moon.Normal_8192x4096.jpg");
+    m_starsMap.Load("D:/Escritorio/milkyway.hdr");
 }
 
 PhysicalSky::~PhysicalSky()
@@ -270,6 +272,7 @@ void PhysicalSky::Update()
 
     if (ImGui::Begin("Physical Sky Settings New"))
     {
+        ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
         ImGui::Checkbox("Show Billboard", &m_showBillboard);
         /*int popStyle = 0;
         if (m_cGroundAlbedo != m_nGroundAlbedo)
@@ -441,6 +444,9 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
 
     m_skyShader.SetVec3("w_SunDir", sunWorldDirection);
     m_skyShader.SetVec3("w_MoonDir", moonWorldDirection);
+
+    m_skyShader.SetTexture("StarsMap", 8, m_starsMap);
+    m_skyShader.SetFloat("StarsMapIntensity", glm::pow(10.0f, m_starsMapIntensity));
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 
