@@ -31,6 +31,8 @@ private:
     void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     static double VisibleLitFractionFromPhaseAngle(double phi);
 private:
+private:
+    enum class LimbDarkeningAlgorithm {NONE, NEC96, HM98};
     std::unique_ptr<atmosphere::Model> m_solarModel;
     std::unique_ptr<atmosphere::Model> m_lunarModel;
 
@@ -102,9 +104,9 @@ private:
     float m_nOzoneAbsorptionScale;
     float m_cOzoneAbsorptionScale;
 
-    int m_dLimbDarkeningStrategy;
-    int m_nLimbDarkeningStrategy;
-    int m_cLimbDarkeningStrategy;
+    LimbDarkeningAlgorithm m_dLimbDarkeningAlgorithm;
+    LimbDarkeningAlgorithm m_nLimbDarkeningAlgorithm;
+    LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
 
     bool m_shouldRecomputeModel;
 

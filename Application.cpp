@@ -27,6 +27,10 @@ Application::Application(int width, int height, Window* window)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     m_scene.Init(m_window);
     OnFramebufferSize(width, height);
 
@@ -122,6 +126,7 @@ void Application::OnScroll(double xoffset, double yoffset)
 void Application::OnUpdate()
 {
     ImGui::ShowDemoWindow();
+    ImGui::ShowMetricsWindow();
 
     m_camera.OnUpdate();
     m_scene.Update();

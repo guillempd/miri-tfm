@@ -33,7 +33,7 @@ PhysicalSky::PhysicalSky()
     , m_dMieExponentialDistribution(1.200000f) // km
     , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
     , m_dOzoneAbsorptionScale(0.001881f) // km^-1
-    , m_dLimbDarkeningStrategy(0)
+    , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_shouldRecomputeModel(false)
     , use_combined_textures_(false)
     , use_half_precision_(false)
@@ -68,7 +68,7 @@ void PhysicalSky::InitNewParameters()
     m_nMieExponentialDistribution = m_dMieExponentialDistribution;
     m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
     m_nOzoneAbsorptionScale = m_dOzoneAbsorptionScale;
-    m_nLimbDarkeningStrategy = m_dLimbDarkeningStrategy;
+    m_nLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
 }
 
 void PhysicalSky::InitCurrentParameters()
@@ -89,7 +89,7 @@ void PhysicalSky::InitCurrentParameters()
     m_cMieExponentialDistribution = m_nMieExponentialDistribution;
     m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
     m_cOzoneAbsorptionScale = m_nOzoneAbsorptionScale;
-    m_cLimbDarkeningStrategy = m_nLimbDarkeningStrategy;
+    m_cLimbDarkeningAlgorithm = m_nLimbDarkeningAlgorithm;
 }
 
 void PhysicalSky::InitModel()
@@ -172,6 +172,11 @@ void PhysicalSky::InitModel()
     */
     // SetRenderingContext();
     InitShaders();
+
+    // Required because initalizing the model messes with these
+    glEnable(GL_BLEND);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 
@@ -272,6 +277,11 @@ void PhysicalSky::Update()
 
     if (ImGui::Begin("Physical Sky Settings New"))
     {
+        m_shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
+        m_shouldRecomputeModel |= ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
+        m_shouldRecomputeModel |= ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
+        m_shouldRecomputeModel |= ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), -1);
+
         ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
         ImGui::Checkbox("Show Billboard", &m_showBillboard);
         /*int popStyle = 0;
@@ -298,13 +308,6 @@ void PhysicalSky::Update()
 
         m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
         m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-
-
-        ImGui::RadioButton("None", &m_nLimbDarkeningStrategy, 0); ImGui::SameLine();
-        ImGui::RadioButton("Nec96", &m_nLimbDarkeningStrategy, 1); ImGui::SameLine();
-        ImGui::RadioButton("HM98", &m_nLimbDarkeningStrategy, 2); ImGui::SameLine();
-        ImGui::RadioButton("Other", &m_nLimbDarkeningStrategy, 3); ImGui::SameLine();
-        ImGui::RadioButton("Invalid", &m_nLimbDarkeningStrategy, 4);
 
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
@@ -395,6 +398,8 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
     m_sunShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
     m_sunShader.SetVec3("w_SunDir", sunWorldDirection);
     m_sunShader.SetVec3("w_MoonDir", moonWorldDirection);
+
+    m_sunShader.SetInt("LimbDarkeningAlgorithm", static_cast<int>(m_cLimbDarkeningAlgorithm));
 
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
