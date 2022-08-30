@@ -251,7 +251,7 @@ void PhysicalSky::InitResources()
     glBindVertexArray(GL_NONE);
 
     m_moonNormalMap.Load("D:/Google Drive/Moon.Normal_8192x4096.jpg");
-    m_starsMap.Load("D:/Escritorio/milkyway.hdr");
+    m_starsMap.Load("D:/Escritorio/starmap_2020_8k.hdr");
 }
 
 PhysicalSky::~PhysicalSky()

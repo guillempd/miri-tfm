@@ -70,7 +70,7 @@ vec3 RectangularToSpherical(vec3 rectangular)
 {
     float r = length(rectangular);
     float lon = atan(rectangular.y, rectangular.x);
-    float lat = asin(rectangular.z / r);
+    float lat = acos(rectangular.z / r);
     return vec3(lon, lat, r);
 }
 
@@ -89,7 +89,7 @@ void main()
     vec3 rh_ViewDir = WorldToHorizon(e_ViewDir);
     vec3 re_ViewDir = RectangularHorizonToRectangularEquatorial(rh_ViewDir);
     vec3 se_ViewDir = RectangularToSpherical(re_ViewDir);
-    vec2 uv = se_ViewDir.xy / vec2(2.0 * PI, PI);
+    vec2 uv = vec2(0.5, 1.0) - se_ViewDir.xy / vec2(2.0 * PI, PI);
     vec3 radiance = texture(StarsMap, uv).rgb * StarsMapIntensity;
 
     vec3 transmittance;
