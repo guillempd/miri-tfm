@@ -33,7 +33,7 @@ PhysicalSky::PhysicalSky()
     , m_dAtmosphereHeight(60.0f) // km
 
     , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
-    , m_shouldRecomputeModel(false)
+    , m_notAppliedChanges(false)
     , m_mesh("D:/Escritorio/Monkey.glb")
     , m_starsMapIntensity(0.0f)
 {
@@ -42,12 +42,12 @@ PhysicalSky::PhysicalSky()
 
 void PhysicalSky::Init()
 {
-    InitNewParameters();
+    ResetDefaults();
     InitModel();
     InitResources();
 }
 
-void PhysicalSky::InitNewParameters()
+void PhysicalSky::MakeDefaultParametersNew()
 {
     m_nGroundAlbedo = m_dGroundAlbedo;
     m_nSunIntensity = m_dSunIntensity;
@@ -65,11 +65,10 @@ void PhysicalSky::InitNewParameters()
     m_nMieExponentialDistribution = m_dMieExponentialDistribution;
     m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
     m_nOzoneAbsorptionScale = m_dOzoneAbsorptionScale;
-    m_nLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
     m_nMoonAngularRadius = m_dMoonAngularRadius;
 }
 
-void PhysicalSky::InitCurrentParameters()
+void PhysicalSky::MakeNewParametersCurrent()
 {
     m_cGroundAlbedo = m_nGroundAlbedo;
     m_cSunIntensity = m_nSunIntensity;
@@ -87,13 +86,45 @@ void PhysicalSky::InitCurrentParameters()
     m_cMieExponentialDistribution = m_nMieExponentialDistribution;
     m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
     m_cOzoneAbsorptionScale = m_nOzoneAbsorptionScale;
-    m_cLimbDarkeningAlgorithm = m_nLimbDarkeningAlgorithm;
     m_cMoonAngularRadius = m_nMoonAngularRadius;
+}
+
+void PhysicalSky::ResetDefaults()
+{
+    MakeDefaultParametersNew();
+    MakeNewParametersCurrent();
+    m_cLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
+}
+
+bool PhysicalSky::AnyChange()
+{
+    bool result = false;
+
+    result |= m_nGroundAlbedo != m_dGroundAlbedo;
+    result |= m_nSunIntensity != m_dSunIntensity;
+    result |= m_nSunAngularRadius != m_dSunAngularRadius;
+    result |= m_nPlanetRadius != m_dPlanetRadius;
+    result |= m_nAtmosphereHeight != m_dAtmosphereHeight;
+    result |= m_nRayleighScatteringCoefficient != m_dRayleighScatteringCoefficient;
+    result |= m_nRayleighScatteringScale != m_dRayleighScatteringScale;
+    result |= m_nRayleighExponentialDistribution != m_dRayleighExponentialDistribution;
+    result |= m_nMieScatteringCoefficient != m_dMieScatteringCoefficient;
+    result |= m_nMieScatteringScale != m_dMieScatteringScale;
+    result |= m_nMieAbsorptionCoefficient != m_dMieAbsorptionCoefficient;
+    result |= m_nMieAbsorptionScale != m_dMieAbsorptionScale;
+    result |= m_nMiePhaseFunctionG != m_dMiePhaseFunctionG;
+    result |= m_nMieExponentialDistribution != m_dMieExponentialDistribution;
+    result |= m_nOzoneAbsorptionCoefficient != m_dOzoneAbsorptionCoefficient;
+    result |= m_nOzoneAbsorptionScale != m_dOzoneAbsorptionScale;
+    result |= m_nMoonAngularRadius != m_dMoonAngularRadius;
+
+    result |= m_cLimbDarkeningAlgorithm != m_dLimbDarkeningAlgorithm;
+
+    return result;
 }
 
 void PhysicalSky::InitModel()
 {
-    InitCurrentParameters();
     const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>();
 
     int viewportData[4];
@@ -260,9 +291,9 @@ void PhysicalSky::Update()
         {
             ImGui::PushID("General");
             ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
+            m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
@@ -270,19 +301,19 @@ void PhysicalSky::Update()
         {
             ImGui::PushID("Sun");
             // TODO: Color
-            m_shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
-            m_shouldRecomputeModel |= ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
-            m_shouldRecomputeModel |= ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
-            m_shouldRecomputeModel |= ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), -1);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Intensity", &m_nSunIntensity, 0.0f, 15000.0f);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Angular Radius", &m_nSunAngularRadius, 0.0f, 0.1f);
+            ImGui::RadioButton("None", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
+            ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
+            ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
+            ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), -1);
+            m_notAppliedChanges |= ImGui::SliderFloat("Intensity", &m_nSunIntensity, 0.0f, 15000.0f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius", &m_nSunAngularRadius, 0.0f, 0.1f);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Moon"))
         {
             ImGui::PushID("Moon");
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Angular Radius", &m_nMoonAngularRadius, 0.0f, 0.1f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius", &m_nMoonAngularRadius, 0.0f, 0.1f);
             ImGui::PopID();
         }
 
@@ -294,45 +325,48 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
             ImGui::PushID("Rayleigh");
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_nRayleighScatteringScale, 0.0f, 2.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nRayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_nRayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale", &m_nRayleighScatteringScale, 0.0f, 2.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nRayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
+            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution", &m_nRayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Mie"))
         {
             ImGui::PushID("Mie");
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nMieScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_nMieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nMieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_nMieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Phase Function G", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_nMieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nMieScatteringCoefficient), ImGuiColorEditFlags_Float);
+            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale", &m_nMieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nMieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale", &m_nMieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Phase Function G", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution", &m_nMieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Ozone"))
         {
             ImGui::PushID("Ozone");
-            m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nOzoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_nOzoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nOzoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
+            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale", &m_nOzoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
-
-        if (ImGui::Button("Reset Defaults"))
+        if (AnyChange())
         {
-            InitNewParameters();
-            m_shouldRecomputeModel = true;
+            if (ImGui::Button("Reset Defaults"))
+            {
+                ResetDefaults();
+                InitModel();
+            }
         }
 
-        if (m_shouldRecomputeModel)
+        if (m_notAppliedChanges)
         {
             if (ImGui::Button("Recompute Model"))
             {
+                MakeNewParametersCurrent();
                 InitModel();
-                m_shouldRecomputeModel = false;
+                m_notAppliedChanges = false;
             }
         }
     }

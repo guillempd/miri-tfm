@@ -16,14 +16,16 @@ public:
     PhysicalSky();
     ~PhysicalSky();
     void Init();
-    void InitNewParameters();
-    void InitCurrentParameters();
+    void MakeDefaultParametersNew();
+    void MakeNewParametersCurrent();
     void InitResources();
     void InitShaders();
     void InitModel();
     void Update();
     void Render(const Camera& camera);
 private:
+    bool AnyChange();
+    void ResetDefaults();
     static glm::mat4 BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection);
     void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
@@ -64,7 +66,6 @@ private:
     float m_cSunAngularRadius;
 
     LimbDarkeningAlgorithm m_dLimbDarkeningAlgorithm;
-    LimbDarkeningAlgorithm m_nLimbDarkeningAlgorithm;
     LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
 
     // Moon
@@ -122,7 +123,7 @@ private:
     float m_nOzoneAbsorptionScale;
     float m_cOzoneAbsorptionScale;
 
-    bool m_shouldRecomputeModel;
+    bool m_notAppliedChanges;
 
     // SHADING RESOURCES
     ShaderProgram m_skyShader;
