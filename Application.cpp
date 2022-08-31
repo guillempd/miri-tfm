@@ -16,6 +16,7 @@ Application::Application(int width, int height, Window* window)
     , m_scene()
     , m_window(window)
     , m_exposure(-2.0f)
+    , m_max_white(1.0f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -134,6 +135,7 @@ void Application::OnUpdate()
     if (ImGui::Begin("General Settings"))
     {
         ImGui::SliderFloat("Exposure", &m_exposure, -5.0f, 5.0f);
+        ImGui::SliderFloat("White Point", &m_max_white, 0.0f, 10.0f);
     }
     ImGui::End();
 
@@ -162,6 +164,7 @@ void Application::OnRender()
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
     m_postprocessShader.SetFloat("exposure", glm::pow(10.0f, m_exposure));
+    m_postprocessShader.SetFloat("max_white", m_max_white);
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

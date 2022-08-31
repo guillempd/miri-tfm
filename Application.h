@@ -34,4 +34,5 @@ private:
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
     float m_exposure;
+    float m_max_white;
 };
