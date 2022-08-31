@@ -31,15 +31,17 @@ private:
     void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     static double VisibleLitFractionFromPhaseAngle(double phi);
 private:
-private:
     enum class LimbDarkeningAlgorithm {NONE, NEC96, HM98};
+private:
     std::unique_ptr<atmosphere::Model> m_solarModel;
     std::unique_ptr<atmosphere::Model> m_lunarModel;
 
-    // Model parameters
+    // MODEL PARAMETERS
     // d: Default
     // m: New
     // c: Current
+
+    // General
     glm::vec3 m_dGroundAlbedo;
     glm::vec3 m_nGroundAlbedo;
     glm::vec3 m_cGroundAlbedo;
@@ -52,6 +54,7 @@ private:
     float m_nAtmosphereHeight;
     float m_cAtmosphereHeight;
 
+    // Sun
     float m_dSunIntensity;
     float m_nSunIntensity;
     float m_cSunIntensity;
@@ -60,6 +63,19 @@ private:
     float m_nSunAngularRadius;
     float m_cSunAngularRadius;
 
+    LimbDarkeningAlgorithm m_dLimbDarkeningAlgorithm;
+    LimbDarkeningAlgorithm m_nLimbDarkeningAlgorithm;
+    LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
+
+    // Moon
+    float m_dMoonAngularRadius;
+    float m_nMoonAngularRadius;
+    float m_cMoonAngularRadius;
+
+    // Sky
+    float m_starsMapIntensity;
+
+    // Rayleigh
     glm::vec3 m_dRayleighScatteringCoefficient;
     glm::vec3 m_nRayleighScatteringCoefficient;
     glm::vec3 m_cRayleighScatteringCoefficient;
@@ -72,6 +88,7 @@ private:
     float m_nRayleighExponentialDistribution;
     float m_cRayleighExponentialDistribution;
 
+    // Mie
     glm::vec3 m_dMieScatteringCoefficient;
     glm::vec3 m_nMieScatteringCoefficient;
     glm::vec3 m_cMieScatteringCoefficient;
@@ -96,6 +113,7 @@ private:
     float m_nMieExponentialDistribution;
     float m_cMieExponentialDistribution;
 
+    // Ozone
     glm::vec3 m_dOzoneAbsorptionCoefficient;
     glm::vec3 m_nOzoneAbsorptionCoefficient;
     glm::vec3 m_cOzoneAbsorptionCoefficient;
@@ -104,16 +122,16 @@ private:
     float m_nOzoneAbsorptionScale;
     float m_cOzoneAbsorptionScale;
 
-    LimbDarkeningAlgorithm m_dLimbDarkeningAlgorithm;
-    LimbDarkeningAlgorithm m_nLimbDarkeningAlgorithm;
-    LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
-
     bool m_shouldRecomputeModel;
 
-
-
+    // SHADING RESOURCES
     ShaderProgram m_skyShader;
-    // ShaderProgram m_demoShader;
+    ShaderProgram m_sunShader;
+    ShaderProgram m_moonShader;
+    ShaderProgram m_meshShader;
+    Texture m_moonNormalMap;
+    Texture m_starsMap;
+    Mesh m_mesh;
 
     // Full screen quad resources
     // TODO: Make these a proper mesh object
@@ -124,17 +142,6 @@ private:
     bool use_combined_textures_;
     bool use_half_precision_;
 
-    // NEW MEMBER VARIABLES
-    ShaderProgram m_sunShader;
-    ShaderProgram m_moonShader;
-    bool m_showBillboard;
     Coordinates m_coordinates;
 
-    Texture m_moonNormalMap;
-
-    Mesh m_mesh;
-    ShaderProgram m_meshShader;
-
-    Texture m_starsMap;
-    float m_starsMapIntensity;
 };

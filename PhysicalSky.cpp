@@ -7,9 +7,6 @@
 #include <iostream>
 
 namespace {
-    constexpr double kPi = 3.1415926;
-    //constexpr double kSunAngularRadius = 0.00935 / 2.0;
-    //constexpr double kSunSolidAngle = kPi * kSunAngularRadius * kSunAngularRadius;
     constexpr double kLengthUnitInMeters = 1000.0;
 }  // anonymous namespace
 
@@ -17,22 +14,24 @@ using namespace atmosphere;
 
 // TODO: Put units in the ImGui interface
 PhysicalSky::PhysicalSky()
-    : m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
-    , m_dSunIntensity(500.000000f) // W*m^-2, for a total irradiance of 1500 W*m^-2
-    , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
-    , m_dPlanetRadius(6360.0f) // km
-    , m_dAtmosphereHeight(60.0f) // km
+    : m_dRayleighScatteringScale(0.033100f) // km^-1
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
-    , m_dRayleighScatteringScale(0.033100f) // km^-1
     , m_dRayleighExponentialDistribution(8.000000f) // km
-    , m_dMieScatteringCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
     , m_dMieScatteringScale(0.003996f) // km^-1
-    , m_dMieAbsorptionCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
+    , m_dMieScatteringCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
     , m_dMieAbsorptionScale(0.000444f) // km^-1
+    , m_dMieAbsorptionCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
     , m_dMiePhaseFunctionG(0.800000f) // unitless
     , m_dMieExponentialDistribution(1.200000f) // km
-    , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
     , m_dOzoneAbsorptionScale(0.001881f) // km^-1
+    , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
+    , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
+    , m_dSunIntensity(1500.000000f) // W*m^-2
+    , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
+    , m_dMoonAngularRadius(0.05f) // rad
+    , m_dPlanetRadius(6360.0f) // km
+    , m_dAtmosphereHeight(60.0f) // km
+
     , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_shouldRecomputeModel(false)
     , use_combined_textures_(false)
@@ -69,6 +68,7 @@ void PhysicalSky::InitNewParameters()
     m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
     m_nOzoneAbsorptionScale = m_dOzoneAbsorptionScale;
     m_nLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
+    m_nMoonAngularRadius = m_dMoonAngularRadius;
 }
 
 void PhysicalSky::InitCurrentParameters()
@@ -90,13 +90,14 @@ void PhysicalSky::InitCurrentParameters()
     m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
     m_cOzoneAbsorptionScale = m_nOzoneAbsorptionScale;
     m_cLimbDarkeningAlgorithm = m_nLimbDarkeningAlgorithm;
+    m_cMoonAngularRadius = m_nMoonAngularRadius;
 }
 
 void PhysicalSky::InitModel()
 {
     InitCurrentParameters();
     const double max_sun_zenith_angle =
-        (use_half_precision_ ? 102.0 : 120.0) / 180.0 * kPi;
+        (use_half_precision_ ? 102.0 : 120.0) / 180.0 * glm::pi<float>();
 
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
@@ -127,7 +128,7 @@ void PhysicalSky::InitModel()
     double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
 
     // Compute lunar model parameters
-    double moon_angular_radius = sun_angular_radius;
+    double moon_angular_radius = static_cast<double>(m_cMoonAngularRadius);
     glm::dvec3 moon_irradiance = sun_irradiance;
     double C = 0.072;
     double r_m = 1737.4; // Distance in km
@@ -262,58 +263,50 @@ PhysicalSky::~PhysicalSky()
 
 void PhysicalSky::Update()
 {
-   /* bool shouldRecomputeModel = false;
-    if (ImGui::Begin("Physical Sky Settings"))
-    {
-        shouldRecomputeModel |= ImGui::Checkbox("Use combined textures", &use_combined_textures_);
-        shouldRecomputeModel |= ImGui::Checkbox("Use half precision", &use_half_precision_);
-    }
-    ImGui::End();
-
-    if (shouldRecomputeModel) InitModel();
-    if (glGetError() != GL_NO_ERROR) std::cerr << "Error recomputing model" << std::endl;*/
-
     m_coordinates.Update();
 
-    if (ImGui::Begin("Physical Sky Settings New"))
+    if (ImGui::Begin("Atmosphere Rendering Settings"))
     {
-        m_shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
-        m_shouldRecomputeModel |= ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
-        m_shouldRecomputeModel |= ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
-        m_shouldRecomputeModel |= ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), -1);
-
-        ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
-        ImGui::Checkbox("Show Billboard", &m_showBillboard);
-        /*int popStyle = 0;
-        if (m_cGroundAlbedo != m_nGroundAlbedo)
+        if (ImGui::CollapsingHeader("General"))
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0, 0.0, 0.0, 1.0));
-            popStyle = 1;
-        }*/
-        m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
-       /* ImGui::PopStyleColor(popStyle);
-        if (m_nGroundAlbedo != m_dGroundAlbedo)
+            ImGui::PushID("General");
+            ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
+            m_shouldRecomputeModel |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::PopID();
+        }
+
+        if (ImGui::CollapsingHeader("Sun"))
         {
-            ImGui::SameLine();
-            if (ImGui::ArrowButton("##Ground Albedo Reset", ImGuiDir_Left))
-            {
-                m_nGroundAlbedo = m_dGroundAlbedo;
-                m_shouldRecomputeModel = true;
-            }
-        }*/
+            ImGui::PushID("Sun");
+            // TODO: Color
+            m_shouldRecomputeModel |= ImGui::RadioButton("None", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
+            m_shouldRecomputeModel |= ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
+            m_shouldRecomputeModel |= ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
+            m_shouldRecomputeModel |= ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_nLimbDarkeningAlgorithm), -1);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Intensity", &m_nSunIntensity, 0.0f, 15000.0f);
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Angular Radius", &m_nSunAngularRadius, 0.0f, 0.1f);
+            ImGui::PopID();
+        }
 
-        // TODO: Sun Color
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Intensity", &m_nSunIntensity, 0.0f, 150000.0f);
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Sun Angular Radius", &m_nSunAngularRadius, 0.0f, 0.1f); // Change to angular diameter/size (?) This is in degrees convert to radians
+        if (ImGui::CollapsingHeader("Moon"))
+        {
+            ImGui::PushID("Moon");
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Angular Radius", &m_nMoonAngularRadius, 0.0f, 0.1f);
+            ImGui::PopID();
+        }
 
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-        m_shouldRecomputeModel |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+        if (ImGui::CollapsingHeader("Sky"))
+        {
+
+        }
 
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
             ImGui::PushID("Rayleigh");
+            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_nRayleighScatteringScale, 0.0f, 2.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nRayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_shouldRecomputeModel |= ImGui::SliderFloat("Scattering Scale", &m_nRayleighScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Exponential Distribution", &m_nRayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
@@ -333,10 +326,16 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("Ozone"))
         {
             ImGui::PushID("Ozone");
-            // TODO: Layer
             m_shouldRecomputeModel |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nOzoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
             m_shouldRecomputeModel |= ImGui::SliderFloat("Absorption Scale", &m_nOzoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
+        }
+
+
+        if (ImGui::Button("Reset Defaults"))
+        {
+            InitNewParameters();
+            m_shouldRecomputeModel = true;
         }
 
         if (m_shouldRecomputeModel)
@@ -370,11 +369,8 @@ void PhysicalSky::Render(const Camera& camera)
     glDisable(GL_DEPTH_TEST);
     {
         RenderSky(camera, sunWorldDirection, moonWorldDirection);
-        if (m_showBillboard)
-        {
-            RenderSun(camera, sunWorldDirection, moonWorldDirection);
-            RenderMoon(camera, sunWorldDirection, moonWorldDirection);
-        }
+        RenderSun(camera, sunWorldDirection, moonWorldDirection);
+        RenderMoon(camera, sunWorldDirection, moonWorldDirection);
     }
     glEnable(GL_DEPTH_TEST);
 
@@ -411,9 +407,8 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_solarModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_moonShader.m_id, 4, 5, 6, 7);
 
-    // TODO: Extract function to obtain model given the billboard direction and size
     glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
-    glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius))); // TODO: Get moon angular size correctly
+    glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cMoonAngularRadius)));
 
     // COMPUTE EARTHSHINE
     float phi = m_coordinates.GetEarthPhaseAngle();
