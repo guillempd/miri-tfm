@@ -44,4 +44,6 @@ private:
     double m_JD;
     double m_lon;
     double m_lat;
+    double m_lonDeg;
+    double m_latDeg;
 };

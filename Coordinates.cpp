@@ -12,8 +12,8 @@ Coordinates::Coordinates()
     , m_m(0)
     , m_s(33)
     , m_JD(2513491.14661)
-    , m_lon(0.0)
-    , m_lat(0.0)
+    , m_lonDeg(0.0)
+    , m_latDeg(0.0)
 {}
 
 
@@ -51,8 +51,10 @@ void Coordinates::Update()
         //ImGui::Text("T: %.6f", T);
         //ImGui::InputDouble("JD", &m_JD);
 
-        ImGui::InputDouble("Observer Longitude", &m_lon);
-        ImGui::InputDouble("Observer Latitude", &m_lat);
+        ImGui::InputDouble("Observer Longitude", &m_lonDeg);
+        ImGui::InputDouble("Observer Latitude", &m_latDeg);
+        m_lon = glm::radians(m_lonDeg);
+        m_lat = glm::radians(m_latDeg);
 
         double deltaT = 0.0;
         double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, deltaT);
