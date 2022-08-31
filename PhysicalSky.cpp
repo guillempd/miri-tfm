@@ -28,7 +28,7 @@ PhysicalSky::PhysicalSky()
     , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
     , m_dSunIntensity(1500.000000f) // W*m^-2
     , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
-    , m_dMoonAngularRadius(0.05f) // rad
+    , m_dMoonAngularRadius(0.05f) // rad // TODO: Get correct value
     , m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
 
@@ -123,21 +123,42 @@ bool PhysicalSky::AnyChange()
     return result;
 }
 
+// TODO: r_m and d in other units
+glm::dvec3 PhysicalSky::ComputeMoonIrradiance()
+{
+    double C = 0.072;
+    double r_m = 1737.4; // Radius of the moon in km
+    double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_coordinates (in AU)
+    double E_sm = 1500.0;
+    double E_em = 0.19 * 0.5; // TODO: Compute correctly
+    double phi = m_coordinates.GetMoonPhaseAngle();
+    double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
+    double q = r_m / d;
+    double E_m = (2.0 / 3.0)*C*q*q * (E_em + 2.0 * E_sm * moonLitFraction);
+    return glm::dvec3(1.0, 1.0, 1.0) * (E_m / 3.0);
+}
+
 void PhysicalSky::InitModel()
 {
-    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>();
-
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
-    glm::dvec3 sun_irradiance = glm::dvec3(1.0) * static_cast<double>(m_cSunIntensity);
+    glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIntensity) / 3.0);
+    double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
+
+    glm::dvec3 moon_irradiance = ComputeMoonIrradiance();
+    double moon_angular_radius = static_cast<double>(m_cMoonAngularRadius);
+
+    double bottom_radius = static_cast<double>(m_cPlanetRadius) * 1000.0;
+    double top_radius = bottom_radius + static_cast<double>(m_cAtmosphereHeight) * 1000.0;
 
     DensityProfileLayer rayleigh_layer(0.0, 1.0, -1.0 / (static_cast<double>(m_cRayleighExponentialDistribution) * 1000.0), 0.0, 0.0);
-    glm::dvec3 rayleigh_scattering = (static_cast<glm::dvec3>(m_cRayleighScatteringCoefficient) * static_cast<double>(m_cRayleighScatteringScale)) / 1000.0;
+    glm::dvec3 rayleigh_scattering = static_cast<glm::dvec3>(m_cRayleighScatteringCoefficient) * (static_cast<double>(m_cRayleighScatteringScale) / 1000.0);
 
     DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / (static_cast<double>(m_cMieExponentialDistribution) * 1000.0), 0.0, 0.0);
-    glm::dvec3 mie_scattering = (static_cast<glm::dvec3>(m_cMieScatteringCoefficient) * static_cast<double>(m_cMieScatteringScale)) / 1000.0;
-    glm::dvec3 mie_extinction = mie_scattering + (static_cast<glm::dvec3>(m_cMieAbsorptionCoefficient) * static_cast<double>(m_cMieAbsorptionScale)) / 1000.0;
+    glm::dvec3 mie_scattering = static_cast<glm::dvec3>(m_cMieScatteringCoefficient) * (static_cast<double>(m_cMieScatteringScale) / 1000.0);
+    glm::dvec3 mie_extinction = mie_scattering + static_cast<glm::dvec3>(m_cMieAbsorptionCoefficient) * (static_cast<double>(m_cMieAbsorptionScale) / 1000.0);
+    double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
 
     // Density profile increasing linearly from 0 to 1 between 10 and 25km, and
     // decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
@@ -149,25 +170,7 @@ void PhysicalSky::InitModel()
     glm::dvec3 absorption_extinction = (static_cast<glm::dvec3>(m_cOzoneAbsorptionCoefficient) * static_cast<double>(m_cOzoneAbsorptionScale)) / 1000.0;
 
     glm::dvec3 ground_albedo = static_cast<glm::dvec3>(m_cGroundAlbedo);
-    double bottom_radius = static_cast<double>(m_cPlanetRadius) * 1000.0;
-    double top_radius = bottom_radius + static_cast<double>(m_cAtmosphereHeight) * 1000.0;
-    double mie_phase_function_g = static_cast<double>(m_cMiePhaseFunctionG);
-    double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
-
-    // Compute lunar model parameters
-    double moon_angular_radius = static_cast<double>(m_cMoonAngularRadius);
-    glm::dvec3 moon_irradiance = sun_irradiance;
-    double C = 0.072;
-    double r_m = 1737.4; // Distance in km
-    double d = 0.002 * 149.6e6; // TODO // Get from m_coordinates
-    double E_sm = 1500.0;
-    double E_em = 0.19 * 0.5; // TODO: Compute
-    double phi = m_coordinates.GetMoonPhaseAngle();
-    double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
-    double E_m = (2.0 * C * r_m * r_m) / (3.0 * d * d) * (E_em + 2.0 * E_sm * moonLitFraction);
-    moon_irradiance = glm::dvec3(E_m) / 3.0;
-     // moon_irradiance *= glm::dvec3(1.0, 0.0, 0.0);
-    
+    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>(); // TODO: Take a look at this value https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/model.h.html
 
     m_solarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,

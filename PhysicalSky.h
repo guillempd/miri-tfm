@@ -26,6 +26,7 @@ public:
 private:
     bool AnyChange();
     void ResetDefaults();
+    glm::dvec3 ComputeMoonIrradiance();
     static glm::mat4 BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection);
     void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
