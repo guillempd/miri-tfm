@@ -514,9 +514,6 @@ void DrawQuad(const std::vector<bool>& enable_blend, GLuint quad_vao) {
   }
 }
 
-constexpr int kLambdaMin = 360;
-constexpr int kLambdaMax = 830;
-
 }  // anonymous namespace
 
 /*<h3 id="implementation">Model implementation</h3>
@@ -551,7 +548,6 @@ Model::Model(
     const glm::dvec3& ground_albedo,
     double max_sun_zenith_angle,
     double length_unit_in_meters,
-    bool combine_scattering_textures,
     int light_source) :
         rgb_format_supported_(IsFramebufferRgbFormatSupported()),
         light_source_(light_source) {
@@ -638,8 +634,6 @@ Model::Model(
           std::to_string(IRRADIANCE_TEXTURE_WIDTH) + ";\n" +
       "const int IRRADIANCE_TEXTURE_HEIGHT = " +
           std::to_string(IRRADIANCE_TEXTURE_HEIGHT) + ";\n" +
-      (combine_scattering_textures ?
-          "#define COMBINED_SCATTERING_TEXTURES\n" : "") +
       definitions_glsl +
       "const AtmosphereParameters ATMOSPHERE = AtmosphereParameters(\n" +
           to_string(sun_irradiance, 1.0) + ",\n" +
@@ -676,16 +670,12 @@ Model::Model(
       SCATTERING_TEXTURE_WIDTH,
       SCATTERING_TEXTURE_HEIGHT,
       SCATTERING_TEXTURE_DEPTH,
-      combine_scattering_textures || !rgb_format_supported_ ? GL_RGBA : GL_RGB);
-  if (combine_scattering_textures) {
-    optional_single_mie_scattering_texture_ = 0;
-  } else {
-    optional_single_mie_scattering_texture_ = NewTexture3d(
-        SCATTERING_TEXTURE_WIDTH,
-        SCATTERING_TEXTURE_HEIGHT,
-        SCATTERING_TEXTURE_DEPTH,
-        rgb_format_supported_ ? GL_RGB : GL_RGBA);
-  }
+      rgb_format_supported_ ? GL_RGB : GL_RGBA);
+  optional_single_mie_scattering_texture_ = NewTexture3d(
+      SCATTERING_TEXTURE_WIDTH,
+      SCATTERING_TEXTURE_HEIGHT,
+      SCATTERING_TEXTURE_DEPTH,
+      rgb_format_supported_ ? GL_RGB : GL_RGBA);
   irradiance_texture_ = NewTexture2d(
       IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
 
@@ -728,9 +718,7 @@ Model::~Model() {
   glDeleteVertexArrays(1, &full_screen_quad_vao_);
   glDeleteTextures(1, &transmittance_texture_);
   glDeleteTextures(1, &scattering_texture_);
-  if (optional_single_mie_scattering_texture_ != 0) {
-    glDeleteTextures(1, &optional_single_mie_scattering_texture_);
-  }
+  glDeleteTextures(1, &optional_single_mie_scattering_texture_);
   glDeleteTextures(1, &irradiance_texture_);
   glDeleteShader(atmosphere_shader_);
 }
@@ -931,13 +919,10 @@ void Model::SetProgramUniforms(
     glBindTexture(GL_TEXTURE_2D, irradiance_texture_);
     glUniform1i(glGetUniformLocation(program, irradiance_texture_name.c_str()), irradiance_texture_unit);
 
-    if (optional_single_mie_scattering_texture_ != 0)
-    {
-        std::string single_mie_scattering_texture_name = source_prefix + "single_mie_scattering_texture";
-        glActiveTexture(GL_TEXTURE0 + single_mie_scattering_texture_unit);
-        glBindTexture(GL_TEXTURE_3D, optional_single_mie_scattering_texture_);
-        glUniform1i(glGetUniformLocation(program, single_mie_scattering_texture_name.c_str()), single_mie_scattering_texture_unit);
-    }
+    std::string single_mie_scattering_texture_name = source_prefix + "single_mie_scattering_texture";
+    glActiveTexture(GL_TEXTURE0 + single_mie_scattering_texture_unit);
+    glBindTexture(GL_TEXTURE_3D, optional_single_mie_scattering_texture_);
+    glUniform1i(glGetUniformLocation(program, single_mie_scattering_texture_name.c_str()), single_mie_scattering_texture_unit);
 }
 
 /*
@@ -1017,13 +1002,9 @@ void Model::Precompute(
       delta_mie_scattering_texture, 0);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2,
       scattering_texture_, 0);
-  if (optional_single_mie_scattering_texture_ != 0) {
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3,
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3,
         optional_single_mie_scattering_texture_, 0);
-    glDrawBuffers(4, kDrawBuffers);
-  } else {
-    glDrawBuffers(3, kDrawBuffers);
-  }
+  glDrawBuffers(4, kDrawBuffers);
   glViewport(0, 0, SCATTERING_TEXTURE_WIDTH, SCATTERING_TEXTURE_HEIGHT);
   compute_single_scattering.Use();
   compute_single_scattering.BindMat3(

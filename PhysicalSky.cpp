@@ -34,7 +34,6 @@ PhysicalSky::PhysicalSky()
 
     , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_shouldRecomputeModel(false)
-    , use_combined_textures_(false)
     , m_mesh("D:/Escritorio/Monkey.glb")
     , m_starsMapIntensity(0.0f)
 {
@@ -95,7 +94,7 @@ void PhysicalSky::InitCurrentParameters()
 void PhysicalSky::InitModel()
 {
     InitCurrentParameters();
-    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<float>();
+    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>();
 
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
@@ -113,7 +112,6 @@ void PhysicalSky::InitModel()
     // decreasing linearly from 1 to 0 between 25 and 40km. This is an approximate
     // profile from http://www.kln.ac.lk/science/Chemistry/Teaching_Resources/
     // Documents/Introduction%20to%20atmospheric%20chemistry.pdf (page 10).
-    // TODO: Add parameters to control this profile layer
     std::vector<DensityProfileLayer> ozone_density;
     ozone_density.push_back(DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
     ozone_density.push_back(DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
@@ -144,14 +142,14 @@ void PhysicalSky::InitModel()
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, SOURCE_SUN));
+        kLengthUnitInMeters, SOURCE_SUN));
     m_solarModel->Init();
 
     m_lunarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, SOURCE_MOON));
+        kLengthUnitInMeters, SOURCE_MOON));
     m_lunarModel->Init();
 
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);
@@ -163,13 +161,6 @@ void PhysicalSky::InitModel()
     our demo scene, and link them with the <code>Model</code>'s atmosphere shader
     to get the final scene rendering program:
     */
-
-    /*
-    <p>Finally, it sets the uniforms of this program that can be set once and for
-    all (in our case this includes the <code>Model</code>'s texture uniforms,
-    because our demo app does not have any texture of its own):
-    */
-    // SetRenderingContext();
     InitShaders();
 
     // Required because initalizing the model messes with these

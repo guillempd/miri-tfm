@@ -138,9 +138,5 @@ private:
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
 
-    // TODO: Remove these parameters
-    bool use_combined_textures_;
-
     Coordinates m_coordinates;
-
 };

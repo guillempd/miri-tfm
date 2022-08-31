@@ -258,10 +258,6 @@ class Model {
     // The length unit used in your shaders and meshes. This is the length unit
     // which must be used when calling the atmosphere model shader functions.
     double length_unit_in_meters,
-    // Whether to pack the (red component of the) single Mie scattering with the
-    // Rayleigh and multiple scattering in a single texture, or to store the
-    // (3 components of the) single Mie scattering in a separate texture.
-    bool combine_scattering_textures,
     int light_source);
 
   ~Model();
