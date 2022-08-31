@@ -140,7 +140,6 @@ private:
 
     // TODO: Remove these parameters
     bool use_combined_textures_;
-    bool use_half_precision_;
 
     Coordinates m_coordinates;
 

@@ -35,7 +35,6 @@ PhysicalSky::PhysicalSky()
     , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_shouldRecomputeModel(false)
     , use_combined_textures_(false)
-    , use_half_precision_(false)
     , m_mesh("D:/Escritorio/Monkey.glb")
     , m_starsMapIntensity(0.0f)
 {
@@ -96,8 +95,7 @@ void PhysicalSky::InitCurrentParameters()
 void PhysicalSky::InitModel()
 {
     InitCurrentParameters();
-    const double max_sun_zenith_angle =
-        (use_half_precision_ ? 102.0 : 120.0) / 180.0 * glm::pi<float>();
+    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<float>();
 
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
@@ -146,14 +144,14 @@ void PhysicalSky::InitModel()
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_SUN));
+        kLengthUnitInMeters, use_combined_textures_, SOURCE_SUN));
     m_solarModel->Init();
 
     m_lunarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
         { mie_layer }, mie_scattering, mie_extinction, mie_phase_function_g,
         ozone_density, absorption_extinction, ground_albedo, max_sun_zenith_angle,
-        kLengthUnitInMeters, use_combined_textures_, use_half_precision_, SOURCE_MOON));
+        kLengthUnitInMeters, use_combined_textures_, SOURCE_MOON));
     m_lunarModel->Init();
 
     glViewport(viewportData[0], viewportData[1], viewportData[2], viewportData[3]);

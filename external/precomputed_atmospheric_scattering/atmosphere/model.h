@@ -262,10 +262,6 @@ class Model {
     // Rayleigh and multiple scattering in a single texture, or to store the
     // (3 components of the) single Mie scattering in a separate texture.
     bool combine_scattering_textures,
-    // Whether to use half precision floats (16 bits) or single precision floats
-    // (32 bits) for the precomputed textures. Half precision is sufficient for
-    // most cases, except for very high exposure values.
-    bool half_precision,
     int light_source);
 
   ~Model();
@@ -301,7 +297,6 @@ class Model {
       bool blend,
       unsigned int num_scattering_orders);
 
-  bool half_precision_;
   bool rgb_format_supported_;
   std::function<std::string(const vec3&)> glsl_header_factory_;
   GLuint transmittance_texture_;

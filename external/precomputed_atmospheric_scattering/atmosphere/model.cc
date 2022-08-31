@@ -452,8 +452,7 @@ GLuint NewTexture2d(int width, int height) {
   return texture;
 }
 
-GLuint NewTexture3d(int width, int height, int depth, GLenum format,
-    bool half_precision) {
+GLuint NewTexture3d(int width, int height, int depth, GLenum format) {
   GLuint texture;
   glGenTextures(1, &texture);
   glActiveTexture(GL_TEXTURE0);
@@ -464,9 +463,7 @@ GLuint NewTexture3d(int width, int height, int depth, GLenum format,
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
-  GLenum internal_format = format == GL_RGBA ?
-      (half_precision ? GL_RGBA16F : GL_RGBA32F) :
-      (half_precision ? GL_RGB16F : GL_RGB32F);
+  GLenum internal_format = (format == GL_RGBA ? GL_RGBA32F : GL_RGB32F);
   glTexImage3D(GL_TEXTURE_3D, 0, internal_format, width, height, depth, 0,
       format, GL_FLOAT, NULL);
   return texture;
@@ -478,7 +475,7 @@ format (the OpenGL 3.3 Core Profile specification requires support for the RGBA
 formats, but not for the RGB ones):
 */
 
-bool IsFramebufferRgbFormatSupported(bool half_precision) {
+bool IsFramebufferRgbFormatSupported() {
   GLuint test_fbo = 0;
   glGenFramebuffers(1, &test_fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, test_fbo);
@@ -486,8 +483,7 @@ bool IsFramebufferRgbFormatSupported(bool half_precision) {
   glGenTextures(1, &test_texture);
   glBindTexture(GL_TEXTURE_2D, test_texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, half_precision ? GL_RGB16F : GL_RGB32F,
-               1, 1, 0, GL_RGB, GL_FLOAT, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB, GL_FLOAT, NULL);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                          GL_TEXTURE_2D, test_texture, 0);
   bool rgb_format_supported =
@@ -556,10 +552,8 @@ Model::Model(
     double max_sun_zenith_angle,
     double length_unit_in_meters,
     bool combine_scattering_textures,
-    bool half_precision,
     int light_source) :
-        half_precision_(half_precision),
-        rgb_format_supported_(IsFramebufferRgbFormatSupported(half_precision)),
+        rgb_format_supported_(IsFramebufferRgbFormatSupported()),
         light_source_(light_source) {
     auto to_string = [](const glm::dvec3& v, double scale)
     {
@@ -682,8 +676,7 @@ Model::Model(
       SCATTERING_TEXTURE_WIDTH,
       SCATTERING_TEXTURE_HEIGHT,
       SCATTERING_TEXTURE_DEPTH,
-      combine_scattering_textures || !rgb_format_supported_ ? GL_RGBA : GL_RGB,
-      half_precision);
+      combine_scattering_textures || !rgb_format_supported_ ? GL_RGBA : GL_RGB);
   if (combine_scattering_textures) {
     optional_single_mie_scattering_texture_ = 0;
   } else {
@@ -691,8 +684,7 @@ Model::Model(
         SCATTERING_TEXTURE_WIDTH,
         SCATTERING_TEXTURE_HEIGHT,
         SCATTERING_TEXTURE_DEPTH,
-        rgb_format_supported_ ? GL_RGB : GL_RGBA,
-        half_precision);
+        rgb_format_supported_ ? GL_RGB : GL_RGBA);
   }
   irradiance_texture_ = NewTexture2d(
       IRRADIANCE_TEXTURE_WIDTH, IRRADIANCE_TEXTURE_HEIGHT);
@@ -808,20 +800,17 @@ void Model::Init(unsigned int num_scattering_orders) {
       SCATTERING_TEXTURE_WIDTH,
       SCATTERING_TEXTURE_HEIGHT,
       SCATTERING_TEXTURE_DEPTH,
-      rgb_format_supported_ ? GL_RGB : GL_RGBA,
-      half_precision_);
+      rgb_format_supported_ ? GL_RGB : GL_RGBA);
   GLuint delta_mie_scattering_texture = NewTexture3d(
       SCATTERING_TEXTURE_WIDTH,
       SCATTERING_TEXTURE_HEIGHT,
       SCATTERING_TEXTURE_DEPTH,
-      rgb_format_supported_ ? GL_RGB : GL_RGBA,
-      half_precision_);
+      rgb_format_supported_ ? GL_RGB : GL_RGBA);
   GLuint delta_scattering_density_texture = NewTexture3d(
       SCATTERING_TEXTURE_WIDTH,
       SCATTERING_TEXTURE_HEIGHT,
       SCATTERING_TEXTURE_DEPTH,
-      rgb_format_supported_ ? GL_RGB : GL_RGBA,
-      half_precision_);
+      rgb_format_supported_ ? GL_RGB : GL_RGBA);
   // delta_multiple_scattering_texture is only needed to compute scattering
   // order 3 or more, while delta_rayleigh_scattering_texture and
   // delta_mie_scattering_texture are only needed to compute double scattering.
