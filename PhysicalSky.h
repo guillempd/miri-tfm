@@ -74,6 +74,12 @@ private:
     float m_nMoonAngularRadius;
     float m_cMoonAngularRadius;
 
+    float m_dMoonNormalMapStrength;
+    float m_cMoonNormalMapStrength;
+
+    bool m_dMoonUseColorMap;
+    bool m_cMoonUseColorMap;
+
     // Sky
     float m_starsMapIntensity;
 
@@ -132,6 +138,7 @@ private:
     ShaderProgram m_moonShader;
     ShaderProgram m_meshShader;
     Texture m_moonNormalMap;
+    Texture m_moonColorMap;
     Texture m_starsMap;
     Mesh m_mesh;
 

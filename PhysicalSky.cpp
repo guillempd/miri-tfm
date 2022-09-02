@@ -36,6 +36,8 @@ PhysicalSky::PhysicalSky()
     , m_notAppliedChanges(false)
     , m_mesh("D:/Escritorio/Monkey.glb")
     , m_starsMapIntensity(0.0f)
+    , m_dMoonNormalMapStrength(0.5f)
+    , m_dMoonUseColorMap(true)
 {
     Init();
 }
@@ -94,6 +96,8 @@ void PhysicalSky::ResetDefaults()
     MakeDefaultParametersNew();
     MakeNewParametersCurrent();
     m_cLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
+    m_cMoonNormalMapStrength = m_dMoonNormalMapStrength;
+    m_cMoonUseColorMap = m_dMoonUseColorMap;
 }
 
 bool PhysicalSky::AnyChange()
@@ -119,6 +123,8 @@ bool PhysicalSky::AnyChange()
     result |= m_nMoonAngularRadius != m_dMoonAngularRadius;
 
     result |= m_cLimbDarkeningAlgorithm != m_dLimbDarkeningAlgorithm;
+    result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
+    result |= m_cMoonUseColorMap != m_dMoonUseColorMap;
 
     return result;
 }
@@ -274,7 +280,8 @@ void PhysicalSky::InitResources()
     glEnableVertexAttribArray(kAttribIndex);
     glBindVertexArray(GL_NONE);
 
-    m_moonNormalMap.Load("D:/Google Drive/Moon.Normal_8192x4096.jpg");
+    m_moonNormalMap.Load("D:/Descargas/moon_xnormal.png");
+    m_moonColorMap.Load("D:/Descargas/lroc_color_poles_8k_nogamma.png");
     m_starsMap.Load("D:/Escritorio/starmap_2020_8k.hdr");
 }
 
@@ -317,6 +324,8 @@ void PhysicalSky::Update()
         {
             ImGui::PushID("Moon");
             m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius", &m_nMoonAngularRadius, 0.0f, 0.1f);
+            ImGui::SliderFloat("Normal Map Strength", &m_cMoonNormalMapStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::Checkbox("Use Color Map", &m_cMoonUseColorMap);
             ImGui::PopID();
         }
 
@@ -436,22 +445,27 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
     glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cMoonAngularRadius)));
 
-    // COMPUTE EARTHSHINE
     float phi = m_coordinates.GetEarthPhaseAngle();
-    float earthLitFraction = VisibleLitFractionFromPhaseAngle(phi); // NOTE: Use the other formula for better numerical stability (?)
-    constexpr float fullEarthshineIntensity = 0.19f;
-    float earthshineIntensity = fullEarthshineIntensity * earthLitFraction;
+    double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);
+    constexpr double fullEarthshineIntensity = 0.19;
+    float earthshineIntensity = static_cast<float>(fullEarthshineIntensity * earthLitFraction);
 
     m_moonShader.SetMat4("Model", moonBillboardModel * moonScale);
     m_moonShader.SetMat4("View", camera.GetViewMatrix());
     m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
+
+    m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
+    m_moonShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
     m_moonShader.SetVec3("w_SunDir", sunWorldDirection);
     m_moonShader.SetVec3("w_MoonDir", moonWorldDirection);
-    m_moonShader.SetVec3("w_CameraPos", camera.GetPosition());
     m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
-    m_moonShader.SetFloat("EarthshineIntensity", earthshineIntensity);
-    m_moonShader.SetVec3("w_PlanetPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
-    m_moonShader.SetTexture("NormalMap", 8, m_moonNormalMap);
+
+    m_moonShader.SetFloat("EarthIrradiance", earthshineIntensity);
+    m_moonShader.SetFloat("SunIrradiance", m_cSunIntensity);
+    m_moonShader.SetTexture("ColorMap", 8, m_moonColorMap);
+    m_moonShader.SetTexture("NormalMap", 9, m_moonNormalMap);
+    m_moonShader.SetFloat("NormalMapStrength", m_cMoonNormalMapStrength);
+    m_moonShader.SetBool("UseColorMap", m_cMoonUseColorMap);
 
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -512,6 +526,7 @@ glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition,
     return model;
 }
 
+// NOTE: Use the other formula for better numerical stability (?)
 double PhysicalSky::VisibleLitFractionFromPhaseAngle(double phi)
 {
     return 0.5 * (1.0 - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0 / glm::tan(0.25 * phi)));
