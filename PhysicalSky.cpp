@@ -305,12 +305,12 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("General"))
         {
             ImGui::PushID("General");
-            ImGui::SliderFloat("Light Radiant Intensity", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
-            ImGui::DragFloat3("Light Position", glm::value_ptr(m_LightPos), 0.01f); // TODO: Is it needed to give min and max (?)
-            ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
+            ImGui::SliderFloat("Light Radiant Intensity (W*sr^-1)", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
+            ImGui::DragFloat3("Light Position (m)", glm::value_ptr(m_LightPos), 0.01f); // TODO: Is it needed to give min and max (?)
+            ImGui::SliderFloat("Stars Map Intensity Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
             m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_notAppliedChanges |= ImGui::SliderFloat("Atmosphere Height", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius (km)", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Atmosphere Height (km)", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
@@ -322,15 +322,15 @@ void PhysicalSky::Update()
             ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
             ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
             ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), -1);
-            m_notAppliedChanges |= ImGui::SliderFloat("Intensity", &m_nSunIntensity, 0.0f, 15000.0f);
-            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius", &m_nSunAngularRadius, 0.0f, 0.1f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Irradiance (W*m^-2)", &m_nSunIntensity, 0.0f, 15000.0f, "%.3f");
+            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius (rad)", &m_nSunAngularRadius, 0.0f, 0.1f);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Moon"))
         {
             ImGui::PushID("Moon");
-            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius", &m_nMoonAngularRadius, 0.0f, 0.1f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius (rad)", &m_nMoonAngularRadius, 0.0f, 0.1f);
             ImGui::SliderFloat("Normal Map Strength", &m_cMoonNormalMapStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::Checkbox("Use Color Map", &m_cMoonUseColorMap);
             ImGui::PopID();
@@ -344,29 +344,29 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("Rayleigh"))
         {
             ImGui::PushID("Rayleigh");
-            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale", &m_nRayleighScatteringScale, 0.0f, 2.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale (km^-1)", &m_nRayleighScatteringScale, 0.0f, 2.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nRayleighScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution", &m_nRayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution (km)", &m_nRayleighExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Mie"))
         {
             ImGui::PushID("Mie");
+            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale (km^-1)", &m_nMieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nMieScatteringCoefficient), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Scattering Scale", &m_nMieScatteringScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale (km^-1)", &m_nMieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nMieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale", &m_nMieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_notAppliedChanges |= ImGui::SliderFloat("Phase Function G", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
-            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution", &m_nMieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Phase Function g", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution (km)", &m_nMieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Ozone"))
         {
             ImGui::PushID("Ozone");
+            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale (km^-1)", &m_nOzoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nOzoneAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale", &m_nOzoneAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
