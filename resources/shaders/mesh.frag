@@ -7,6 +7,9 @@ uniform vec3 w_SunDir;
 uniform vec3 w_MoonDir;
 const vec3 Albedo = vec3(0.18);
 
+uniform vec3 w_LightPos;
+uniform vec3 LightRadiantIntensity;
+
 in vec3 w_Pos;
 in vec3 w_Normal;
 
@@ -32,7 +35,13 @@ void main()
     vec3 solarSkyInscatter = GetSolarSkyRadianceToPoint(e_CameraPos, e_Pos, 0.0, e_SunDir, transmittance);
     vec3 lunarSkyInscatter = GetLunarSkyRadianceToPoint(e_CameraPos, e_Pos, 0.0, e_MoonDir, transmittance);
     vec3 inscatter = solarSkyInscatter + lunarSkyInscatter;
-    
-    vec3 result = Albedo / PI * (directIrradiance + indirectIrradiance) * transmittance + inscatter;
+
+    vec3 w_LightDir = w_LightPos - w_Pos;
+    float dSquared = dot(w_LightDir, w_LightDir);
+    w_LightDir = w_LightDir / sqrt(dSquared);
+    vec3 lightIrradiance = LightRadiantIntensity / dSquared * max(dot(w_Normal, w_LightDir), 0.0);
+
+    vec3 radiance = Albedo / PI * (lightIrradiance + directIrradiance + indirectIrradiance);
+    vec3 result =  radiance * transmittance + inscatter;
     Color = vec4(result, 1.0);
 }

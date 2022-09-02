@@ -148,4 +148,9 @@ private:
     GLuint m_fullScreenQuadVbo;
 
     Coordinates m_coordinates;
+
+    float m_cLightRadiantIntensity;
+    float m_dLightRadiantIntensity;
+
+    glm::vec3 m_LightPos;
 };

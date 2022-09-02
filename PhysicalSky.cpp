@@ -13,6 +13,7 @@ namespace {
 using namespace atmosphere;
 
 // TODO: Put units in the ImGui interface
+// TODO: Check if shading is performed in the correct units (W*m^-2 irradiance vs km distance)
 PhysicalSky::PhysicalSky()
     : m_dRayleighScatteringScale(0.033100f) // km^-1
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
@@ -38,6 +39,8 @@ PhysicalSky::PhysicalSky()
     , m_starsMapIntensity(0.0f)
     , m_dMoonNormalMapStrength(0.5f)
     , m_dMoonUseColorMap(true)
+    , m_dLightRadiantIntensity(10.0f) // W*sr^-1
+    , m_LightPos(0.0f, 2.0f, 0.0f)
 {
     Init();
 }
@@ -98,6 +101,7 @@ void PhysicalSky::ResetDefaults()
     m_cLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
     m_cMoonNormalMapStrength = m_dMoonNormalMapStrength;
     m_cMoonUseColorMap = m_dMoonUseColorMap;
+    m_cLightRadiantIntensity = m_dLightRadiantIntensity;
 }
 
 bool PhysicalSky::AnyChange()
@@ -125,6 +129,7 @@ bool PhysicalSky::AnyChange()
     result |= m_cLimbDarkeningAlgorithm != m_dLimbDarkeningAlgorithm;
     result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
     result |= m_cMoonUseColorMap != m_dMoonUseColorMap;
+    result |= m_cLightRadiantIntensity != m_dLightRadiantIntensity;
 
     return result;
 }
@@ -300,6 +305,8 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("General"))
         {
             ImGui::PushID("General");
+            ImGui::SliderFloat("Light Radiant Intensity", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
+            ImGui::DragFloat3("Light Position", glm::value_ptr(m_LightPos), 0.01f); // TODO: Is it needed to give min and max (?)
             ImGui::SliderFloat("Stars Map Intensity", &m_starsMapIntensity, -5.0f, 5.0f);
             m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
             m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
@@ -512,6 +519,9 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_meshShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
     m_meshShader.SetVec3("w_SunDir", sunWorldDirection);
     m_meshShader.SetVec3("w_MoonDir", moonWorldDirection);
+
+    m_meshShader.SetVec3("w_LightPos", m_LightPos);
+    m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
 
     m_mesh.Render();
 }
