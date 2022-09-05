@@ -544,6 +544,7 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
 
     m_meshShader.SetVec3("w_LightPos", m_LightPos / 1000.0f);
     m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
+    m_meshShader.SetBool("EnableLight", m_cEnableLight);
 
     m_mesh.Render();
 
