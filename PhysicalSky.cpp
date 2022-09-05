@@ -35,7 +35,7 @@ PhysicalSky::PhysicalSky()
 
     , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_notAppliedChanges(false)
-    , m_mesh("D:/Escritorio/Monkey.glb")
+    , m_mesh("D:/Escritorio/human.glb")
     , m_starsMapIntensity(0.0f)
     , m_dMoonNormalMapStrength(0.5f)
     , m_dMoonUseColorMap(true)
