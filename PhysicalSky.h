@@ -28,8 +28,8 @@ private:
     void ResetDefaults();
     glm::dvec3 ComputeMoonIrradiance();
     static glm::mat4 BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection);
-    void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
-    void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
+    void RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanSunAngularRadius);
+    void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanMoonAngularRadius);
     void RenderSky(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderLight(const Camera& camera);
@@ -63,17 +63,17 @@ private:
     float m_nSunIntensity;
     float m_cSunIntensity;
 
-    float m_dSunAngularRadius;
-    float m_nSunAngularRadius;
-    float m_cSunAngularRadius;
+    float m_dSunSizeMultiplier;
+    float m_nSunSizeMultiplier;
+    float m_cSunSizeMultiplier;
 
     LimbDarkeningAlgorithm m_dLimbDarkeningAlgorithm;
     LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
 
     // Moon
-    float m_dMoonAngularRadius;
-    float m_nMoonAngularRadius;
-    float m_cMoonAngularRadius;
+    float m_dMoonSizeMultiplier;
+    float m_nMoonSizeMultiplier;
+    float m_cMoonSizeMultiplier;
 
     float m_dMoonNormalMapStrength;
     float m_cMoonNormalMapStrength;

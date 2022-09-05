@@ -28,8 +28,8 @@ PhysicalSky::PhysicalSky()
     , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
     , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
     , m_dSunIntensity(1500.000000f) // W*m^-2
-    , m_dSunAngularRadius(0.05f) // rad // Correct value is 0.004675f
-    , m_dMoonAngularRadius(0.05f) // rad // TODO: Get correct value
+    , m_dSunSizeMultiplier(5.0f) // unitless
+    , m_dMoonSizeMultiplier(5.0f) // unitless
     , m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
 
@@ -59,7 +59,8 @@ void PhysicalSky::MakeDefaultParametersNew()
 {
     m_nGroundAlbedo = m_dGroundAlbedo;
     m_nSunIntensity = m_dSunIntensity;
-    m_nSunAngularRadius = m_dSunAngularRadius;
+    m_nSunSizeMultiplier = m_dSunSizeMultiplier;
+    m_nMoonSizeMultiplier = m_dMoonSizeMultiplier;
     m_nPlanetRadius = m_dPlanetRadius;
     m_nAtmosphereHeight = m_dAtmosphereHeight;
     m_nRayleighScatteringCoefficient = m_dRayleighScatteringCoefficient;
@@ -73,14 +74,14 @@ void PhysicalSky::MakeDefaultParametersNew()
     m_nMieExponentialDistribution = m_dMieExponentialDistribution;
     m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
     m_nOzoneAbsorptionScale = m_dOzoneAbsorptionScale;
-    m_nMoonAngularRadius = m_dMoonAngularRadius;
 }
 
 void PhysicalSky::MakeNewParametersCurrent()
 {
     m_cGroundAlbedo = m_nGroundAlbedo;
     m_cSunIntensity = m_nSunIntensity;
-    m_cSunAngularRadius = m_nSunAngularRadius;
+    m_cSunSizeMultiplier = m_nSunSizeMultiplier;
+    m_cMoonSizeMultiplier = m_nMoonSizeMultiplier;
     m_cPlanetRadius = m_nPlanetRadius;
     m_cAtmosphereHeight = m_nAtmosphereHeight;
     m_cRayleighScatteringCoefficient = m_nRayleighScatteringCoefficient;
@@ -94,7 +95,6 @@ void PhysicalSky::MakeNewParametersCurrent()
     m_cMieExponentialDistribution = m_nMieExponentialDistribution;
     m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
     m_cOzoneAbsorptionScale = m_nOzoneAbsorptionScale;
-    m_cMoonAngularRadius = m_nMoonAngularRadius;
 }
 
 void PhysicalSky::ResetDefaults()
@@ -114,7 +114,8 @@ bool PhysicalSky::AnyChange()
 
     result |= m_nGroundAlbedo != m_dGroundAlbedo;
     result |= m_nSunIntensity != m_dSunIntensity;
-    result |= m_nSunAngularRadius != m_dSunAngularRadius;
+    result |= m_nSunSizeMultiplier != m_dSunSizeMultiplier;
+    result |= m_nMoonSizeMultiplier != m_dMoonSizeMultiplier;
     result |= m_nPlanetRadius != m_dPlanetRadius;
     result |= m_nAtmosphereHeight != m_dAtmosphereHeight;
     result |= m_nRayleighScatteringCoefficient != m_dRayleighScatteringCoefficient;
@@ -128,7 +129,6 @@ bool PhysicalSky::AnyChange()
     result |= m_nMieExponentialDistribution != m_dMieExponentialDistribution;
     result |= m_nOzoneAbsorptionCoefficient != m_dOzoneAbsorptionCoefficient;
     result |= m_nOzoneAbsorptionScale != m_dOzoneAbsorptionScale;
-    result |= m_nMoonAngularRadius != m_dMoonAngularRadius;
 
     result |= m_cLimbDarkeningAlgorithm != m_dLimbDarkeningAlgorithm;
     result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
@@ -142,10 +142,10 @@ bool PhysicalSky::AnyChange()
 // TODO: r_m and d in other units
 glm::dvec3 PhysicalSky::ComputeMoonIrradiance()
 {
-    double C = 0.072;
-    double r_m = 1737.4; // Radius of the moon in km
-    double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_coordinates (in AU)
-    double E_sm = 1500.0;
+    constexpr double C = 0.072;
+    constexpr double r_m = 1737.4; // Radius of the moon in km
+    constexpr double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_coordinates (in AU)
+    double E_sm = static_cast<double>(m_cSunIntensity);
     double E_em = 0.19 * 0.5; // TODO: Compute correctly
     double phi = m_coordinates.GetMoonPhaseAngle();
     double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
@@ -160,10 +160,16 @@ void PhysicalSky::InitModel()
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
     glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIntensity) / 3.0);
-    double sun_angular_radius = static_cast<double>(m_cSunAngularRadius);
+    glm::vec3 sunHorizonCoordinates = m_coordinates.GetSunPosition();
+    constexpr double sunRadius = 0.00465047;
+    double sunTanAngularRadius = (sunRadius * m_cSunSizeMultiplier)/ sunHorizonCoordinates.z;
+    double sun_angular_radius = glm::atan(sunTanAngularRadius);
 
     glm::dvec3 moon_irradiance = ComputeMoonIrradiance();
-    double moon_angular_radius = static_cast<double>(m_cMoonAngularRadius);
+    glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
+    constexpr double moonRadius = 0.00001163;
+    double moonTanAngularRadius = (moonRadius * m_cMoonSizeMultiplier) / moonHorizonCoordinates.z;
+    double moon_angular_radius = glm::atan(moonTanAngularRadius);
 
     double bottom_radius = static_cast<double>(m_cPlanetRadius) * 1000.0;
     double top_radius = bottom_radius + static_cast<double>(m_cAtmosphereHeight) * 1000.0;
@@ -186,7 +192,7 @@ void PhysicalSky::InitModel()
     glm::dvec3 absorption_extinction = (static_cast<glm::dvec3>(m_cOzoneAbsorptionCoefficient) * static_cast<double>(m_cOzoneAbsorptionScale)) / 1000.0;
 
     glm::dvec3 ground_albedo = static_cast<glm::dvec3>(m_cGroundAlbedo);
-    const double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>(); // TODO: Take a look at this value https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/model.h.html
+    constexpr double max_sun_zenith_angle = 120.0 / 180.0 * glm::pi<double>(); // TODO: Take a look at this value https://ebruneton.github.io/precomputed_atmospheric_scattering/atmosphere/model.h.html
 
     m_solarModel.reset(new Model(sun_irradiance, sun_angular_radius, moon_irradiance, moon_angular_radius,
         bottom_radius, top_radius, { rayleigh_layer }, rayleigh_scattering,
@@ -341,15 +347,15 @@ void PhysicalSky::Update()
             ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
             ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
             ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), -1);
-            m_notAppliedChanges |= ImGui::SliderFloat("Irradiance (W*m^-2)", &m_nSunIntensity, 0.0f, 15000.0f, "%.3f");
-            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius (rad)", &m_nSunAngularRadius, 0.0f, 0.1f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Irradiance (W*m^-2)", &m_nSunIntensity, 0.0f, 15000.0f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Size Multiplier", &m_nSunSizeMultiplier, 0.2f, 5.0f);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Moon"))
         {
             ImGui::PushID("Moon");
-            m_notAppliedChanges |= ImGui::SliderFloat("Angular Radius (rad)", &m_nMoonAngularRadius, 0.0f, 0.1f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Size Multiplier", &m_nMoonSizeMultiplier, 0.2f, 5.0f);
             ImGui::SliderFloat("Normal Map Strength", &m_cMoonNormalMapStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::Checkbox("Use Color Map", &m_cMoonUseColorMap);
             ImGui::PopID();
@@ -420,18 +426,22 @@ void PhysicalSky::Render(const Camera& camera)
     glm::vec2 sunHorizonSin = glm::sin(sunHorizonCoordinates);
     glm::vec3 sunHorizonDirection = glm::vec3(sunHorizonCos.y * sunHorizonCos.x, sunHorizonCos.y * sunHorizonSin.x, sunHorizonSin.y);
     glm::vec3 sunWorldDirection = glm::vec3(horizonToWorld * glm::vec4(sunHorizonDirection, 0.0));
+    constexpr float sunRadius = 0.00465047f;
+    float tanSunAngularRadius = (m_cSunSizeMultiplier * sunRadius) / sunHorizonCoordinates.z;
 
     glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
     glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
     glm::vec2 moonHorizonSin = glm::sin(moonHorizonCoordinates);
     glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);
     glm::vec3 moonWorldDirection = glm::vec3(horizonToWorld * glm::vec4(moonHorizonDirection, 0.0));
+    constexpr float moonRadius = 0.00001163f;
+    float tanMoonAngularRadius = (m_cMoonSizeMultiplier * moonRadius) / moonHorizonCoordinates.z;
 
     glDisable(GL_DEPTH_TEST);
     {
         RenderSky(camera, sunWorldDirection, moonWorldDirection);
-        RenderSun(camera, sunWorldDirection, moonWorldDirection);
-        RenderMoon(camera, sunWorldDirection, moonWorldDirection);
+        RenderSun(camera, sunWorldDirection, moonWorldDirection, tanSunAngularRadius);
+        RenderMoon(camera, sunWorldDirection, moonWorldDirection, tanMoonAngularRadius);
     }
     glEnable(GL_DEPTH_TEST);
 
@@ -439,14 +449,14 @@ void PhysicalSky::Render(const Camera& camera)
     if (m_cEnableLight) RenderLight(camera);
 }
 
-void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
+void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanSunAngularRadius)
 {
     m_sunShader.Use();
     m_solarModel->SetProgramUniforms(m_sunShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_sunShader.m_id, 4, 5, 6, 7);
 
     glm::mat4 sunBillboardModel = BillboardModelFromCamera(camera.GetPosition(), sunWorldDirection);
-    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cSunAngularRadius)));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(tanSunAngularRadius));
 
     m_sunShader.SetMat4("Model", sunBillboardModel * scale);
     m_sunShader.SetMat4("View", camera.GetViewMatrix());
@@ -463,14 +473,14 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
+void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanMoonAngularRadius)
 {
     m_moonShader.Use();
     m_solarModel->SetProgramUniforms(m_moonShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_moonShader.m_id, 4, 5, 6, 7);
 
     glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
-    glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(glm::tan(m_cMoonAngularRadius)));
+    glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(tanMoonAngularRadius));
 
     float phi = m_coordinates.GetEarthPhaseAngle();
     double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);

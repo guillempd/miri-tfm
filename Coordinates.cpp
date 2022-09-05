@@ -14,6 +14,8 @@ Coordinates::Coordinates()
     , m_JD(2513491.14661)
     , m_lonDeg(0.0)
     , m_latDeg(0.0)
+    , m_lon(0.0)
+    , m_lat(0.0)
 {}
 
 
@@ -224,7 +226,7 @@ glm::vec3 Coordinates::GetSunPosition(double T)
 
     double lambda = 4.895048 + 628.331951 * T + (0.033417 - 0.000084 * T) * glm::sin(M) + 0.000351 * glm::sin(2*M);
     double beta = 0.0;
-    double r = 1.000140 - (0.016708 - 0.000042 * T) * glm::cos(M) - 0.000141 * glm::cos(2*M);
+    double r = 1.000140 - (0.016708 - 0.000042 * T) * glm::cos(M) - 0.000141 * glm::cos(2*M); // AU
     
     glm::vec3 sphericalEcliptic = glm::vec3(lambda, beta, r);
     return sphericalEcliptic;
@@ -268,7 +270,8 @@ glm::vec3 Coordinates::GetMoonPosition(double T)
         +0.000049 * glm::cos(2*mp)
         +0.000015 * glm::cos(2*d + mp)
         +0.000009 * glm::cos(2*d - m);
-    double r = 1.0 / pip / 23455;
+    constexpr double au_in_earth_radi = 23455.0; // 1 AU = 23455 earth radi
+    double r = (1.0 / pip) / au_in_earth_radi; // AU
 
     glm::vec3 sphericalEcliptic = glm::vec3(lambda, beta, r);
     return sphericalEcliptic;
