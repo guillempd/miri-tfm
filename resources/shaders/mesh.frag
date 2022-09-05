@@ -5,7 +5,7 @@ uniform vec3 w_CameraPos;
 uniform vec3 w_EarthCenterPos;
 uniform vec3 w_SunDir;
 uniform vec3 w_MoonDir;
-const vec3 Albedo = vec3(0.18);
+const vec3 Albedo = vec3(0.5);
 
 uniform vec3 w_LightPos;
 uniform vec3 LightRadiantIntensity;
@@ -36,7 +36,7 @@ void main()
     vec3 lunarSkyInscatter = GetLunarSkyRadianceToPoint(e_CameraPos, e_Pos, 0.0, e_MoonDir, transmittance);
     vec3 inscatter = solarSkyInscatter + lunarSkyInscatter;
 
-    vec3 w_LightDir = w_LightPos - w_Pos;
+    vec3 w_LightDir = (w_LightPos - w_Pos) * 1000.0; // Multiplied by 1000.0 to convert to m
     float dSquared = dot(w_LightDir, w_LightDir);
     w_LightDir = w_LightDir / sqrt(dSquared);
     vec3 lightIrradiance = LightRadiantIntensity / dSquared * max(dot(w_Normal, w_LightDir), 0.0);

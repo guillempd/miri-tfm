@@ -155,6 +155,7 @@ private:
 
     glm::vec3 m_LightPos;
 
+    Mesh m_planeMesh;
     Mesh m_bulbMesh;
     bool m_cEnableLight;
     bool m_dEnableLight;

@@ -39,10 +39,11 @@ PhysicalSky::PhysicalSky()
     , m_starsMapIntensity(0.0f)
     , m_dMoonNormalMapStrength(0.5f)
     , m_dMoonUseColorMap(true)
-    , m_dLightRadiantIntensity(10.0f) // W*sr^-1
-    , m_LightPos(0.0f, 2.0f, 0.0f)
+    , m_dLightRadiantIntensity(1.0f) // W*sr^-1
+    , m_LightPos(0.0f, 5.0f, 0.0f)
     , m_bulbMesh("D:/Escritorio/sphere1.glb")
     , m_dEnableLight(true)
+    , m_planeMesh("D:/Escritorio/plane50x50.glb")
 {
     Init();
 }
@@ -541,10 +542,15 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_meshShader.SetVec3("w_SunDir", sunWorldDirection);
     m_meshShader.SetVec3("w_MoonDir", moonWorldDirection);
 
-    m_meshShader.SetVec3("w_LightPos", m_LightPos);
+    m_meshShader.SetVec3("w_LightPos", m_LightPos / 1000.0f);
     m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
 
     m_mesh.Render();
+
+    glm::mat4 planeModel = glm::mat4(1.0f);
+    planeModel = glm::scale(planeModel, glm::vec3(1e-3f));
+    m_meshShader.SetMat4("Model", planeModel);
+    m_planeMesh.Render();
 }
 
 void PhysicalSky::RenderLight(const Camera& camera)
@@ -553,6 +559,7 @@ void PhysicalSky::RenderLight(const Camera& camera)
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::scale(model, glm::vec3(1e-3f));
     model = glm::translate(model, m_LightPos);
+    model = glm::scale(model, glm::vec3(0.2f));
     m_lightShader.SetMat4("Model", model);
     m_lightShader.SetMat4("View", camera.GetViewMatrix());
     m_lightShader.SetMat4("Projection", camera.GetProjectionMatrix());
