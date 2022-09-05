@@ -32,6 +32,7 @@ private:
     void RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderSky(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
+    void RenderLight(const Camera& camera);
     static double VisibleLitFractionFromPhaseAngle(double phi);
 private:
     enum class LimbDarkeningAlgorithm {NONE, NEC96, HM98};
@@ -153,4 +154,9 @@ private:
     float m_dLightRadiantIntensity;
 
     glm::vec3 m_LightPos;
+
+    Mesh m_bulbMesh;
+    bool m_cEnableLight;
+    bool m_dEnableLight;
+    ShaderProgram m_lightShader;
 };

@@ -41,6 +41,8 @@ PhysicalSky::PhysicalSky()
     , m_dMoonUseColorMap(true)
     , m_dLightRadiantIntensity(10.0f) // W*sr^-1
     , m_LightPos(0.0f, 2.0f, 0.0f)
+    , m_bulbMesh("D:/Escritorio/sphere1.glb")
+    , m_dEnableLight(true)
 {
     Init();
 }
@@ -102,6 +104,7 @@ void PhysicalSky::ResetDefaults()
     m_cMoonNormalMapStrength = m_dMoonNormalMapStrength;
     m_cMoonUseColorMap = m_dMoonUseColorMap;
     m_cLightRadiantIntensity = m_dLightRadiantIntensity;
+    m_cEnableLight = m_dEnableLight;
 }
 
 bool PhysicalSky::AnyChange()
@@ -130,6 +133,7 @@ bool PhysicalSky::AnyChange()
     result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
     result |= m_cMoonUseColorMap != m_dMoonUseColorMap;
     result |= m_cLightRadiantIntensity != m_dLightRadiantIntensity;
+    result |= m_cEnableLight != m_dEnableLight;
 
     return result;
 }
@@ -264,6 +268,19 @@ void PhysicalSky::InitShaders()
     m_meshShader.AttachShader(meshFragmentShader.m_id);
     m_meshShader.AttachShader(m_solarModel->shader());
     m_meshShader.Build();
+
+    // NOTE: Might add atmosphere shader
+    ShaderStage lightVertexShader = ShaderStage();
+    lightVertexShader.Create(ShaderType::VERTEX);
+    lightVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/light.vert", "D:/dev/miri-tfm/resources/shaders/");
+    ShaderStage lightFragmentShader = ShaderStage();
+    lightFragmentShader.Create(ShaderType::FRAGMENT);
+    lightFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/light.frag", "D:/dev/miri-tfm/resources/shaders/");
+    m_lightShader.Create();
+    m_lightShader.AttachShader(lightVertexShader.m_id);
+    m_lightShader.AttachShader(lightFragmentShader.m_id);
+    m_lightShader.Build();
+
 }
 
 void PhysicalSky::InitResources()
@@ -305,6 +322,7 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("General"))
         {
             ImGui::PushID("General");
+            ImGui::Checkbox("Enable Light", &m_cEnableLight);
             ImGui::SliderFloat("Light Radiant Intensity (W*sr^-1)", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
             ImGui::DragFloat3("Light Position (m)", glm::value_ptr(m_LightPos), 0.01f); // TODO: Is it needed to give min and max (?)
             ImGui::SliderFloat("Stars Map Intensity Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
@@ -417,6 +435,7 @@ void PhysicalSky::Render(const Camera& camera)
     glEnable(GL_DEPTH_TEST);
 
     RenderScene(camera, sunWorldDirection, moonWorldDirection);
+    if (m_cEnableLight) RenderLight(camera);
 }
 
 void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
@@ -524,6 +543,17 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
 
     m_mesh.Render();
+}
+
+void PhysicalSky::RenderLight(const Camera& camera)
+{
+    m_lightShader.Use();
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, m_LightPos);
+    m_lightShader.SetMat4("Model", model);
+    m_lightShader.SetMat4("View", camera.GetViewMatrix());
+    m_lightShader.SetMat4("Projection", camera.GetProjectionMatrix());
+    m_bulbMesh.Render();
 }
 
 glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition, const glm::vec3& billboardDirection)
