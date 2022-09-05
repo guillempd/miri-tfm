@@ -19,7 +19,7 @@ Camera::Camera()
     , m_isRotating(false)
     , m_isPanning(false)
     , m_verticalFov(glm::half_pi<float>())
-    , m_radius(1.0f)
+    , m_radius(1e-3f)
     , m_aspectRatio(1.0f)
 {
 
@@ -99,8 +99,8 @@ glm::mat4 Camera::GetViewMatrix() const
 
 glm::mat4 Camera::GetProjectionMatrix() const
 {
-    constexpr float zNear = 0.1f;
-    constexpr float zFar = 100000.0f;
+    constexpr float zNear = 1e-4f;
+    constexpr float zFar = 1e3f;
     return glm::perspective(m_verticalFov, m_aspectRatio, zNear, zFar);
 }
 

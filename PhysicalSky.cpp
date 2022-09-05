@@ -530,7 +530,9 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_solarModel->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_meshShader.m_id, 4, 5, 6, 7);
 
-    m_meshShader.SetMat4("Model", glm::mat4(1.0f));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(1e-3f));
+    m_meshShader.SetMat4("Model", model);
     m_meshShader.SetMat4("View", camera.GetViewMatrix());
     m_meshShader.SetMat4("Projection", camera.GetProjectionMatrix());
 
@@ -549,6 +551,7 @@ void PhysicalSky::RenderLight(const Camera& camera)
 {
     m_lightShader.Use();
     glm::mat4 model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(1e-3f));
     model = glm::translate(model, m_LightPos);
     m_lightShader.SetMat4("Model", model);
     m_lightShader.SetMat4("View", camera.GetViewMatrix());
