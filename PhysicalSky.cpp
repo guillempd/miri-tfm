@@ -139,19 +139,27 @@ bool PhysicalSky::AnyChange()
     return result;
 }
 
-// TODO: r_m and d in other units
 glm::dvec3 PhysicalSky::ComputeMoonIrradiance()
 {
     constexpr double C = 0.072;
-    constexpr double r_m = 1737.4; // Radius of the moon in km
-    constexpr double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_astronomicalPositioning (in AU)
+    constexpr double r_m = 1.162671e-5; // Radius of the moon (in AU)
+    double d = m_astronomicalPositioning.GetMoonHorizonCoordinates().z; // Earth-Moon distance (in AU)
     double E_sm = static_cast<double>(m_cSunIntensity);
-    double E_em = 0.19 * 0.5; // TODO: Compute correctly
+    double E_em = ComputeEarthshineIrradiance();
     double phi = m_astronomicalPositioning.GetMoonPhaseAngle();
     double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
     double q = r_m / d;
-    double E_m = (2.0 / 3.0)*C*q*q * (E_em + 2.0 * E_sm * moonLitFraction);
+    double E_m = (2.0 / 3.0)*C*q*q * (E_em + E_sm * moonLitFraction);
     return glm::dvec3(1.0, 1.0, 1.0) * (E_m / 3.0);
+}
+
+double PhysicalSky::ComputeEarthshineIrradiance()
+{
+    double phi = m_astronomicalPositioning.GetEarthPhaseAngle();
+    double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);
+    constexpr double fullEarthshineIntensity = 0.19;
+    double earthshineIntensity = 0.5 * fullEarthshineIntensity * earthLitFraction;
+    return earthshineIntensity;
 }
 
 void PhysicalSky::InitModel()
@@ -458,11 +466,6 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
     glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(tanMoonAngularRadius));
 
-    float phi = m_astronomicalPositioning.GetEarthPhaseAngle();
-    double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);
-    constexpr double fullEarthshineIntensity = 0.19;
-    float earthshineIntensity = static_cast<float>(fullEarthshineIntensity * earthLitFraction);
-
     m_moonShader.SetMat4("Model", moonBillboardModel * moonScale);
     m_moonShader.SetMat4("View", camera.GetViewMatrix());
     m_moonShader.SetMat4("Projection", camera.GetProjectionMatrix());
@@ -473,7 +476,8 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_moonShader.SetVec3("w_MoonDir", moonWorldDirection);
     m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
 
-    m_moonShader.SetFloat("EarthIrradiance", earthshineIntensity);
+    double earthshineIntensity = ComputeEarthshineIrradiance();
+    m_moonShader.SetFloat("EarthIrradiance", static_cast<float>(earthshineIntensity));
     m_moonShader.SetFloat("SunIrradiance", m_cSunIntensity);
     m_moonShader.SetTexture("ColorMap", 8, m_moonColorMap);
     m_moonShader.SetTexture("NormalMap", 9, m_moonNormalMap);
@@ -561,8 +565,7 @@ glm::mat4 PhysicalSky::BillboardModelFromCamera(const glm::vec3& cameraPosition,
     return model;
 }
 
-// NOTE: Use the other formula for better numerical stability (?)
 double PhysicalSky::VisibleLitFractionFromPhaseAngle(double phi)
 {
-    return 0.5 * (1.0 - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0 / glm::tan(0.25 * phi)));
+    return 1.0 - glm::sin(0.5 * phi) * glm::tan(0.5 * phi) * glm::log(1.0 / glm::tan(0.25 * phi));
 }

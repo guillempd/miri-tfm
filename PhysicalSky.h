@@ -34,6 +34,7 @@ private:
     void RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection);
     void RenderLight(const Camera& camera);
     static double VisibleLitFractionFromPhaseAngle(double phi);
+    double ComputeEarthshineIrradiance();
 private:
     enum class LimbDarkeningAlgorithm {NONE, NEC96, HM98};
 private:
