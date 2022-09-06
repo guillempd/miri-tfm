@@ -2,21 +2,20 @@
 
 #include <glm/glm.hpp>
 
-// TODO: Compute radi correctly (check units)
 // TODO: Take into account deltaT
-class Coordinates
+class AstronomicalPositioning
 {
 public:
-    Coordinates();
-    ~Coordinates() = default;
+    AstronomicalPositioning();
+    ~AstronomicalPositioning() = default;
     void Update();
     glm::dvec3 GetSunHorizonCoordinates() { return m_sunHorizonCoordinates; }
     glm::dvec3 GetMoonHorizonCoordinates() { return m_moonHorizonCoordinates; }
-    float GetMoonPhaseAngle() { return m_moonPhaseAngle; }
-    float GetEarthPhaseAngle() { return m_earthPhaseAngle; }
-    float GetLon() { return m_lon; }
-    float GetLat() { return m_lat; }
-    float GetT() { return m_T; }
+    double GetMoonPhaseAngle() { return m_moonPhaseAngle; }
+    double GetEarthPhaseAngle() { return m_earthPhaseAngle; }
+    double GetLon() { return m_lon; }
+    double GetLat() { return m_lat; }
+    double GetT() { return m_T; }
 private:
     void Compute();
     void ComputeJulianDate();

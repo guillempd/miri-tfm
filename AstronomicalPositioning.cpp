@@ -1,10 +1,10 @@
-#include "Coordinates.h"
+#include "AstronomicalPositioning.h"
 
 #include <imgui.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
-Coordinates::Coordinates()
+AstronomicalPositioning::AstronomicalPositioning()
     : m_M(1)
     , m_D(1)
     , m_Y(2000)
@@ -20,7 +20,7 @@ Coordinates::Coordinates()
     Compute();
 }
 
-void Coordinates::Update()
+void AstronomicalPositioning::Update()
 {
     if (ImGui::Begin("Coordinates Stuff"))
     {
@@ -59,7 +59,7 @@ void Coordinates::Update()
 }
 
 // See: Jensen 2001
-glm::dvec3 Coordinates::SphericalToRectangular(glm::dvec3 spherical)
+glm::dvec3 AstronomicalPositioning::SphericalToRectangular(glm::dvec3 spherical)
 {
     double lon = spherical.x;
     double lat = spherical.y;
@@ -73,7 +73,7 @@ glm::dvec3 Coordinates::SphericalToRectangular(glm::dvec3 spherical)
     return rectangular;
 }
 
-glm::dvec3 Coordinates::RectangularToSpherical(glm::dvec3 rectangular)
+glm::dvec3 AstronomicalPositioning::RectangularToSpherical(glm::dvec3 rectangular)
 {
     double r = glm::length(rectangular);
     double lon = glm::atan(rectangular.y, rectangular.x);
@@ -87,14 +87,14 @@ glm::dvec3 Coordinates::RectangularToSpherical(glm::dvec3 rectangular)
 }
 
 // See: Jensen 2001
-glm::dvec3 Coordinates::RectangularEclipticToRectangularEquatorial(glm::dvec3 rectangularEcliptic, double T)
+glm::dvec3 AstronomicalPositioning::RectangularEclipticToRectangularEquatorial(glm::dvec3 rectangularEcliptic, double T)
 {
     double eps = 0.409093 - 0.000227 * T;
     glm::dvec3 rectangularEquatorial = Rx(eps) * rectangularEcliptic;
     return rectangularEquatorial;
 }
 
-glm::dvec3 Coordinates::RectangularEquatorialToRectangularHorizon(glm::dvec3 rectangularEquatorial, double T, double T_, double lon, double lat)
+glm::dvec3 AstronomicalPositioning::RectangularEquatorialToRectangularHorizon(glm::dvec3 rectangularEquatorial, double T, double T_, double lon, double lat)
 {
     double LMST = 4.894961 + 230121.675315 * T_ + lon;
     glm::dmat3 P = Rz(0.01118*T) * Ry(-0.00972*T) * Rz(0.01118*T);
@@ -105,7 +105,7 @@ glm::dvec3 Coordinates::RectangularEquatorialToRectangularHorizon(glm::dvec3 rec
 
 
 
-void Coordinates::Compute()
+void AstronomicalPositioning::Compute()
 {
     ComputeJulianDate();
     ComputeT();
@@ -115,23 +115,23 @@ void Coordinates::Compute()
 }
 
 // TODO: Check if something has to be added to the seconds (see: Jensen 2001 Appendix Time Conversion)
-void Coordinates::ComputeJulianDate()
+void AstronomicalPositioning::ComputeJulianDate()
 {
     m_JD = ComputeJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
 }
 
-void Coordinates::ComputeT()
+void AstronomicalPositioning::ComputeT()
 {
     m_T = ComputeJulianCenturies(m_JD);
 }
 
-void Coordinates::ComputeLonLat()
+void AstronomicalPositioning::ComputeLonLat()
 {
     m_lon = glm::radians(m_lonDeg);
     m_lat = glm::radians(m_latDeg);
 }
 
-void Coordinates::ComputeCoordinates()
+void AstronomicalPositioning::ComputeCoordinates()
 {
     m_sunEclipticCoordinates = ComputeSunEclipticCoordinates(m_T);
     m_moonEclipticCoordinates = ComputeMoonEclipticCoordinates(m_T);
@@ -139,7 +139,7 @@ void Coordinates::ComputeCoordinates()
     ComputeEquatorialAndHorizonCoordinates(m_moonEclipticCoordinates, m_moonEclipticRectangularCoordinates, m_moonEquatorialCoordinates, m_moonHorizonCoordinates);
 }
 
-void Coordinates::ComputeEquatorialAndHorizonCoordinates(glm::dvec3 eclipticCoordinates, glm::dvec3& eclipticRectangularCoordinates, glm::dvec3& equatorialCoordinates, glm::dvec3& horizonCoordinates)
+void AstronomicalPositioning::ComputeEquatorialAndHorizonCoordinates(glm::dvec3 eclipticCoordinates, glm::dvec3& eclipticRectangularCoordinates, glm::dvec3& equatorialCoordinates, glm::dvec3& horizonCoordinates)
 {
     eclipticRectangularCoordinates = SphericalToRectangular(eclipticCoordinates);
     glm::dvec3 rectangularEquatorial = RectangularEclipticToRectangularEquatorial(eclipticRectangularCoordinates, m_T);
@@ -148,13 +148,13 @@ void Coordinates::ComputeEquatorialAndHorizonCoordinates(glm::dvec3 eclipticCoor
     horizonCoordinates = RectangularToSpherical(rectangularHorizon);
 }
 
-void Coordinates::ComputePhaseAngles()
+void AstronomicalPositioning::ComputePhaseAngles()
 {
     m_earthPhaseAngle = glm::acos(glm::dot(m_sunEclipticRectangularCoordinates, m_moonEclipticRectangularCoordinates) / (glm::length(m_sunEclipticRectangularCoordinates) * glm::length(m_moonEclipticRectangularCoordinates)));
     m_moonPhaseAngle = glm::pi<float>() - m_earthPhaseAngle;
 }
 
-double Coordinates::ComputeJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT)
+double AstronomicalPositioning::ComputeJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT)
 {
     int Mp = M;
     int Yp = Y;
@@ -171,13 +171,13 @@ double Coordinates::ComputeJulianDate(int M, int D, int Y, int h, int m, int s, 
     return JD;
 }
 
-double Coordinates::ComputeJulianCenturies(double JD)
+double AstronomicalPositioning::ComputeJulianCenturies(double JD)
 {
     double T = (JD - 2451545.0) / 36525.0;
     return T;
 }
 
-glm::dvec3 Coordinates::ComputeSunEclipticCoordinates(double T)
+glm::dvec3 AstronomicalPositioning::ComputeSunEclipticCoordinates(double T)
 {
     double M = 6.24 + 628.302 * T;
 
@@ -188,7 +188,7 @@ glm::dvec3 Coordinates::ComputeSunEclipticCoordinates(double T)
     return glm::dvec3(lambda, beta, r);
 }
 
-glm::dvec3 Coordinates::ComputeMoonEclipticCoordinates(double T)
+glm::dvec3 AstronomicalPositioning::ComputeMoonEclipticCoordinates(double T)
 {
     double lp = 3.8104 + 8399.7091 * T;
     double m = 6.2300 + 628.3019 * T;
@@ -229,24 +229,24 @@ glm::dvec3 Coordinates::ComputeMoonEclipticCoordinates(double T)
     constexpr double au_in_earth_radi = 23455.0; // 1 AU = 23455 earth radi
     double r = (1.0 / pip) / au_in_earth_radi; // AU
 
-    return glm::vec3(lambda, beta, r);
+    return glm::dvec3(lambda, beta, r);
 }
 
-glm::dmat3 Coordinates::Rx(double a)
+glm::dmat3 AstronomicalPositioning::Rx(double a)
 {
     double sa = glm::sin(a);
     double ca = glm::cos(a);
-    return glm::mat3(glm::dvec3(1.0f, 0.0f, 0.0f), glm::dvec3(0.0f, ca, sa), glm::dvec3(0.0f, -sa, ca));
+    return glm::dmat3(glm::dvec3(1.0f, 0.0f, 0.0f), glm::dvec3(0.0f, ca, sa), glm::dvec3(0.0f, -sa, ca));
 }
 
-glm::dmat3 Coordinates::Ry(double a)
+glm::dmat3 AstronomicalPositioning::Ry(double a)
 {
     double sa = glm::sin(a);
     double ca = glm::cos(a);
     return glm::dmat3(glm::dvec3(ca, 0.0f, -sa), glm::dvec3(0.0f, 1.0f, 0.0f), glm::dvec3(sa, 0.0f, ca));
 }
 
-glm::dmat3 Coordinates::Rz(double a)
+glm::dmat3 AstronomicalPositioning::Rz(double a)
 {
     double sa = glm::sin(a);
     double ca = glm::cos(a);

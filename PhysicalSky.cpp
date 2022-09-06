@@ -12,8 +12,6 @@ namespace {
 
 using namespace atmosphere;
 
-// TODO: Put units in the ImGui interface
-// TODO: Check if shading is performed in the correct units (W*m^-2 irradiance vs km distance)
 // TODO: Make use of doubles
 PhysicalSky::PhysicalSky()
     : m_dRayleighScatteringScale(0.033100f) // km^-1
@@ -145,10 +143,10 @@ glm::dvec3 PhysicalSky::ComputeMoonIrradiance()
 {
     constexpr double C = 0.072;
     constexpr double r_m = 1737.4; // Radius of the moon in km
-    constexpr double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_coordinates (in AU)
+    constexpr double d = 384400.0; // Earth-Moon distance in km // TODO: Get from m_astronomicalPositioning (in AU)
     double E_sm = static_cast<double>(m_cSunIntensity);
     double E_em = 0.19 * 0.5; // TODO: Compute correctly
-    double phi = m_coordinates.GetMoonPhaseAngle();
+    double phi = m_astronomicalPositioning.GetMoonPhaseAngle();
     double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
     double q = r_m / d;
     double E_m = (2.0 / 3.0)*C*q*q * (E_em + 2.0 * E_sm * moonLitFraction);
@@ -161,13 +159,13 @@ void PhysicalSky::InitModel()
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
     glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIntensity) / 3.0);
-    glm::vec3 sunHorizonCoordinates = m_coordinates.GetSunHorizonCoordinates();
+    glm::vec3 sunHorizonCoordinates = m_astronomicalPositioning.GetSunHorizonCoordinates();
     constexpr double sunRadius = 0.00465047;
     double sunTanAngularRadius = (sunRadius * m_cSunSizeMultiplier)/ sunHorizonCoordinates.z;
     double sun_angular_radius = glm::atan(sunTanAngularRadius);
 
     glm::dvec3 moon_irradiance = ComputeMoonIrradiance();
-    glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonHorizonCoordinates();
+    glm::vec3 moonHorizonCoordinates = m_astronomicalPositioning.GetMoonHorizonCoordinates();
     constexpr double moonRadius = 0.00001163;
     double moonTanAngularRadius = (moonRadius * m_cMoonSizeMultiplier) / moonHorizonCoordinates.z;
     double moon_angular_radius = glm::atan(moonTanAngularRadius);
@@ -323,7 +321,7 @@ PhysicalSky::~PhysicalSky()
 
 void PhysicalSky::Update()
 {
-    m_coordinates.Update();
+    m_astronomicalPositioning.Update();
 
     if (ImGui::Begin("Atmosphere Rendering Settings"))
     {
@@ -422,7 +420,7 @@ void PhysicalSky::Render(const Camera& camera)
 {
     glm::mat4 horizonToWorld = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
-    glm::dvec3 sunHorizonCoordinates = m_coordinates.GetSunHorizonCoordinates();
+    glm::dvec3 sunHorizonCoordinates = m_astronomicalPositioning.GetSunHorizonCoordinates();
     glm::vec2 sunHorizonCos = glm::cos(sunHorizonCoordinates);
     glm::vec2 sunHorizonSin = glm::sin(sunHorizonCoordinates);
     glm::vec3 sunHorizonDirection = glm::vec3(sunHorizonCos.y * sunHorizonCos.x, sunHorizonCos.y * sunHorizonSin.x, sunHorizonSin.y);
@@ -430,7 +428,7 @@ void PhysicalSky::Render(const Camera& camera)
     constexpr float sunRadius = 0.00465047f;
     float tanSunAngularRadius = (m_cSunSizeMultiplier * sunRadius) / sunHorizonCoordinates.z;
 
-    glm::dvec3 moonHorizonCoordinates = m_coordinates.GetMoonHorizonCoordinates();
+    glm::dvec3 moonHorizonCoordinates = m_astronomicalPositioning.GetMoonHorizonCoordinates();
     glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
     glm::vec2 moonHorizonSin = glm::sin(moonHorizonCoordinates);
     glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);
@@ -483,7 +481,7 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     glm::mat4 moonBillboardModel = BillboardModelFromCamera(camera.GetPosition(), moonWorldDirection);
     glm::mat4 moonScale = glm::scale(glm::mat4(1.0f), glm::vec3(tanMoonAngularRadius));
 
-    float phi = m_coordinates.GetEarthPhaseAngle();
+    float phi = m_astronomicalPositioning.GetEarthPhaseAngle();
     double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);
     constexpr double fullEarthshineIntensity = 0.19;
     float earthshineIntensity = static_cast<float>(fullEarthshineIntensity * earthLitFraction);
@@ -526,9 +524,9 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
     m_skyShader.SetTexture("StarsMap", 8, m_starsMap);
     m_skyShader.SetFloat("StarsMapIntensity", glm::pow(10.0f, m_starsMapIntensity));
 
-    m_skyShader.SetFloat("lon", m_coordinates.GetLon());
-    m_skyShader.SetFloat("lat", m_coordinates.GetLat());
-    m_skyShader.SetFloat("T", m_coordinates.GetT());
+    m_skyShader.SetFloat("lon", m_astronomicalPositioning.GetLon());
+    m_skyShader.SetFloat("lat", m_astronomicalPositioning.GetLat());
+    m_skyShader.SetFloat("T", m_astronomicalPositioning.GetT());
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 

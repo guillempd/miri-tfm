@@ -2,7 +2,7 @@
 
 #include "ShaderProgram.h"
 #include "Camera.h"
-#include "Coordinates.h"
+#include "AstronomicalPositioning.h"
 #include "Texture.h"
 #include "Mesh.h"
 
@@ -148,7 +148,7 @@ private:
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
 
-    Coordinates m_coordinates;
+    AstronomicalPositioning m_astronomicalPositioning;
 
     float m_cLightRadiantIntensity;
     float m_dLightRadiantIntensity;
