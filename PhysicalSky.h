@@ -14,7 +14,7 @@ class PhysicalSky
 {
 public:
     PhysicalSky();
-    ~PhysicalSky();
+    ~PhysicalSky() = default;
     void Init();
     void MakeDefaultParametersNew();
     void MakeNewParametersCurrent();
@@ -143,11 +143,6 @@ private:
     Texture m_starsMap;
     Mesh m_mesh;
 
-    // Full screen quad resources
-    // TODO: Make these a proper mesh object
-    GLuint m_fullScreenQuadVao;
-    GLuint m_fullScreenQuadVbo;
-
     AstronomicalPositioning m_astronomicalPositioning;
 
     float m_cLightRadiantIntensity;
@@ -155,9 +150,10 @@ private:
 
     glm::vec3 m_LightPos;
 
-    Mesh m_planeMesh;
+    Mesh m_groundMesh;
     Mesh m_bulbMesh;
     bool m_cEnableLight;
     bool m_dEnableLight;
     ShaderProgram m_lightShader;
+    Mesh m_fullScreenQuadMesh;
 };

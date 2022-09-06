@@ -42,7 +42,8 @@ PhysicalSky::PhysicalSky()
     , m_LightPos(0.0f, 5.0f, 0.0f)
     , m_bulbMesh("D:/Escritorio/sphere1.glb")
     , m_dEnableLight(true)
-    , m_planeMesh("D:/Escritorio/plane50x50.glb")
+    , m_groundMesh("D:/Escritorio/plane50x50.glb")
+    , m_fullScreenQuadMesh("D:/Escritorio/FullScreenQuad.glb")
 {
     Init();
 }
@@ -291,32 +292,9 @@ void PhysicalSky::InitShaders()
 
 void PhysicalSky::InitResources()
 {
-    glGenVertexArrays(1, &m_fullScreenQuadVao);
-    glBindVertexArray(m_fullScreenQuadVao);
-    glGenBuffers(1, &m_fullScreenQuadVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, m_fullScreenQuadVbo);
-    const GLfloat vertices[] = {
-        -1.0, -1.0, 0.0, 1.0,
-        +1.0, -1.0, 0.0, 1.0,
-        -1.0, +1.0, 0.0, 1.0,
-        +1.0, +1.0, 0.0, 1.0
-    };
-    glBufferData(GL_ARRAY_BUFFER, sizeof vertices, vertices, GL_STATIC_DRAW);
-    constexpr GLuint kAttribIndex = 0;
-    constexpr int kCoordsPerVertex = 4;
-    glVertexAttribPointer(kAttribIndex, kCoordsPerVertex, GL_FLOAT, false, 0, 0);
-    glEnableVertexAttribArray(kAttribIndex);
-    glBindVertexArray(GL_NONE);
-
     m_moonNormalMap.Load("D:/Descargas/moon_xnormal.png");
     m_moonColorMap.Load("D:/Descargas/lroc_color_poles_8k_nogamma.png");
     m_starsMap.Load("D:/Escritorio/starmap_2020_8k.hdr");
-}
-
-PhysicalSky::~PhysicalSky()
-{
-    glDeleteBuffers(1, &m_fullScreenQuadVbo);
-    glDeleteVertexArrays(1, &m_fullScreenQuadVao);
 }
 
 void PhysicalSky::Update()
@@ -468,8 +446,7 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
 
     m_sunShader.SetInt("LimbDarkeningAlgorithm", static_cast<int>(m_cLimbDarkeningAlgorithm));
 
-    glBindVertexArray(m_fullScreenQuadVao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    m_fullScreenQuadMesh.Render();
 }
 
 void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanMoonAngularRadius)
@@ -503,8 +480,7 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_moonShader.SetFloat("NormalMapStrength", m_cMoonNormalMapStrength);
     m_moonShader.SetBool("UseColorMap", m_cMoonUseColorMap);
 
-    glBindVertexArray(m_fullScreenQuadVao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    m_fullScreenQuadMesh.Render();
 }
 
 void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
@@ -530,8 +506,7 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
 
     if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
 
-    glBindVertexArray(m_fullScreenQuadVao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    m_fullScreenQuadMesh.Render();
 }
 
 void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection)
@@ -560,7 +535,7 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     glm::mat4 planeModel = glm::mat4(1.0f);
     planeModel = glm::scale(planeModel, glm::vec3(1e-3f));
     m_meshShader.SetMat4("Model", planeModel);
-    m_planeMesh.Render();
+    m_groundMesh.Render();
 }
 
 void PhysicalSky::RenderLight(const Camera& camera)
