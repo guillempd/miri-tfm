@@ -14,6 +14,7 @@ using namespace atmosphere;
 
 // TODO: Put units in the ImGui interface
 // TODO: Check if shading is performed in the correct units (W*m^-2 irradiance vs km distance)
+// TODO: Make use of doubles
 PhysicalSky::PhysicalSky()
     : m_dRayleighScatteringScale(0.033100f) // km^-1
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
@@ -160,13 +161,13 @@ void PhysicalSky::InitModel()
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
     glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIntensity) / 3.0);
-    glm::vec3 sunHorizonCoordinates = m_coordinates.GetSunPosition();
+    glm::vec3 sunHorizonCoordinates = m_coordinates.GetSunHorizonCoordinates();
     constexpr double sunRadius = 0.00465047;
     double sunTanAngularRadius = (sunRadius * m_cSunSizeMultiplier)/ sunHorizonCoordinates.z;
     double sun_angular_radius = glm::atan(sunTanAngularRadius);
 
     glm::dvec3 moon_irradiance = ComputeMoonIrradiance();
-    glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
+    glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonHorizonCoordinates();
     constexpr double moonRadius = 0.00001163;
     double moonTanAngularRadius = (moonRadius * m_cMoonSizeMultiplier) / moonHorizonCoordinates.z;
     double moon_angular_radius = glm::atan(moonTanAngularRadius);
@@ -421,7 +422,7 @@ void PhysicalSky::Render(const Camera& camera)
 {
     glm::mat4 horizonToWorld = glm::mat4(glm::vec4(0.0f, 0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
-    glm::vec3 sunHorizonCoordinates = m_coordinates.GetSunPosition();
+    glm::dvec3 sunHorizonCoordinates = m_coordinates.GetSunHorizonCoordinates();
     glm::vec2 sunHorizonCos = glm::cos(sunHorizonCoordinates);
     glm::vec2 sunHorizonSin = glm::sin(sunHorizonCoordinates);
     glm::vec3 sunHorizonDirection = glm::vec3(sunHorizonCos.y * sunHorizonCos.x, sunHorizonCos.y * sunHorizonSin.x, sunHorizonSin.y);
@@ -429,7 +430,7 @@ void PhysicalSky::Render(const Camera& camera)
     constexpr float sunRadius = 0.00465047f;
     float tanSunAngularRadius = (m_cSunSizeMultiplier * sunRadius) / sunHorizonCoordinates.z;
 
-    glm::vec3 moonHorizonCoordinates = m_coordinates.GetMoonPosition();
+    glm::dvec3 moonHorizonCoordinates = m_coordinates.GetMoonHorizonCoordinates();
     glm::vec2 moonHorizonCos = glm::cos(moonHorizonCoordinates);
     glm::vec2 moonHorizonSin = glm::sin(moonHorizonCoordinates);
     glm::vec3 moonHorizonDirection = glm::vec3(moonHorizonCos.y * moonHorizonCos.x, moonHorizonCos.y * moonHorizonSin.x, moonHorizonSin.y);

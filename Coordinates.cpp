@@ -16,173 +16,56 @@ Coordinates::Coordinates()
     , m_latDeg(0.0)
     , m_lon(0.0)
     , m_lat(0.0)
-{}
-
-
-
-void GetDegreesMinutesSeconds(float& lon_deg, float& lon_min, float& lon_sec)
 {
-    lon_min = glm::fract(lon_deg) * 60.0f;
-    lon_sec = glm::fract(lon_min) * 60.0f;
-    
-    lon_deg = glm::floor(lon_deg);
-    lon_min = glm::floor(lon_min);
+    Compute();
 }
 
 void Coordinates::Update()
 {
     if (ImGui::Begin("Coordinates Stuff"))
     {
-       /* if (ImGui::InputFloat3("Spherical Coordinates", glm::value_ptr(m_sphericalCoordinates)))
-        {
-            m_rectangularCoordinates = SphericalToRectangular(m_sphericalCoordinates);
-        }
-        if (ImGui::InputFloat3("Rectangular Coordinates", glm::value_ptr(m_rectangularCoordinates)))
-        {
-
-        }*/
-
         ImGui::InputInt("Month", &m_M);
         ImGui::InputInt("Day", &m_D);
         ImGui::InputInt("Year", &m_Y);
         ImGui::InputInt("Hour", &m_h);
         ImGui::InputInt("Minute", &m_m);
         ImGui::InputInt("Second", &m_s);
-
-        //ImGui::Text("JD: %.6f", JD);
-        //ImGui::Text("T: %.6f", T);
-        //ImGui::InputDouble("JD", &m_JD);
-
         ImGui::InputDouble("Observer Longitude", &m_lonDeg);
         ImGui::InputDouble("Observer Latitude", &m_latDeg);
-        m_lon = glm::radians(m_lonDeg);
-        m_lat = glm::radians(m_latDeg);
 
-        double deltaT = 0.0;
-        double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, deltaT);
-        double JD_ = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-        double T = GetJulianCenturies(JD);
-        double T_ = GetJulianCenturies(JD_);
+        Compute();
 
-        PrintJulianDate(JD);
+        ImGui::Text("Julian Date (JD): %f", m_JD);
         ImGui::Separator();
-        glm::vec3 rectangularSun = PrintSunPosition(T, T_, m_lon, m_lat);
+        glm::dvec3 sunEclipticCoordinatesDeg = glm::mod(glm::degrees(m_sunEclipticCoordinates), 360.0);
+        ImGui::Text("Sun Ecliptic Coordinates | Longitude: %gd, Latitude: %gd", sunEclipticCoordinatesDeg.x, sunEclipticCoordinatesDeg.y);
+        glm::dvec3 sunEquatorialCoordinatesDeg = glm::mod(glm::degrees(m_sunEquatorialCoordinates), 360.0);
+        ImGui::Text("Sun Equatorial Coordinates | RA: %gd, Latitude: %gd", sunEquatorialCoordinatesDeg.x, sunEquatorialCoordinatesDeg.y);
+        glm::dvec3 sunHorizonCoordinatesDeg = glm::mod(glm::degrees(m_sunHorizonCoordinates), 360.0);
+        ImGui::Text("Sun Horizon Coordinates | Az: %gd, Alt: %gd", sunHorizonCoordinatesDeg.x, sunHorizonCoordinatesDeg.y);
+        ImGui::Text("Distance | %.6f AU", m_sunEclipticCoordinates.z);
         ImGui::Separator();
-        glm::vec3 rectangularMoon = PrintMoonPosition(T, T_, m_lon, m_lat);
+        glm::dvec3 moonEclipticCoordinatesDeg = glm::mod(glm::degrees(m_moonEclipticCoordinates), 360.0);
+        ImGui::Text("Moon Ecliptic Coordinates | Longitude: %gd, Latitude: %gd", moonEclipticCoordinatesDeg.x, moonEclipticCoordinatesDeg.y);
+        glm::dvec3 moonEquatorialCoordinatesDeg = glm::mod(glm::degrees(m_moonEquatorialCoordinates), 360.0);
+        ImGui::Text("Moon Equatorial Coordinates | RA: %gd, Latitude: %gd", moonEquatorialCoordinatesDeg.x, moonEquatorialCoordinatesDeg.y);
+        glm::dvec3 moonHorizonCoordinatesDeg = glm::mod(glm::degrees(m_moonHorizonCoordinates), 360.0);
+        ImGui::Text("Moon Horizon Coordinates | Az: %gd, Alt: %gd", moonHorizonCoordinatesDeg.x, moonHorizonCoordinatesDeg.y);
+        ImGui::Text("Distance | %.6f AU", m_moonEclipticCoordinates.z);
         ImGui::Separator();
-        PrintPhaseAngles(rectangularSun, rectangularMoon);
+        ImGui::Text("Phase Angles | Earth: %grad Moon: %grad", m_earthPhaseAngle, m_moonPhaseAngle);
     }
     ImGui::End();
 }
 
-glm::vec3 Coordinates::GetSunPosition()
-{
-    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-    double T = GetJulianCenturies(JD);
-    glm::vec3 sphericalEcliptic = GetSunPosition(T);
-    glm::vec3 rectangularEcliptic = SphericalToRectangular(sphericalEcliptic);
-    glm::vec3 rectangulatEquatorial = RectangularEclipticToRectangularEquatorial(rectangularEcliptic, T);
-    glm::vec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEcliptic, T, T, m_lon, m_lat);
-    glm::vec3 sphericalHorizon = RectangularToSpherical(rectangularHorizon);
-    return sphericalHorizon;
-}
-
-glm::vec3 Coordinates::GetMoonPosition()
-{
-    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-    double T = GetJulianCenturies(JD);
-    glm::vec3 sphericalEcliptic = GetMoonPosition(T);
-    glm::vec3 rectangularEcliptic = SphericalToRectangular(sphericalEcliptic);
-    glm::vec3 rectangulatEquatorial = RectangularEclipticToRectangularEquatorial(rectangularEcliptic, T);
-    glm::vec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEcliptic, T, T, m_lon, m_lat);
-    glm::vec3 sphericalHorizon = RectangularToSpherical(rectangularHorizon);
-    return sphericalHorizon;
-}
-
-float Coordinates::GetMoonPhaseAngle()
-{
-    return glm::pi<float>() - GetEarthPhaseAngle();
-}
-
-float Coordinates::GetEarthPhaseAngle()
-{
-    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-    double T = GetJulianCenturies(JD);
-    glm::vec3 sphericalSun = GetSunPosition(T);
-    glm::vec3 sphericalMoon = GetMoonPosition(T);
-    glm::vec3 rectangularSun = SphericalToRectangular(sphericalSun);
-    glm::vec3 rectangularMoon = SphericalToRectangular(sphericalMoon);
-    return glm::acos(glm::dot(rectangularSun, rectangularMoon) / (glm::length(rectangularSun) * glm::length(rectangularMoon)));
-}
-
-void Coordinates::PrintJulianDate(double JD)
-{
-    ImGui::Text("Julian Date (JD): %f", JD);
-}
-
-glm::vec3 Coordinates::PrintSunPosition(double T, double T_, double lon, double lat)
-{
-    glm::vec3 sphericalEclipticSun = GetSunPosition(T);
-    float lon_sun = glm::mod(glm::degrees(sphericalEclipticSun.x), 360.0f);
-    float lat_sun = glm::mod(glm::degrees(sphericalEclipticSun.y), 360.0f);
-    ImGui::Text("Sun Ecliptic Coordinates | Longitude: %gd, Latitude: %gd", lon_sun, lat_sun);
-
-    glm::vec3 rectangularEclipticSun = SphericalToRectangular(sphericalEclipticSun);
-    glm::vec3 rectangularEquatorialSun = RectangularEclipticToRectangularEquatorial(rectangularEclipticSun, T);
-    glm::vec3 sphericalEquatorialSun = RectangularToSpherical(rectangularEquatorialSun);
-    float lon_sun_eq = glm::mod(glm::degrees(sphericalEquatorialSun.x), 360.0f);
-    float lat_sun_eq = glm::mod(glm::degrees(sphericalEquatorialSun.y), 360.0f);
-    ImGui::Text("Sun Equatorial Coordinates | RA: %gd, Latitude: %gd", lon_sun_eq, lat_sun_eq);
-
-    glm::vec3 rectangularHorizonSun = RectangularEquatorialToRectangularHorizon(rectangularEquatorialSun, T, T_, lon, lat);
-    glm::vec3 sphericalHorizonSun = RectangularToSpherical(rectangularHorizonSun);
-    float lon_sun_hor = glm::mod(glm::degrees(sphericalHorizonSun.x), 360.0f);
-    float lat_sun_hor = glm::mod(glm::degrees(sphericalHorizonSun.y), 360.0f);
-    ImGui::Text("Sun Horizon Coordinates | Az: %gd, Alt: %gd", lon_sun_hor, lat_sun_hor);
-    ImGui::Text("Distance | %.6f AU", sphericalEclipticSun.z);
-
-    return rectangularEclipticSun;
-}
-
-glm::vec3 Coordinates::PrintMoonPosition(double T, double T_, double lon, double lat)
-{
-    glm::vec3 sphericalEclipticMoon = GetMoonPosition(T);
-    float lon_moon = glm::mod(glm::degrees(sphericalEclipticMoon.x), 360.0f);
-    float lat_moon = glm::mod(glm::degrees(sphericalEclipticMoon.y), 360.0f);
-    ImGui::Text("Moon Ecliptic Coordinates | Longitude: %gd, Latitude: %gd", lon_moon, lat_moon);
-
-    glm::vec3 rectangularEclipticMoon = SphericalToRectangular(sphericalEclipticMoon);
-    glm::vec3 rectangularEquatorialMoon = RectangularEclipticToRectangularEquatorial(rectangularEclipticMoon, T);
-    glm::vec3 sphericalEquatorialMoon = RectangularToSpherical(rectangularEquatorialMoon);
-    float lon_moon_eq = glm::mod(glm::degrees(sphericalEquatorialMoon.x), 360.0f);
-    float lat_moon_eq = glm::mod(glm::degrees(sphericalEquatorialMoon.y), 360.0f);
-    ImGui::Text("Moon Equatorial Coordinates | RA: %gd, Latitude: %gd", lon_moon_eq, lat_moon_eq);
-
-    glm::vec3 rectangularHorizonMoon = RectangularEquatorialToRectangularHorizon(rectangularEquatorialMoon, T, T_, lon, lat);
-    glm::vec3 sphericalHorizonMoon = RectangularToSpherical(rectangularHorizonMoon);
-    float lon_moon_hor = glm::mod(glm::degrees(sphericalHorizonMoon.x), 360.0f);
-    float lat_moon_hor = glm::mod(glm::degrees(sphericalHorizonMoon.y), 360.0f);
-    ImGui::Text("Moon Horizon Coordinates | Az: %gd Alt: %gd", lon_moon_hor, lat_moon_hor);
-    ImGui::Text("Distance | %.6f AU", sphericalEclipticMoon.z);
-
-    return rectangularEclipticMoon;
-}
-
-void Coordinates::PrintPhaseAngles(glm::vec3 rectangularSun, glm::vec3 rectangularMoon)
-{
-    float earthPhaseAngle = glm::acos(glm::dot(rectangularSun, rectangularMoon) / (glm::length(rectangularSun) * glm::length(rectangularMoon)));
-    float moonPhaseAngle = glm::pi<float>() - earthPhaseAngle;
-    ImGui::Text("Phase Angles | Earth: %grad Moon: %grad", earthPhaseAngle, moonPhaseAngle);
-}
-
 // See: Jensen 2001
-glm::vec3 Coordinates::SphericalToRectangular(glm::vec3 spherical)
+glm::dvec3 Coordinates::SphericalToRectangular(glm::dvec3 spherical)
 {
-    float lon = spherical.x;
-    float lat = spherical.y;
-    float r = spherical.z;
+    double lon = spherical.x;
+    double lat = spherical.y;
+    double r = spherical.z;
 
-    glm::vec3 rectangular;
+    glm::dvec3 rectangular;
     rectangular.x = glm::cos(lat) * glm::cos(lon);
     rectangular.y = glm::cos(lat) * glm::sin(lon);
     rectangular.z = glm::sin(lat);
@@ -190,13 +73,13 @@ glm::vec3 Coordinates::SphericalToRectangular(glm::vec3 spherical)
     return rectangular;
 }
 
-glm::vec3 Coordinates::RectangularToSpherical(glm::vec3 rectangular)
+glm::dvec3 Coordinates::RectangularToSpherical(glm::dvec3 rectangular)
 {
-    float r = glm::length(rectangular);
-    float lon = glm::atan(rectangular.y, rectangular.x);
-    float lat = glm::asin(rectangular.z / r);
+    double r = glm::length(rectangular);
+    double lon = glm::atan(rectangular.y, rectangular.x);
+    double lat = glm::asin(rectangular.z / r);
 
-    glm::vec3 spherical;
+    glm::dvec3 spherical;
     spherical.x = lon;
     spherical.y = lat;
     spherical.z = r;
@@ -204,102 +87,74 @@ glm::vec3 Coordinates::RectangularToSpherical(glm::vec3 rectangular)
 }
 
 // See: Jensen 2001
-glm::vec3 Coordinates::RectangularEclipticToRectangularEquatorial(glm::vec3 rectangularEcliptic, double T)
+glm::dvec3 Coordinates::RectangularEclipticToRectangularEquatorial(glm::dvec3 rectangularEcliptic, double T)
 {
     double eps = 0.409093 - 0.000227 * T;
-    glm::vec3 rectangularEquatorial = Rx(eps) * rectangularEcliptic;
+    glm::dvec3 rectangularEquatorial = Rx(eps) * rectangularEcliptic;
     return rectangularEquatorial;
 }
 
-glm::vec3 Coordinates::RectangularEquatorialToRectangularHorizon(glm::vec3 rectangularEquatorial, double T, double T_, double lon, double lat)
+glm::dvec3 Coordinates::RectangularEquatorialToRectangularHorizon(glm::dvec3 rectangularEquatorial, double T, double T_, double lon, double lat)
 {
     double LMST = 4.894961 + 230121.675315 * T_ + lon;
-    glm::mat3 P = Rz(0.01118*T) * Ry(-0.00972*T) * Rz(0.01118*T);
-    glm::mat3 M = Ry(lat - glm::half_pi<float>()) * Rz(-LMST) * P;
-    glm::vec3 rectangularHorizon = M * rectangularEquatorial;
+    glm::dmat3 P = Rz(0.01118*T) * Ry(-0.00972*T) * Rz(0.01118*T);
+    glm::dmat3 M = Ry(lat - glm::half_pi<float>()) * Rz(-LMST) * P;
+    glm::dvec3 rectangularHorizon = M * rectangularEquatorial;
     return rectangularHorizon;
 }
 
-glm::vec3 Coordinates::GetSunPosition(double T)
+
+
+void Coordinates::Compute()
 {
-    double M = 6.24 + 628.302 * T;
-
-    double lambda = 4.895048 + 628.331951 * T + (0.033417 - 0.000084 * T) * glm::sin(M) + 0.000351 * glm::sin(2*M);
-    double beta = 0.0;
-    double r = 1.000140 - (0.016708 - 0.000042 * T) * glm::cos(M) - 0.000141 * glm::cos(2*M); // AU
-    
-    glm::vec3 sphericalEcliptic = glm::vec3(lambda, beta, r);
-    return sphericalEcliptic;
-}
-
-glm::vec3 Coordinates::GetMoonPosition(double T)
-{
-    double lp = 3.8104 + 8399.7091 * T;
-    double m  = 6.2300 +  628.3019 * T;
-    double f  = 1.6280 + 8433.4663 * T;
-    double mp = 2.3554 + 8328.6911 * T;
-    double d  = 5.1985 + 7771.3772 * T;
-
-    double lambda = lp
-        +0.1098 * glm::sin(mp)
-        +0.0222 * glm::sin(2*d - mp)
-        +0.0115 * glm::sin(2*d)
-        +0.0037 * glm::sin(2*mp)
-        -0.0032 * glm::sin(m)
-        -0.0020 * glm::sin(2*f)
-        +0.0010 * glm::sin(2*d - 2*mp)
-        +0.0010 * glm::sin(2*d - m - mp)
-        +0.0009 * glm::sin(2*d + mp)
-        +0.0008 * glm::sin(2*d - m)
-        +0.0007 * glm::sin(mp - m)
-        -0.0006 * glm::sin(d)
-        -0.0005 * glm::sin(m + mp);
-    double beta = 
-        +0.0895 * glm::sin(f)
-        +0.0049 * glm::sin(mp + f)
-        +0.0048 * glm::sin(mp - f)
-        +0.0030 * glm::sin(2*d - f)
-        +0.0010 * glm::sin(2*d + f - mp)
-        +0.0008 * glm::sin(2*d - f - mp)
-        +0.0006 * glm::sin(2*d + f);
-    double pip =
-        +0.016593
-        +0.000904 * glm::cos(mp)
-        +0.000166 * glm::cos(2*d - mp)
-        +0.000137 * glm::cos(2*d)
-        +0.000049 * glm::cos(2*mp)
-        +0.000015 * glm::cos(2*d + mp)
-        +0.000009 * glm::cos(2*d - m);
-    constexpr double au_in_earth_radi = 23455.0; // 1 AU = 23455 earth radi
-    double r = (1.0 / pip) / au_in_earth_radi; // AU
-
-    glm::vec3 sphericalEcliptic = glm::vec3(lambda, beta, r);
-    return sphericalEcliptic;
-}
-
-glm::mat3 Coordinates::Rx(float a)
-{
-    float sa = glm::sin(a);
-    float ca = glm::cos(a);
-    return glm::mat3(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, ca, sa), glm::vec3(0.0f, -sa, ca));
-}
-
-glm::mat3 Coordinates::Ry(float a)
-{
-    float sa = glm::sin(a);
-    float ca = glm::cos(a);
-    return glm::mat3(glm::vec3(ca, 0.0f, -sa), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(sa, 0.0f, ca));
-}
-
-glm::mat3 Coordinates::Rz(float a)
-{
-    float sa = glm::sin(a);
-    float ca = glm::cos(a);
-    return glm::mat3(glm::vec3(ca, sa, 0.0f), glm::vec3(-sa, ca, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ComputeJulianDate();
+    ComputeT();
+    ComputeLonLat();
+    ComputeCoordinates();
+    ComputePhaseAngles();
 }
 
 // TODO: Check if something has to be added to the seconds (see: Jensen 2001 Appendix Time Conversion)
-double Coordinates::GetJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT)
+void Coordinates::ComputeJulianDate()
+{
+    m_JD = ComputeJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
+}
+
+void Coordinates::ComputeT()
+{
+    m_T = ComputeJulianCenturies(m_JD);
+}
+
+void Coordinates::ComputeLonLat()
+{
+    m_lon = glm::radians(m_lonDeg);
+    m_lat = glm::radians(m_latDeg);
+}
+
+void Coordinates::ComputeCoordinates()
+{
+    m_sunEclipticCoordinates = ComputeSunEclipticCoordinates(m_T);
+    m_moonEclipticCoordinates = ComputeMoonEclipticCoordinates(m_T);
+    ComputeEquatorialAndHorizonCoordinates(m_sunEclipticCoordinates, m_sunEclipticRectangularCoordinates, m_sunEquatorialCoordinates, m_sunHorizonCoordinates);
+    ComputeEquatorialAndHorizonCoordinates(m_moonEclipticCoordinates, m_moonEclipticRectangularCoordinates, m_moonEquatorialCoordinates, m_moonHorizonCoordinates);
+}
+
+void Coordinates::ComputeEquatorialAndHorizonCoordinates(glm::dvec3 eclipticCoordinates, glm::dvec3& eclipticRectangularCoordinates, glm::dvec3& equatorialCoordinates, glm::dvec3& horizonCoordinates)
+{
+    eclipticRectangularCoordinates = SphericalToRectangular(eclipticCoordinates);
+    glm::dvec3 rectangularEquatorial = RectangularEclipticToRectangularEquatorial(eclipticRectangularCoordinates, m_T);
+    equatorialCoordinates = RectangularToSpherical(rectangularEquatorial);
+    glm::dvec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEquatorial, m_T, m_T, m_lon, m_lat);
+    horizonCoordinates = RectangularToSpherical(rectangularHorizon);
+}
+
+void Coordinates::ComputePhaseAngles()
+{
+    m_earthPhaseAngle = glm::acos(glm::dot(m_sunEclipticRectangularCoordinates, m_moonEclipticRectangularCoordinates) / (glm::length(m_sunEclipticRectangularCoordinates) * glm::length(m_moonEclipticRectangularCoordinates)));
+    m_moonPhaseAngle = glm::pi<float>() - m_earthPhaseAngle;
+}
+
+double Coordinates::ComputeJulianDate(int M, int D, int Y, int h, int m, int s, double deltaT)
 {
     int Mp = M;
     int Yp = Y;
@@ -316,25 +171,84 @@ double Coordinates::GetJulianDate(int M, int D, int Y, int h, int m, int s, doub
     return JD;
 }
 
-double Coordinates::GetJulianCenturies(double JD)
+double Coordinates::ComputeJulianCenturies(double JD)
 {
     double T = (JD - 2451545.0) / 36525.0;
     return T;
 }
 
-float Coordinates::GetLon()
+glm::dvec3 Coordinates::ComputeSunEclipticCoordinates(double T)
 {
-    return m_lon;
+    double M = 6.24 + 628.302 * T;
+
+    double lambda = 4.895048 + 628.331951 * T + (0.033417 - 0.000084 * T) * glm::sin(M) + 0.000351 * glm::sin(2 * M);
+    double beta = 0.0;
+    double r = 1.000140 - (0.016708 - 0.000042 * T) * glm::cos(M) - 0.000141 * glm::cos(2 * M); // AU
+
+    return glm::dvec3(lambda, beta, r);
 }
 
-float Coordinates::GetLat()
+glm::dvec3 Coordinates::ComputeMoonEclipticCoordinates(double T)
 {
-    return m_lat;
+    double lp = 3.8104 + 8399.7091 * T;
+    double m = 6.2300 + 628.3019 * T;
+    double f = 1.6280 + 8433.4663 * T;
+    double mp = 2.3554 + 8328.6911 * T;
+    double d = 5.1985 + 7771.3772 * T;
+
+    double lambda = lp
+        + 0.1098 * glm::sin(mp)
+        + 0.0222 * glm::sin(2 * d - mp)
+        + 0.0115 * glm::sin(2 * d)
+        + 0.0037 * glm::sin(2 * mp)
+        - 0.0032 * glm::sin(m)
+        - 0.0020 * glm::sin(2 * f)
+        + 0.0010 * glm::sin(2 * d - 2 * mp)
+        + 0.0010 * glm::sin(2 * d - m - mp)
+        + 0.0009 * glm::sin(2 * d + mp)
+        + 0.0008 * glm::sin(2 * d - m)
+        + 0.0007 * glm::sin(mp - m)
+        - 0.0006 * glm::sin(d)
+        - 0.0005 * glm::sin(m + mp);
+    double beta =
+        +0.0895 * glm::sin(f)
+        + 0.0049 * glm::sin(mp + f)
+        + 0.0048 * glm::sin(mp - f)
+        + 0.0030 * glm::sin(2 * d - f)
+        + 0.0010 * glm::sin(2 * d + f - mp)
+        + 0.0008 * glm::sin(2 * d - f - mp)
+        + 0.0006 * glm::sin(2 * d + f);
+    double pip =
+        +0.016593
+        + 0.000904 * glm::cos(mp)
+        + 0.000166 * glm::cos(2 * d - mp)
+        + 0.000137 * glm::cos(2 * d)
+        + 0.000049 * glm::cos(2 * mp)
+        + 0.000015 * glm::cos(2 * d + mp)
+        + 0.000009 * glm::cos(2 * d - m);
+    constexpr double au_in_earth_radi = 23455.0; // 1 AU = 23455 earth radi
+    double r = (1.0 / pip) / au_in_earth_radi; // AU
+
+    return glm::vec3(lambda, beta, r);
 }
 
-float Coordinates::GetT()
+glm::dmat3 Coordinates::Rx(double a)
 {
-    double JD = GetJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-    double T = GetJulianCenturies(JD);
-    return static_cast<float>(T);
+    double sa = glm::sin(a);
+    double ca = glm::cos(a);
+    return glm::mat3(glm::dvec3(1.0f, 0.0f, 0.0f), glm::dvec3(0.0f, ca, sa), glm::dvec3(0.0f, -sa, ca));
+}
+
+glm::dmat3 Coordinates::Ry(double a)
+{
+    double sa = glm::sin(a);
+    double ca = glm::cos(a);
+    return glm::dmat3(glm::dvec3(ca, 0.0f, -sa), glm::dvec3(0.0f, 1.0f, 0.0f), glm::dvec3(sa, 0.0f, ca));
+}
+
+glm::dmat3 Coordinates::Rz(double a)
+{
+    double sa = glm::sin(a);
+    double ca = glm::cos(a);
+    return glm::dmat3(glm::dvec3(ca, sa, 0.0f), glm::dvec3(-sa, ca, 0.0f), glm::dvec3(0.0f, 0.0f, 1.0f));
 }
