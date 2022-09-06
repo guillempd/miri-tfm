@@ -27,6 +27,7 @@ uniform sampler2D ColorMap;
 uniform sampler2D NormalMap;
 uniform float NormalMapStrength;
 uniform int UseColorMap;
+uniform int EnableEarthshine;
 
 out vec4 FragColor;
 
@@ -115,9 +116,12 @@ void main()
     vec3 sunIrradiance = vec3(1.0, 1.0, 1.0) * (SunIrradiance / 3.0);
     radiance += color * RadianceContribution(N, V, sunL, sunIrradiance);
 
-    vec3 earthL = normalize(w_EarthDir);
-    vec3 earthIrradiance = vec3(1.0, 1.0, 1.0) * (EarthIrradiance / 3.0);
-    radiance += color * RadianceContribution(N, V, earthL, earthIrradiance);
+    if (bool(EnableEarthshine))
+    {
+        vec3 earthL = normalize(w_EarthDir);
+        vec3 earthIrradiance = vec3(1.0, 1.0, 1.0) * (EarthIrradiance / 3.0);
+        radiance += color * RadianceContribution(N, V, earthL, earthIrradiance);
+    }
 
     vec3 p_SunDir = w_SunDir;
     vec3 p_MoonDir = w_MoonDir;

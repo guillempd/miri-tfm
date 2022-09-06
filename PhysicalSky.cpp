@@ -44,6 +44,7 @@ PhysicalSky::PhysicalSky()
     , m_dEnableLight(true)
     , m_groundMesh("D:/Escritorio/plane50x50.glb")
     , m_fullScreenQuadMesh("D:/Escritorio/FullScreenQuad.glb")
+    , m_dEnableEarthshine(true)
 {
     Init();
 }
@@ -106,6 +107,7 @@ void PhysicalSky::ResetDefaults()
     m_cMoonUseColorMap = m_dMoonUseColorMap;
     m_cLightRadiantIntensity = m_dLightRadiantIntensity;
     m_cEnableLight = m_dEnableLight;
+    m_cEnableEarthshine = m_dEnableEarthshine;
 }
 
 bool PhysicalSky::AnyChange()
@@ -135,6 +137,7 @@ bool PhysicalSky::AnyChange()
     result |= m_cMoonUseColorMap != m_dMoonUseColorMap;
     result |= m_cLightRadiantIntensity != m_dLightRadiantIntensity;
     result |= m_cEnableLight != m_dEnableLight;
+    result |= m_cEnableEarthshine != m_dEnableEarthshine;
 
     return result;
 }
@@ -343,6 +346,7 @@ void PhysicalSky::Update()
             m_notAppliedChanges |= ImGui::SliderFloat("Size Multiplier", &m_nMoonSizeMultiplier, 0.2f, 5.0f);
             ImGui::SliderFloat("Normal Map Strength", &m_cMoonNormalMapStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::Checkbox("Use Color Map", &m_cMoonUseColorMap);
+            ImGui::Checkbox("Enable Earthshine", &m_cEnableEarthshine);
             ImGui::PopID();
         }
 
@@ -483,6 +487,7 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_moonShader.SetTexture("NormalMap", 9, m_moonNormalMap);
     m_moonShader.SetFloat("NormalMapStrength", m_cMoonNormalMapStrength);
     m_moonShader.SetBool("UseColorMap", m_cMoonUseColorMap);
+    m_moonShader.SetBool("EnableEarthshine", m_cEnableEarthshine);
 
     m_fullScreenQuadMesh.Render();
 }

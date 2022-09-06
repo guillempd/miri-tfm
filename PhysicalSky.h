@@ -157,4 +157,8 @@ private:
     bool m_dEnableLight;
     ShaderProgram m_lightShader;
     Mesh m_fullScreenQuadMesh;
+
+
+    bool m_cEnableEarthshine;
+    bool m_dEnableEarthshine;
 };
