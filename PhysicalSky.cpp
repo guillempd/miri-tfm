@@ -27,7 +27,8 @@ PhysicalSky::PhysicalSky()
     , m_dMoonColorMapEnable(true)
     , m_dMoonNormalMapStrength(0.75f)
 
-    , m_starsMapIntensity(0.0f) // TODO: Make default
+    , m_dSkyStarsMapMultiplier(0.0f)
+    , m_dSkyMilkywayMapMultiplier(0.0f)
 
     , m_dArtificialLightEnable(true)
     , m_dArtificialLightPos(0.0f, 5.0f, 0.0f)
@@ -127,6 +128,9 @@ void PhysicalSky::ResetDefaults()
     m_cMoonColorMapEnable = m_dMoonColorMapEnable;
     m_cMoonNormalMapStrength = m_dMoonNormalMapStrength;
 
+    m_cSkyStarsMapMultiplier = m_dSkyStarsMapMultiplier;
+    m_cSkyMilkywayMapMultiplier = m_dSkyMilkywayMapMultiplier;
+
     m_cArtificialLightEnable = m_dArtificialLightEnable;
     m_cArtificialLightPos = m_dArtificialLightPos;
     m_cArtificialLightRadiantIntensity = m_dArtificialLightRadiantIntensity;
@@ -159,11 +163,15 @@ bool PhysicalSky::AnyChange()
     result |= m_nOzoneAbsorptionScale != m_dOzoneAbsorptionScale;
     result |= m_nOzoneAbsorptionCoefficient != m_dOzoneAbsorptionCoefficient;
 
+
     result |= m_cSunLimbDarkeningAlgorithm != m_dSunLimbDarkeningAlgorithm;
 
     result |= m_cMoonEarthshineEnable != m_dMoonEarthshineEnable;
     result |= m_cMoonColorMapEnable != m_dMoonColorMapEnable;
     result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
+
+    result |= m_cSkyStarsMapMultiplier != m_dSkyStarsMapMultiplier;
+    result |= m_cSkyMilkywayMapMultiplier != m_dSkyMilkywayMapMultiplier;
 
     result |= m_cArtificialLightEnable != m_dArtificialLightEnable;
     result |= m_cArtificialLightPos != m_dArtificialLightPos;
@@ -334,7 +342,8 @@ void PhysicalSky::InitResources()
 {
     m_moonNormalMap.Load("D:/Descargas/moon_xnormal.png");
     m_moonColorMap.Load("D:/Descargas/lroc_color_poles_8k_nogamma.png");
-    m_starsMap.Load("D:/Escritorio/starmap_2020_8k.hdr");
+    m_skyStarsMap.Load("D:/Escritorio/hiptyc_2020_8k.hdr");
+    m_skyMilkywayMap.Load("D:/Escritorio/milkyway_2020_8k.hdr");
 }
 
 void PhysicalSky::Update()
@@ -378,8 +387,8 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("Sky"))
         {
             ImGui::PushID("Sky");
-            ImGui::SliderFloat("Stars Map Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
-            //ImGui::SliderFloat(); // TODO: Milky way texture
+            ImGui::SliderFloat("Stars Map Multiplier", &m_cSkyStarsMapMultiplier, -5.0f, 5.0f);
+            ImGui::SliderFloat("Milky Way Map Multiplier", &m_cSkyMilkywayMapMultiplier, -5.0f, 5.0f);
             ImGui::PopID();
         }
 
@@ -543,8 +552,11 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
     m_skyShader.SetVec3("w_SunDir", sunWorldDirection);
     m_skyShader.SetVec3("w_MoonDir", moonWorldDirection);
 
-    m_skyShader.SetTexture("StarsMap", 8, m_starsMap);
-    m_skyShader.SetFloat("StarsMapIntensity", glm::pow(10.0f, m_starsMapIntensity));
+    m_skyShader.SetTexture("StarsMap", 8, m_skyStarsMap);
+    m_skyShader.SetFloat("StarsMapMultiplier", glm::pow(10.0f, m_cSkyStarsMapMultiplier));
+
+    m_skyShader.SetTexture("MilkywayMap", 9, m_skyMilkywayMap);
+    m_skyShader.SetFloat("MilkywayMapMultiplier", glm::pow(10.0f, m_cSkyMilkywayMapMultiplier));
 
     m_skyShader.SetFloat("lon", m_astronomicalPositioning.GetLon());
     m_skyShader.SetFloat("lat", m_astronomicalPositioning.GetLat());

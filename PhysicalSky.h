@@ -94,8 +94,14 @@ private:
 
     // SKY
     ShaderProgram m_skyShader;
-    Texture m_starsMap;
-    float m_starsMapIntensity;
+
+    Texture m_skyStarsMap;
+    float m_dSkyStarsMapMultiplier;
+    float m_cSkyStarsMapMultiplier;
+
+    Texture m_skyMilkywayMap;
+    float m_dSkyMilkywayMapMultiplier;
+    float m_cSkyMilkywayMapMultiplier;
 
     // ARTIFICIAL LIGHT
     ShaderProgram m_lightShader;

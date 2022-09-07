@@ -15,7 +15,10 @@ uniform vec3 w_SunDir;
 uniform vec3 w_MoonDir;
 
 uniform sampler2D StarsMap;
-uniform float StarsMapIntensity;
+uniform float StarsMapMultiplier;
+
+uniform sampler2D MilkywayMap;
+uniform float MilkywayMapMultiplier;
 
 uniform float T;
 uniform float lon;
@@ -89,7 +92,11 @@ void main()
     vec3 re_ViewDir = RectangularHorizonToRectangularEquatorial(rh_ViewDir);
     vec3 se_ViewDir = RectangularToSpherical(re_ViewDir);
     vec2 uv = vec2(0.5, 1.0) - se_ViewDir.xy / vec2(2.0 * PI, PI);
-    vec3 radiance = texture(StarsMap, uv).rgb * StarsMapIntensity;
+
+    vec3 radiance = vec3(0.0);
+
+    radiance += texture(StarsMap, uv).rgb * StarsMapMultiplier;
+    radiance += texture(MilkywayMap, uv).rgb * MilkywayMapMultiplier;
 
     vec3 transmittance;
     vec3 solarSkyInscatter = GetSolarSkyRadiance(e_CameraPos, e_ViewDir, 0.0, e_SunDir, transmittance);
