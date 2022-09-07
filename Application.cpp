@@ -13,7 +13,7 @@
 Application::Application(int width, int height, Window* window)
     : m_camera()
     , m_previousCursorPosition()
-    , m_scene()
+    , m_physicalSky()
     , m_window(window)
     , m_exposure(-2.0f)
     , m_max_white(1.0f)
@@ -32,7 +32,6 @@ Application::Application(int width, int height, Window* window)
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    m_scene.Init(m_window);
     OnFramebufferSize(width, height);
 
     // FRAMEBUFFER STUFF
@@ -99,7 +98,6 @@ void Application::OnCursorPos(double xpos, double ypos)
     glm::vec2 currentCursorPosition = glm::vec2(xpos, ypos);
     glm::vec2 cursorMovement = currentCursorPosition - m_previousCursorPosition;
     bool captured = false;
-    if (!captured) captured = m_scene.OnCursorMovement(cursorMovement);
     if (!captured) captured = m_camera.OnCursorMovement(cursorMovement);
 
     m_previousCursorPosition = currentCursorPosition;
@@ -108,7 +106,6 @@ void Application::OnCursorPos(double xpos, double ypos)
 void Application::OnMouseButton(int button, int action, int mods)
 {
     m_camera.OnMouseButton(button, action, mods);
-    m_scene.OnMouseClick(button, action, mods);
 }
 
 void Application::OnFramebufferSize(int width, int height)
@@ -130,7 +127,7 @@ void Application::OnUpdate()
     ImGui::ShowMetricsWindow();
 
     m_camera.OnUpdate();
-    m_scene.Update();
+    m_physicalSky.Update();
 
     if (ImGui::Begin("General Settings"))
     {
@@ -155,7 +152,7 @@ void Application::OnRender()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_hdrFramebuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    m_scene.Render(m_camera);
+    m_physicalSky.Render(m_camera);
 
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
