@@ -39,7 +39,7 @@ PhysicalSky::PhysicalSky()
     , m_dMoonNormalMapStrength(0.5f)
     , m_dMoonUseColorMap(true)
     , m_dLightRadiantIntensity(1.0f) // W*sr^-1
-    , m_LightPos(0.0f, 5.0f, 0.0f)
+    , m_dLightPos(0.0f, 5.0f, 0.0f)
     , m_bulbMesh("D:/Escritorio/sphere1.glb")
     , m_dEnableLight(true)
     , m_groundMesh("D:/Escritorio/plane50x50.glb")
@@ -108,6 +108,7 @@ void PhysicalSky::ResetDefaults()
     m_cLightRadiantIntensity = m_dLightRadiantIntensity;
     m_cEnableLight = m_dEnableLight;
     m_cEnableEarthshine = m_dEnableEarthshine;
+    m_cLightPos = m_dLightPos;
 }
 
 bool PhysicalSky::AnyChange()
@@ -138,6 +139,7 @@ bool PhysicalSky::AnyChange()
     result |= m_cLightRadiantIntensity != m_dLightRadiantIntensity;
     result |= m_cEnableLight != m_dEnableLight;
     result |= m_cEnableEarthshine != m_dEnableEarthshine;
+    result |= m_cLightPos != m_dLightPos;
 
     return result;
 }
@@ -319,7 +321,7 @@ void PhysicalSky::Update()
             ImGui::PushID("General");
             ImGui::Checkbox("Enable Light", &m_cEnableLight);
             ImGui::SliderFloat("Light Radiant Intensity (W*sr^-1)", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
-            ImGui::DragFloat3("Light Position (m)", glm::value_ptr(m_LightPos), 0.01f); // TODO: Is it needed to give min and max (?)
+            ImGui::DragFloat3("Light Position (m)", glm::value_ptr(m_cLightPos), 0.01f); // TODO: Is it needed to give min and max (?)
             ImGui::SliderFloat("Stars Map Intensity Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
             m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
             m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius (km)", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
@@ -498,11 +500,11 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
     m_solarModel->SetProgramUniforms(m_skyShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_skyShader.m_id, 4, 5, 6, 7);
 
-    m_skyShader.SetVec3("w_CameraPos", camera.GetPosition());
-    m_skyShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
     m_skyShader.SetMat4("WorldFromView", camera.GetWorldFromViewMatrix());
     m_skyShader.SetMat4("ViewFromClip", camera.GetViewFromClipMatrix());
 
+    m_skyShader.SetVec3("w_CameraPos", camera.GetPosition());
+    m_skyShader.SetVec3("w_EarthCenterPos", glm::vec3(0.0f, -m_cPlanetRadius, 0.0f));
     m_skyShader.SetVec3("w_SunDir", sunWorldDirection);
     m_skyShader.SetVec3("w_MoonDir", moonWorldDirection);
 
@@ -513,8 +515,6 @@ void PhysicalSky::RenderSky(const Camera& camera, const glm::vec3& sunWorldDirec
     m_skyShader.SetFloat("lat", m_astronomicalPositioning.GetLat());
     m_skyShader.SetFloat("T", m_astronomicalPositioning.GetT());
 
-    if (glGetError() != GL_NO_ERROR) std::cerr << "E: Setting uniforms" << std::endl;
-
     m_fullScreenQuadMesh.Render();
 }
 
@@ -524,9 +524,7 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_solarModel->SetProgramUniforms(m_meshShader.m_id, 0, 1, 2, 3);
     m_lunarModel->SetProgramUniforms(m_meshShader.m_id, 4, 5, 6, 7);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::scale(model, glm::vec3(1e-3f));
-    m_meshShader.SetMat4("Model", model);
+    m_meshShader.SetMat4("Model", glm::scale(glm::mat4(1.0f), glm::vec3(1e-3f)));
     m_meshShader.SetMat4("View", camera.GetViewMatrix());
     m_meshShader.SetMat4("Projection", camera.GetProjectionMatrix());
 
@@ -535,28 +533,28 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_meshShader.SetVec3("w_SunDir", sunWorldDirection);
     m_meshShader.SetVec3("w_MoonDir", moonWorldDirection);
 
-    m_meshShader.SetVec3("w_LightPos", m_LightPos / 1000.0f);
+    m_meshShader.SetVec3("w_LightPos", m_cLightPos / 1000.0f);
     m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
     m_meshShader.SetBool("EnableLight", m_cEnableLight);
 
     m_mesh.Render();
 
-    glm::mat4 planeModel = glm::mat4(1.0f);
-    planeModel = glm::scale(planeModel, glm::vec3(1e-3f));
-    m_meshShader.SetMat4("Model", planeModel);
+    m_meshShader.SetMat4("Model", glm::scale(glm::mat4(1.0f), glm::vec3(1e-3f)));
     m_groundMesh.Render();
 }
 
 void PhysicalSky::RenderLight(const Camera& camera)
 {
     m_lightShader.Use();
+
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::scale(model, glm::vec3(1e-3f));
-    model = glm::translate(model, m_LightPos);
+    model = glm::translate(model, m_cLightPos);
     model = glm::scale(model, glm::vec3(0.2f));
     m_lightShader.SetMat4("Model", model);
     m_lightShader.SetMat4("View", camera.GetViewMatrix());
     m_lightShader.SetMat4("Projection", camera.GetProjectionMatrix());
+
     m_bulbMesh.Render();
 }
 

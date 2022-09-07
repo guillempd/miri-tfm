@@ -40,8 +40,9 @@ private:
 private:
     std::unique_ptr<atmosphere::Model> m_solarModel;
     std::unique_ptr<atmosphere::Model> m_lunarModel;
+    AstronomicalPositioning m_astronomicalPositioning;
 
-    // MODEL PARAMETERS
+    // MODEL PARAMETERS PREFIX
     // d: Default
     // m: New
     // c: Current
@@ -59,7 +60,26 @@ private:
     float m_nAtmosphereHeight;
     float m_cAtmosphereHeight;
 
+    ShaderProgram m_skyShader;
+    ShaderProgram m_meshShader;
+    Texture m_starsMap;
+    Mesh m_mesh;
+    Mesh m_groundMesh;
+    Mesh m_bulbMesh;
+    Mesh m_fullScreenQuadMesh;
+    bool m_cEnableLight;
+    bool m_dEnableLight;
+    ShaderProgram m_lightShader;
+    float m_cLightRadiantIntensity;
+    float m_dLightRadiantIntensity;
+
+    glm::vec3 m_cLightPos;
+    glm::vec3 m_dLightPos;
+
+    
     // Sun
+    ShaderProgram m_sunShader;
+
     float m_dSunIntensity;
     float m_nSunIntensity;
     float m_cSunIntensity;
@@ -72,6 +92,10 @@ private:
     LimbDarkeningAlgorithm m_cLimbDarkeningAlgorithm;
 
     // Moon
+    ShaderProgram m_moonShader;
+
+    Texture m_moonNormalMap;
+    Texture m_moonColorMap;
     float m_dMoonSizeMultiplier;
     float m_nMoonSizeMultiplier;
     float m_cMoonSizeMultiplier;
@@ -81,6 +105,8 @@ private:
 
     bool m_dMoonUseColorMap;
     bool m_cMoonUseColorMap;
+    bool m_cEnableEarthshine;
+    bool m_dEnableEarthshine;
 
     // Sky
     float m_starsMapIntensity;
@@ -133,32 +159,4 @@ private:
     float m_cOzoneAbsorptionScale;
 
     bool m_notAppliedChanges;
-
-    // SHADING RESOURCES
-    ShaderProgram m_skyShader;
-    ShaderProgram m_sunShader;
-    ShaderProgram m_moonShader;
-    ShaderProgram m_meshShader;
-    Texture m_moonNormalMap;
-    Texture m_moonColorMap;
-    Texture m_starsMap;
-    Mesh m_mesh;
-
-    AstronomicalPositioning m_astronomicalPositioning;
-
-    float m_cLightRadiantIntensity;
-    float m_dLightRadiantIntensity;
-
-    glm::vec3 m_LightPos;
-
-    Mesh m_groundMesh;
-    Mesh m_bulbMesh;
-    bool m_cEnableLight;
-    bool m_dEnableLight;
-    ShaderProgram m_lightShader;
-    Mesh m_fullScreenQuadMesh;
-
-
-    bool m_cEnableEarthshine;
-    bool m_dEnableEarthshine;
 };

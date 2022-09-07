@@ -17,7 +17,6 @@ uniform vec3 w_MoonDir;
 uniform sampler2D StarsMap;
 uniform float StarsMapIntensity;
 
-// Pass these positioning coordinates as vec3 (?)
 uniform float T;
 uniform float lon;
 uniform float lat;
