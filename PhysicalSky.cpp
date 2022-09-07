@@ -14,37 +14,44 @@ using namespace atmosphere;
 
 // TODO: Make use of doubles
 PhysicalSky::PhysicalSky()
-    : m_dRayleighScatteringScale(0.033100f) // km^-1
+    : m_dPlanetRadius(6360.0f) // km
+    , m_dAtmosphereHeight(60.0f) // km
+    , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
+
+    , m_dSunSizeMultiplier(5.0f) // unitless
+    , m_dSunIrradiance(1500.000000f) // W*m^-2
+    , m_dSunLimbDarkeningAlgorithm(SunLimbDarkeningAlgorithm::NONE)
+
+    , m_dMoonSizeMultiplier(5.0f) // unitless
+    , m_dMoonEarthshineEnable(true)
+    , m_dMoonColorMapEnable(true)
+    , m_dMoonNormalMapStrength(0.75f)
+
+    , m_starsMapIntensity(0.0f) // TODO: Make default
+
+    , m_dArtificialLightEnable(true)
+    , m_dArtificialLightPos(0.0f, 5.0f, 0.0f)
+    , m_dArtificialLightRadiantIntensity(1.0f) // W*sr^-1
+
+    , m_dRayleighScatteringScale(0.033100f) // km^-1
     , m_dRayleighScatteringCoefficient(0.175287f, 0.409607f, 1.000000f) // unitless
     , m_dRayleighExponentialDistribution(8.000000f) // km
+
     , m_dMieScatteringScale(0.003996f) // km^-1
     , m_dMieScatteringCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
     , m_dMieAbsorptionScale(0.000444f) // km^-1
     , m_dMieAbsorptionCoefficient(1.000000f, 1.000000f, 1.000000f) // unitless
     , m_dMiePhaseFunctionG(0.800000f) // unitless
     , m_dMieExponentialDistribution(1.200000f) // km
+
     , m_dOzoneAbsorptionScale(0.001881f) // km^-1
     , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
-    , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
-    , m_dSunIntensity(1500.000000f) // W*m^-2
-    , m_dSunSizeMultiplier(5.0f) // unitless
-    , m_dMoonSizeMultiplier(5.0f) // unitless
-    , m_dPlanetRadius(6360.0f) // km
-    , m_dAtmosphereHeight(60.0f) // km
 
-    , m_dLimbDarkeningAlgorithm(LimbDarkeningAlgorithm::NONE)
     , m_notAppliedChanges(false)
     , m_mesh("D:/Escritorio/human.glb")
-    , m_starsMapIntensity(0.0f)
-    , m_dMoonNormalMapStrength(0.5f)
-    , m_dMoonUseColorMap(true)
-    , m_dLightRadiantIntensity(1.0f) // W*sr^-1
-    , m_dLightPos(0.0f, 5.0f, 0.0f)
     , m_bulbMesh("D:/Escritorio/sphere1.glb")
-    , m_dEnableLight(true)
     , m_groundMesh("D:/Escritorio/plane50x50.glb")
     , m_fullScreenQuadMesh("D:/Escritorio/FullScreenQuad.glb")
-    , m_dEnableEarthshine(true)
 {
     Init();
 }
@@ -58,88 +65,109 @@ void PhysicalSky::Init()
 
 void PhysicalSky::MakeDefaultParametersNew()
 {
-    m_nGroundAlbedo = m_dGroundAlbedo;
-    m_nSunIntensity = m_dSunIntensity;
-    m_nSunSizeMultiplier = m_dSunSizeMultiplier;
-    m_nMoonSizeMultiplier = m_dMoonSizeMultiplier;
     m_nPlanetRadius = m_dPlanetRadius;
     m_nAtmosphereHeight = m_dAtmosphereHeight;
-    m_nRayleighScatteringCoefficient = m_dRayleighScatteringCoefficient;
+    m_nGroundAlbedo = m_dGroundAlbedo;
+
+    m_nSunSizeMultiplier = m_dSunSizeMultiplier;
+    m_nSunIrradiance = m_dSunIrradiance;
+
+    m_nMoonSizeMultiplier = m_dMoonSizeMultiplier;
+
     m_nRayleighScatteringScale = m_dRayleighScatteringScale;
+    m_nRayleighScatteringCoefficient = m_dRayleighScatteringCoefficient;
     m_nRayleighExponentialDistribution = m_dRayleighExponentialDistribution;
-    m_nMieScatteringCoefficient = m_dMieScatteringCoefficient;
+
     m_nMieScatteringScale = m_dMieScatteringScale;
-    m_nMieAbsorptionCoefficient = m_dMieAbsorptionCoefficient;
+    m_nMieScatteringCoefficient = m_dMieScatteringCoefficient;
     m_nMieAbsorptionScale = m_dMieAbsorptionScale;
-    m_nMiePhaseFunctionG = m_dMiePhaseFunctionG;
+    m_nMieAbsorptionCoefficient = m_dMieAbsorptionCoefficient;
     m_nMieExponentialDistribution = m_dMieExponentialDistribution;
-    m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
+    m_nMiePhaseFunctionG = m_dMiePhaseFunctionG;
+
     m_nOzoneAbsorptionScale = m_dOzoneAbsorptionScale;
+    m_nOzoneAbsorptionCoefficient = m_dOzoneAbsorptionCoefficient;
 }
 
 void PhysicalSky::MakeNewParametersCurrent()
 {
-    m_cGroundAlbedo = m_nGroundAlbedo;
-    m_cSunIntensity = m_nSunIntensity;
-    m_cSunSizeMultiplier = m_nSunSizeMultiplier;
-    m_cMoonSizeMultiplier = m_nMoonSizeMultiplier;
     m_cPlanetRadius = m_nPlanetRadius;
     m_cAtmosphereHeight = m_nAtmosphereHeight;
-    m_cRayleighScatteringCoefficient = m_nRayleighScatteringCoefficient;
+    m_cGroundAlbedo = m_nGroundAlbedo;
+
+    m_cSunSizeMultiplier = m_nSunSizeMultiplier;
+    m_cSunIrradiance = m_nSunIrradiance;
+
+    m_cMoonSizeMultiplier = m_nMoonSizeMultiplier;
+
     m_cRayleighScatteringScale = m_nRayleighScatteringScale;
+    m_cRayleighScatteringCoefficient = m_nRayleighScatteringCoefficient;
     m_cRayleighExponentialDistribution = m_nRayleighExponentialDistribution;
-    m_cMieScatteringCoefficient = m_nMieScatteringCoefficient;
+
     m_cMieScatteringScale = m_nMieScatteringScale;
-    m_cMieAbsorptionCoefficient = m_nMieAbsorptionCoefficient;
+    m_cMieScatteringCoefficient = m_nMieScatteringCoefficient;
     m_cMieAbsorptionScale = m_nMieAbsorptionScale;
-    m_cMiePhaseFunctionG = m_nMiePhaseFunctionG;
+    m_cMieAbsorptionCoefficient = m_nMieAbsorptionCoefficient;
     m_cMieExponentialDistribution = m_nMieExponentialDistribution;
-    m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
+    m_cMiePhaseFunctionG = m_nMiePhaseFunctionG;
+
     m_cOzoneAbsorptionScale = m_nOzoneAbsorptionScale;
+    m_cOzoneAbsorptionCoefficient = m_nOzoneAbsorptionCoefficient;
 }
 
 void PhysicalSky::ResetDefaults()
 {
     MakeDefaultParametersNew();
+
     MakeNewParametersCurrent();
-    m_cLimbDarkeningAlgorithm = m_dLimbDarkeningAlgorithm;
+
+    m_cSunLimbDarkeningAlgorithm = m_dSunLimbDarkeningAlgorithm;
+
+    m_cMoonEarthshineEnable = m_dMoonEarthshineEnable;
+    m_cMoonColorMapEnable = m_dMoonColorMapEnable;
     m_cMoonNormalMapStrength = m_dMoonNormalMapStrength;
-    m_cMoonUseColorMap = m_dMoonUseColorMap;
-    m_cLightRadiantIntensity = m_dLightRadiantIntensity;
-    m_cEnableLight = m_dEnableLight;
-    m_cEnableEarthshine = m_dEnableEarthshine;
-    m_cLightPos = m_dLightPos;
+
+    m_cArtificialLightEnable = m_dArtificialLightEnable;
+    m_cArtificialLightPos = m_dArtificialLightPos;
+    m_cArtificialLightRadiantIntensity = m_dArtificialLightRadiantIntensity;
 }
 
 bool PhysicalSky::AnyChange()
 {
     bool result = false;
 
-    result |= m_nGroundAlbedo != m_dGroundAlbedo;
-    result |= m_nSunIntensity != m_dSunIntensity;
-    result |= m_nSunSizeMultiplier != m_dSunSizeMultiplier;
-    result |= m_nMoonSizeMultiplier != m_dMoonSizeMultiplier;
     result |= m_nPlanetRadius != m_dPlanetRadius;
     result |= m_nAtmosphereHeight != m_dAtmosphereHeight;
-    result |= m_nRayleighScatteringCoefficient != m_dRayleighScatteringCoefficient;
-    result |= m_nRayleighScatteringScale != m_dRayleighScatteringScale;
-    result |= m_nRayleighExponentialDistribution != m_dRayleighExponentialDistribution;
-    result |= m_nMieScatteringCoefficient != m_dMieScatteringCoefficient;
-    result |= m_nMieScatteringScale != m_dMieScatteringScale;
-    result |= m_nMieAbsorptionCoefficient != m_dMieAbsorptionCoefficient;
-    result |= m_nMieAbsorptionScale != m_dMieAbsorptionScale;
-    result |= m_nMiePhaseFunctionG != m_dMiePhaseFunctionG;
-    result |= m_nMieExponentialDistribution != m_dMieExponentialDistribution;
-    result |= m_nOzoneAbsorptionCoefficient != m_dOzoneAbsorptionCoefficient;
-    result |= m_nOzoneAbsorptionScale != m_dOzoneAbsorptionScale;
+    result |= m_nGroundAlbedo != m_dGroundAlbedo;
 
-    result |= m_cLimbDarkeningAlgorithm != m_dLimbDarkeningAlgorithm;
+    result |= m_nSunSizeMultiplier != m_dSunSizeMultiplier;
+    result |= m_nSunIrradiance != m_dSunIrradiance;
+
+    result |= m_nMoonSizeMultiplier != m_dMoonSizeMultiplier;
+
+    result |= m_nRayleighScatteringScale != m_dRayleighScatteringScale;
+    result |= m_nRayleighScatteringCoefficient != m_dRayleighScatteringCoefficient;
+    result |= m_nRayleighExponentialDistribution != m_dRayleighExponentialDistribution;
+
+    result |= m_nMieScatteringScale != m_dMieScatteringScale;
+    result |= m_nMieScatteringCoefficient != m_dMieScatteringCoefficient;
+    result |= m_nMieAbsorptionScale != m_dMieAbsorptionScale;
+    result |= m_nMieAbsorptionCoefficient != m_dMieAbsorptionCoefficient;
+    result |= m_nMieExponentialDistribution != m_dMieExponentialDistribution;
+    result |= m_nMiePhaseFunctionG != m_dMiePhaseFunctionG;
+
+    result |= m_nOzoneAbsorptionScale != m_dOzoneAbsorptionScale;
+    result |= m_nOzoneAbsorptionCoefficient != m_dOzoneAbsorptionCoefficient;
+
+    result |= m_cSunLimbDarkeningAlgorithm != m_dSunLimbDarkeningAlgorithm;
+
+    result |= m_cMoonEarthshineEnable != m_dMoonEarthshineEnable;
+    result |= m_cMoonColorMapEnable != m_dMoonColorMapEnable;
     result |= m_cMoonNormalMapStrength != m_dMoonNormalMapStrength;
-    result |= m_cMoonUseColorMap != m_dMoonUseColorMap;
-    result |= m_cLightRadiantIntensity != m_dLightRadiantIntensity;
-    result |= m_cEnableLight != m_dEnableLight;
-    result |= m_cEnableEarthshine != m_dEnableEarthshine;
-    result |= m_cLightPos != m_dLightPos;
+
+    result |= m_cArtificialLightEnable != m_dArtificialLightEnable;
+    result |= m_cArtificialLightPos != m_dArtificialLightPos;
+    result |= m_cArtificialLightRadiantIntensity != m_dArtificialLightRadiantIntensity;
 
     return result;
 }
@@ -149,7 +177,7 @@ glm::dvec3 PhysicalSky::ComputeMoonIrradiance()
     constexpr double C = 0.072;
     constexpr double r_m = 1.162671e-5; // Radius of the moon (in AU)
     double d = m_astronomicalPositioning.GetMoonHorizonCoordinates().z; // Earth-Moon distance (in AU)
-    double E_sm = static_cast<double>(m_cSunIntensity);
+    double E_sm = static_cast<double>(m_cSunIrradiance);
     double E_em = ComputeEarthshineIrradiance();
     double phi = m_astronomicalPositioning.GetMoonPhaseAngle();
     double moonLitFraction = VisibleLitFractionFromPhaseAngle(phi);
@@ -162,9 +190,9 @@ double PhysicalSky::ComputeEarthshineIrradiance()
 {
     double phi = m_astronomicalPositioning.GetEarthPhaseAngle();
     double earthLitFraction = VisibleLitFractionFromPhaseAngle(phi);
-    constexpr double fullEarthshineIntensity = 0.19;
-    double earthshineIntensity = 0.5 * fullEarthshineIntensity * earthLitFraction;
-    return earthshineIntensity;
+    constexpr double fullEarthshineIrradiance = 0.19;
+    double earthshineIrradiance = 0.5 * fullEarthshineIrradiance * earthLitFraction;
+    return earthshineIrradiance;
 }
 
 void PhysicalSky::InitModel()
@@ -172,7 +200,7 @@ void PhysicalSky::InitModel()
     int viewportData[4];
     glGetIntegerv(GL_VIEWPORT, viewportData);
 
-    glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIntensity) / 3.0);
+    glm::dvec3 sun_irradiance = glm::dvec3(1.0, 1.0, 1.0) * (static_cast<double>(m_cSunIrradiance) / 3.0);
     glm::vec3 sunHorizonCoordinates = m_astronomicalPositioning.GetSunHorizonCoordinates();
     constexpr double sunRadius = 0.00465047;
     double sunTanAngularRadius = (sunRadius * m_cSunSizeMultiplier)/ sunHorizonCoordinates.z;
@@ -237,7 +265,6 @@ void PhysicalSky::InitModel()
     glBlendEquation(GL_FUNC_ADD);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
-
 
 void PhysicalSky::InitShaders()
 {
@@ -319,13 +346,9 @@ void PhysicalSky::Update()
         if (ImGui::CollapsingHeader("General"))
         {
             ImGui::PushID("General");
-            ImGui::Checkbox("Enable Light", &m_cEnableLight);
-            ImGui::SliderFloat("Light Radiant Intensity (W*sr^-1)", &m_cLightRadiantIntensity, 0.0f, 50.0, "%.3f");
-            ImGui::DragFloat3("Light Position (m)", glm::value_ptr(m_cLightPos), 0.01f); // TODO: Is it needed to give min and max (?)
-            ImGui::SliderFloat("Stars Map Intensity Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
-            m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
             m_notAppliedChanges |= ImGui::SliderFloat("Planet Radius (km)", &m_nPlanetRadius, 1.0f, 10000.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::SliderFloat("Atmosphere Height (km)", &m_nAtmosphereHeight, 1.0f, 200.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::ColorEdit3("Ground Albedo", glm::value_ptr(m_nGroundAlbedo), ImGuiColorEditFlags_Float);
             ImGui::PopID();
         }
 
@@ -333,12 +356,12 @@ void PhysicalSky::Update()
         {
             ImGui::PushID("Sun");
             // TODO: Color
-            ImGui::RadioButton("None", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
-            ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
-            ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), static_cast<int>(LimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
-            ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_cLimbDarkeningAlgorithm), -1);
-            m_notAppliedChanges |= ImGui::SliderFloat("Irradiance (W*m^-2)", &m_nSunIntensity, 0.0f, 15000.0f);
             m_notAppliedChanges |= ImGui::SliderFloat("Size Multiplier", &m_nSunSizeMultiplier, 0.2f, 5.0f);
+            m_notAppliedChanges |= ImGui::SliderFloat("Irradiance (W*m^-2)", &m_nSunIrradiance, 0.0f, 15000.0f);
+            ImGui::RadioButton("None", reinterpret_cast<int*>(&m_cSunLimbDarkeningAlgorithm), static_cast<int>(SunLimbDarkeningAlgorithm::NONE)); ImGui::SameLine();
+            ImGui::RadioButton("NEC96", reinterpret_cast<int*>(&m_cSunLimbDarkeningAlgorithm), static_cast<int>(SunLimbDarkeningAlgorithm::NEC96)); ImGui::SameLine();
+            ImGui::RadioButton("HM98", reinterpret_cast<int*>(&m_cSunLimbDarkeningAlgorithm), static_cast<int>(SunLimbDarkeningAlgorithm::HM98)); ImGui::SameLine();
+            ImGui::RadioButton("Invalid", reinterpret_cast<int*>(&m_cSunLimbDarkeningAlgorithm), -1);
             ImGui::PopID();
         }
 
@@ -346,15 +369,27 @@ void PhysicalSky::Update()
         {
             ImGui::PushID("Moon");
             m_notAppliedChanges |= ImGui::SliderFloat("Size Multiplier", &m_nMoonSizeMultiplier, 0.2f, 5.0f);
+            ImGui::Checkbox("Enable Earthshine", &m_cMoonEarthshineEnable);
+            ImGui::Checkbox("Use Color Map", &m_cMoonColorMapEnable);
             ImGui::SliderFloat("Normal Map Strength", &m_cMoonNormalMapStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::Checkbox("Use Color Map", &m_cMoonUseColorMap);
-            ImGui::Checkbox("Enable Earthshine", &m_cEnableEarthshine);
             ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Sky"))
         {
+            ImGui::PushID("Sky");
+            ImGui::SliderFloat("Stars Map Multiplier", &m_starsMapIntensity, -5.0f, 5.0f);
+            //ImGui::SliderFloat(); // TODO: Milky way texture
+            ImGui::PopID();
+        }
 
+        if (ImGui::CollapsingHeader("Artifical Light"))
+        {
+            ImGui::PushID("Artifical Light");
+            ImGui::Checkbox("Enable", &m_cArtificialLightEnable);
+            ImGui::DragFloat3("Position (m)", glm::value_ptr(m_cArtificialLightPos), 0.01f);
+            ImGui::SliderFloat("Radiant Intensity (W*sr^-1)", &m_cArtificialLightRadiantIntensity, 0.0f, 50.0, "%.3f");
+            ImGui::PopID();
         }
 
         if (ImGui::CollapsingHeader("Rayleigh"))
@@ -373,8 +408,8 @@ void PhysicalSky::Update()
             m_notAppliedChanges |= ImGui::ColorEdit3("Scattering Coefficient", glm::value_ptr(m_nMieScatteringCoefficient), ImGuiColorEditFlags_Float);
             m_notAppliedChanges |= ImGui::SliderFloat("Absorption Scale (km^-1)", &m_nMieAbsorptionScale, 0.0f, 10.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::ColorEdit3("Absorption Coefficient", glm::value_ptr(m_nMieAbsorptionCoefficient), ImGuiColorEditFlags_Float);
-            m_notAppliedChanges |= ImGui::SliderFloat("Phase Function g", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             m_notAppliedChanges |= ImGui::SliderFloat("Exponential Distribution (km)", &m_nMieExponentialDistribution, 0.5f, 20.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
+            m_notAppliedChanges |= ImGui::SliderFloat("Phase Function g", &m_nMiePhaseFunctionG, 0.0f, 1.0f, "%.6f", ImGuiSliderFlags_AlwaysClamp);
             ImGui::PopID();
         }
 
@@ -437,7 +472,7 @@ void PhysicalSky::Render(const Camera& camera)
     glEnable(GL_DEPTH_TEST);
 
     RenderScene(camera, sunWorldDirection, moonWorldDirection);
-    if (m_cEnableLight) RenderLight(camera);
+    if (m_cArtificialLightEnable) RenderLight(camera);
 }
 
 void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirection, const glm::vec3& moonWorldDirection, float tanSunAngularRadius)
@@ -458,7 +493,7 @@ void PhysicalSky::RenderSun(const Camera& camera, const glm::vec3& sunWorldDirec
     m_sunShader.SetVec3("w_SunDir", sunWorldDirection);
     m_sunShader.SetVec3("w_MoonDir", moonWorldDirection);
 
-    m_sunShader.SetInt("LimbDarkeningAlgorithm", static_cast<int>(m_cLimbDarkeningAlgorithm));
+    m_sunShader.SetInt("LimbDarkeningAlgorithm", static_cast<int>(m_cSunLimbDarkeningAlgorithm));
 
     m_fullScreenQuadMesh.Render();
 }
@@ -482,14 +517,14 @@ void PhysicalSky::RenderMoon(const Camera& camera, const glm::vec3& sunWorldDire
     m_moonShader.SetVec3("w_MoonDir", moonWorldDirection);
     m_moonShader.SetVec3("w_EarthDir", -moonWorldDirection);
 
-    double earthshineIntensity = ComputeEarthshineIrradiance();
-    m_moonShader.SetFloat("EarthIrradiance", static_cast<float>(earthshineIntensity));
-    m_moonShader.SetFloat("SunIrradiance", m_cSunIntensity);
+    double earthshineIrradiance = ComputeEarthshineIrradiance();
+    m_moonShader.SetFloat("EarthIrradiance", static_cast<float>(earthshineIrradiance));
+    m_moonShader.SetFloat("SunIrradiance", m_cSunIrradiance);
     m_moonShader.SetTexture("ColorMap", 8, m_moonColorMap);
     m_moonShader.SetTexture("NormalMap", 9, m_moonNormalMap);
     m_moonShader.SetFloat("NormalMapStrength", m_cMoonNormalMapStrength);
-    m_moonShader.SetBool("UseColorMap", m_cMoonUseColorMap);
-    m_moonShader.SetBool("EnableEarthshine", m_cEnableEarthshine);
+    m_moonShader.SetBool("UseColorMap", m_cMoonColorMapEnable);
+    m_moonShader.SetBool("EnableEarthshine", m_cMoonEarthshineEnable);
 
     m_fullScreenQuadMesh.Render();
 }
@@ -533,9 +568,9 @@ void PhysicalSky::RenderScene(const Camera& camera, const glm::vec3& sunWorldDir
     m_meshShader.SetVec3("w_SunDir", sunWorldDirection);
     m_meshShader.SetVec3("w_MoonDir", moonWorldDirection);
 
-    m_meshShader.SetVec3("w_LightPos", m_cLightPos / 1000.0f);
-    m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cLightRadiantIntensity / 3.0f));
-    m_meshShader.SetBool("EnableLight", m_cEnableLight);
+    m_meshShader.SetVec3("w_LightPos", m_cArtificialLightPos / 1000.0f);
+    m_meshShader.SetVec3("LightRadiantIntensity", glm::vec3(1.0f) * (m_cArtificialLightRadiantIntensity / 3.0f));
+    m_meshShader.SetBool("EnableLight", m_cArtificialLightEnable);
 
     m_mesh.Render();
 
@@ -549,7 +584,7 @@ void PhysicalSky::RenderLight(const Camera& camera)
 
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::scale(model, glm::vec3(1e-3f));
-    model = glm::translate(model, m_cLightPos);
+    model = glm::translate(model, m_cArtificialLightPos);
     model = glm::scale(model, glm::vec3(0.2f));
     m_lightShader.SetMat4("Model", model);
     m_lightShader.SetMat4("View", camera.GetViewMatrix());
