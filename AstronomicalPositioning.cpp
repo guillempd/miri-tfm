@@ -5,13 +5,13 @@
 #include <glm/gtc/type_ptr.hpp>
 
 AstronomicalPositioning::AstronomicalPositioning()
-    : m_M(1)
-    , m_D(1)
-    , m_Y(2000)
+    : m_M(10)
+    , m_D(10)
+    , m_Y(2022)
     , m_h(6)
     , m_m(0)
     , m_s(33)
-    , m_JD(2513491.14661)
+    , m_JD(2459862.750382)
     , m_lonDeg(0.0)
     , m_latDeg(0.0)
     , m_lon(0.0)
@@ -107,7 +107,6 @@ glm::dvec3 AstronomicalPositioning::RectangularEquatorialToRectangularHorizon(gl
 
 void AstronomicalPositioning::Compute()
 {
-    ComputeJulianDate();
     ComputeT();
     ComputeLonLat();
     ComputeCoordinates();
@@ -115,14 +114,13 @@ void AstronomicalPositioning::Compute()
 }
 
 // TODO: Check if something has to be added to the seconds (see: Jensen 2001 Appendix Time Conversion)
-void AstronomicalPositioning::ComputeJulianDate()
-{
-    m_JD = ComputeJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
-}
-
 void AstronomicalPositioning::ComputeT()
 {
+    m_JD = ComputeJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 0.0);
     m_T = ComputeJulianCenturies(m_JD);
+
+    double JDp = ComputeJulianDate(m_M, m_D, m_Y, m_h, m_m, m_s, 73.0);
+    m_Tp = ComputeJulianCenturies(JDp);
 }
 
 void AstronomicalPositioning::ComputeLonLat()
@@ -144,7 +142,7 @@ void AstronomicalPositioning::ComputeEquatorialAndHorizonCoordinates(glm::dvec3 
     eclipticRectangularCoordinates = SphericalToRectangular(eclipticCoordinates);
     glm::dvec3 rectangularEquatorial = RectangularEclipticToRectangularEquatorial(eclipticRectangularCoordinates, m_T);
     equatorialCoordinates = RectangularToSpherical(rectangularEquatorial);
-    glm::dvec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEquatorial, m_T, m_T, m_lon, m_lat);
+    glm::dvec3 rectangularHorizon = RectangularEquatorialToRectangularHorizon(rectangularEquatorial, m_T, m_Tp, m_lon, m_lat);
     horizonCoordinates = RectangularToSpherical(rectangularHorizon);
 }
 

@@ -18,7 +18,6 @@ public:
     double GetT() { return m_T; }
 private:
     void Compute();
-    void ComputeJulianDate();
     void ComputeT();
     void ComputeLonLat();
     void ComputeCoordinates();
@@ -43,7 +42,8 @@ private:
     int m_h;
     int m_m;
     int m_s;
-    double m_T; // TODO: Add m_Tp
+    double m_T;
+    double m_Tp;
     double m_JD;
     double m_lon;
     double m_lat;
