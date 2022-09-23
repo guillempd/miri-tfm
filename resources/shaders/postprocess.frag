@@ -1,84 +1,81 @@
 #version 330 core
 
+const mat3 XYZ_from_RGB = mat3(vec3(0.4124, 0.2126, 0.0193), vec3(0.3576, 0.7152, 0.1192), vec3(0.1805, 0.0722, 0.9505));
+
 in vec2 TexCoord;
 
 uniform sampler2D hdrTexture;
 uniform float exposure;
-
 uniform float max_white;
+
+uniform vec3 blue_tint;
+
+uniform int mode;
+#define MODE_DAY 0
+#define MODE_NIGHT 1
+#define MODE_PHOTOPIC_LUMINANCE 2
+#define MODE_SCOTOPIC_LUMINANCE 3
 
 out vec4 FragColor;
 
-// See: https://en.wikipedia.org/wiki/SRGB#Transformation
-float toSrgb(float c)
-{
-    if (c <= 0.0031308) return 12.92 * c;
-    else return 1.055 * pow(c, 1.0 / 2.4) - 0.055;
-}
-
-vec3 toSrgb(vec3 c)
-{
-    return vec3(toSrgb(c.x), toSrgb(c.y), toSrgb(c.z));
-}
-
-// vec3 tonemap(vec3 c, float exposure)
-// {
-//     return vec3(1.0) - exp(-exposure * c);
-// }
-
-vec3 expose(vec3 c, float exposure)
-{
-    return exposure * c;
-}
-
-
-vec3 reinhard(vec3 c)
-{
-    return c / (1.0 + c);
-}
-
-float reinhard(float l)
-{
-    return l / (1.0 + l);
-}
-
 float luminance(vec3 c)
 {
-    return dot(c, vec3(0.2126f, 0.7152f, 0.0722f));
+    const vec3 Y_from_RGB = vec3(XYZ_from_RGB[0][1], XYZ_from_RGB[1][1], XYZ_from_RGB[2][1]);
+    return dot(c, Y_from_RGB);
 }
 
-vec3 reinhard_luminance(vec3 c)
+// TODO: Improve notation / make it consistent with the writeup
+vec3 reinhard(vec3 c)
 {
-    float l_in = luminance(c);
-    float l_out = reinhard(l_in);
-    return c * (l_out / l_in);
+    float L = luminance(c);
+    float targetL = (L * (1.0 + L / (max_white * max_white))) / (1.0 + L);
+    return c / L * targetL;
 }
 
-vec3 reinhard_extended(vec3 c, float max_white)
+vec3 srgb_from_linear(vec3 linear)
 {
-    return (c * (1.0 + c / vec3(max_white * max_white))) / (1.0 + c);
+    vec3 srgbLo = 12.92 * linear;
+    vec3 srgbHi = 1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055;
+    bvec3 lo = lessThanEqual(linear, vec3(0.0031308));
+    vec3 srgb = mix(srgbHi, srgbLo, lo);
+    return srgb;
 }
 
-float reinhard_extended(float l, float max_white)
+float photopic_luminance_from_XYZ(vec3 XYZ)
 {
-    return (l * (1.0 + l / (max_white * max_white))) / (1.0 + l);
+    return XYZ.y;
 }
 
-vec3 reinhard_extended_luminance(vec3 c, float max_white)
+float scotopic_luminance_from_XYZ(vec3 XYZ)
 {
-    float l_in = luminance(c);
-    float l_out = reinhard_extended(l_in, max_white);
-    return c * (l_out / l_in);
+    return XYZ.y * (1.33 * (1.0 + (XYZ.y + XYZ.z)/ XYZ.x) - 1.68);
+}
+
+vec3 XYZ_from_linear(vec3 linear)
+{
+    return XYZ_from_RGB * linear;
+}
+
+vec3 mode_selection(vec3 sdrColor)
+{
+    vec3 xyzColor = XYZ_from_linear(sdrColor);
+    float Y = photopic_luminance_from_XYZ(xyzColor);
+    float V = scotopic_luminance_from_XYZ(xyzColor);
+    switch (mode)
+    {
+        case MODE_DAY:                  return sdrColor;
+        case MODE_NIGHT:                return V * blue_tint; 
+        case MODE_PHOTOPIC_LUMINANCE:   return vec3(Y);
+        case MODE_SCOTOPIC_LUMINANCE:   return vec3(V);
+    }
 }
 
 void main()
 {
     vec3 hdrColor = texture(hdrTexture, TexCoord).rgb;
-    hdrColor = expose(hdrColor, exposure);
-
-    vec3 sdrColor = reinhard_extended_luminance(hdrColor, max_white);
-    vec3 srgbColor = toSrgb(sdrColor);
-
-    FragColor.rgb = srgbColor;
-    FragColor.a = 1.0;
+    vec3 exposedHdrColor = hdrColor * exposure;
+    vec3 sdrColor = reinhard(exposedHdrColor);
+    vec3 outColor = mode_selection(sdrColor);
+    vec3 srgbColor = srgb_from_linear(outColor);
+    FragColor = vec4(srgbColor, 1.0);
 }

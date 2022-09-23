@@ -17,6 +17,8 @@ Application::Application(int width, int height, Window* window)
     , m_window(window)
     , m_exposure(-2.0f)
     , m_max_white(1.0f)
+    , m_displayMode(DisplayMode::DAY)
+    , m_tintColor(0.6, 0.5, 0.9)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -133,6 +135,14 @@ void Application::OnUpdate()
     {
         ImGui::SliderFloat("Exposure", &m_exposure, -5.0f, 5.0f);
         ImGui::SliderFloat("White Point", &m_max_white, 0.0f, 10.0f);
+        ImGui::RadioButton("Day", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::DAY)); ImGui::SameLine();
+        ImGui::RadioButton("Night", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::NIGHT)); ImGui::SameLine();
+        ImGui::RadioButton("Photopic Luminance", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::PHOTOPIC_LUMINANCE)); ImGui::SameLine();
+        ImGui::RadioButton("Scotopic Luminance", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::SCOTOPIC_LUMINANCE));
+        if (m_displayMode == DisplayMode::NIGHT)
+        {
+            ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_tintColor));
+        }
     }
     ImGui::End();
 
@@ -162,6 +172,8 @@ void Application::OnRender()
     m_postprocessShader.SetInt("hdrTexture", 0);
     m_postprocessShader.SetFloat("exposure", glm::pow(10.0f, m_exposure));
     m_postprocessShader.SetFloat("max_white", m_max_white);
+    m_postprocessShader.SetInt("mode", static_cast<int>(m_displayMode));
+    m_postprocessShader.SetVec3("blue_tint", m_tintColor);
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

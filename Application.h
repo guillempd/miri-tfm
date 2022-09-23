@@ -21,6 +21,8 @@ public:
     void OnScroll(double xoffset, double yoffset);
     void OnFramebufferSize(int width, int height);
 private:
+    enum class DisplayMode {DAY, NIGHT, PHOTOPIC_LUMINANCE, SCOTOPIC_LUMINANCE};
+private:
     Camera m_camera;
     glm::vec2 m_previousCursorPosition;
     PhysicalSky m_physicalSky;
@@ -35,4 +37,6 @@ private:
     GLuint m_fullScreenQuadVbo;
     float m_exposure;
     float m_max_white;
+    DisplayMode m_displayMode;
+    glm::vec3 m_tintColor;
 };
