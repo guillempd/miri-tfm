@@ -16,9 +16,13 @@ Application::Application(int width, int height, Window* window)
     , m_physicalSky()
     , m_window(window)
     , m_exposure(-2.0f)
-    , m_max_white(1.0f)
+    , m_max_white(1e6f)
     , m_displayMode(DisplayMode::DAY)
-    , m_tintColor(0.6, 0.5, 0.9)
+    , m_tintColor(0.1f, 0.1f, 0.5f)
+    , m_noiseScale(50.0f)
+    , m_noiseStrength(0.0025f)
+    , m_left(0.0f)
+    , m_right(0.01f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -57,11 +61,11 @@ Application::Application(int width, int height, Window* window)
     // POSTPROCESS STUFF
     ShaderStage vertexShader = ShaderStage();
     vertexShader.Create(ShaderType::VERTEX);
-    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert");
+    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert", "D:/dev/miri-tfm/resources/shaders");
 
     ShaderStage fragmentShader = ShaderStage();
     fragmentShader.Create(ShaderType::FRAGMENT);
-    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag");
+    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag", "D:/dev/miri-tfm/resources/shaders");
 
     m_postprocessShader.Create();
     m_postprocessShader.AttachShader(vertexShader.m_id);
@@ -112,6 +116,7 @@ void Application::OnMouseButton(int button, int action, int mods)
 
 void Application::OnFramebufferSize(int width, int height)
 {
+    m_resolution = glm::vec3(width, height, 0.0);
     glViewport(0, 0, width, height);
     m_camera.SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
     GLenum errorCode = glGetError();
@@ -131,17 +136,22 @@ void Application::OnUpdate()
     m_camera.OnUpdate();
     m_physicalSky.Update();
 
-    if (ImGui::Begin("General Settings"))
+    if (ImGui::Begin("Postprocess"))
     {
         ImGui::SliderFloat("Exposure", &m_exposure, -5.0f, 5.0f);
-        ImGui::SliderFloat("White Point", &m_max_white, 0.0f, 10.0f);
+        ImGui::SliderFloat("White Point", &m_max_white, 0.0f, 1e6f, "%.3f", ImGuiSliderFlags_Logarithmic);
         ImGui::RadioButton("Day", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::DAY)); ImGui::SameLine();
         ImGui::RadioButton("Night", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::NIGHT)); ImGui::SameLine();
         ImGui::RadioButton("Photopic Luminance", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::PHOTOPIC_LUMINANCE)); ImGui::SameLine();
         ImGui::RadioButton("Scotopic Luminance", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::SCOTOPIC_LUMINANCE));
         if (m_displayMode == DisplayMode::NIGHT)
         {
-            ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_tintColor));
+            ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_tintColor), ImGuiColorEditFlags_Float);
+            ImGui::SliderFloat("Noise Scale", &m_noiseScale, 0.0f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Noise Strength", &m_noiseStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Left", &m_left, 0.0f, 1.0f);
+            ImGui::SliderFloat("Right", &m_right, 0.0f, 1.0f);
+            //ImGui::SliderFloat();
         }
     }
     ImGui::End();
@@ -174,6 +184,11 @@ void Application::OnRender()
     m_postprocessShader.SetFloat("max_white", m_max_white);
     m_postprocessShader.SetInt("mode", static_cast<int>(m_displayMode));
     m_postprocessShader.SetVec3("blue_tint", m_tintColor);
+    m_postprocessShader.SetVec3("resolution", m_resolution);
+    m_postprocessShader.SetFloat("noiseScale", m_noiseScale);
+    m_postprocessShader.SetFloat("noiseStrength", m_noiseStrength);
+    m_postprocessShader.SetFloat("left", m_left);
+    m_postprocessShader.SetFloat("right", m_right);
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

@@ -39,4 +39,9 @@ private:
     float m_max_white;
     DisplayMode m_displayMode;
     glm::vec3 m_tintColor;
+    glm::vec3 m_resolution;
+    float m_noiseScale;
+    float m_noiseStrength;
+    float m_left;
+    float m_right;
 };

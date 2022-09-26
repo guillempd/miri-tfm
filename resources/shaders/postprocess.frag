@@ -1,4 +1,5 @@
 #version 330 core
+#include "noise2D.glsl"
 
 const mat3 XYZ_from_RGB = mat3(vec3(0.4124, 0.2126, 0.0193), vec3(0.3576, 0.7152, 0.1192), vec3(0.1805, 0.0722, 0.9505));
 
@@ -9,6 +10,11 @@ uniform float exposure;
 uniform float max_white;
 
 uniform vec3 blue_tint; // 1:1:2 ratio for this tint works well
+uniform vec3 resolution;
+uniform float noiseScale;
+uniform float noiseStrength;
+uniform float left;
+uniform float right;
 
 uniform int mode;
 #define MODE_DAY 0
@@ -60,15 +66,25 @@ vec3 XYZ_from_linear(vec3 linear)
 // TODO: Properly compute s
 vec3 mode_selection(vec3 sdrColor)
 {
+    vec2 texCoord = gl_FragCoord.xy / resolution.yy * noiseScale;
+    float f = 0.0;
+    mat2 m = mat2(1.6,  1.2, -1.2,  1.6);
+    f  = 0.5000 * snoise(texCoord); texCoord = m * texCoord;
+    f += 0.2500 * snoise(texCoord); texCoord = m * texCoord;
+    f += 0.1250 * snoise(texCoord); texCoord = m * texCoord;
+    f += 0.0625 * snoise(texCoord); texCoord = m * texCoord;
+    f *= noiseStrength;
+    FragColor = vec4(vec3(f), 1.0);
+
     vec3 xyzColor = XYZ_from_linear(sdrColor);
 
     float Y = photopic_luminance_from_XYZ(xyzColor);
     float V = scotopic_luminance_from_XYZ(xyzColor);
 
     vec3 dayColor = sdrColor;
-    vec3 nightColor = V * blue_tint;
+    vec3 nightColor = (V + f)  * blue_tint;
 
-    float s = 1.0 - smoothstep(0.0, 1.0, Y); // based on Y // Jonas Thesis
+    float s = 1.0 - smoothstep(left, right, Y); // based on Y // Jonas Thesis
     vec3 mixColor = mix(dayColor, nightColor, s);
 
     switch (mode)
