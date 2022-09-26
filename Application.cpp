@@ -18,11 +18,11 @@ Application::Application(int width, int height, Window* window)
     , m_exposure(-2.0f)
     , m_max_white(1e6f)
     , m_displayMode(DisplayMode::DAY)
-    , m_tintColor(0.1f, 0.1f, 0.5f)
+    , m_blueTint(0.1f, 0.1f, 0.5f)
     , m_noiseScale(50.0f)
-    , m_noiseStrength(0.0025f)
-    , m_left(0.0f)
-    , m_right(0.01f)
+    , m_noiseStrength(0.005f)
+    , m_mesopicRangeStart(0.0f)
+    , m_mesopicRangeEnd(0.01f)
 {
     std::cout << "Creating application" << std::endl;
 
@@ -146,12 +146,12 @@ void Application::OnUpdate()
         ImGui::RadioButton("Scotopic Luminance", reinterpret_cast<int*>(&m_displayMode), static_cast<int>(DisplayMode::SCOTOPIC_LUMINANCE));
         if (m_displayMode == DisplayMode::NIGHT)
         {
-            ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_tintColor), ImGuiColorEditFlags_Float);
+            ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_blueTint), ImGuiColorEditFlags_Float);
             ImGui::SliderFloat("Noise Scale", &m_noiseScale, 0.0f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Noise Strength", &m_noiseStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Left", &m_left, 0.0f, 1.0f);
-            ImGui::SliderFloat("Right", &m_right, 0.0f, 1.0f);
-            //ImGui::SliderFloat();
+            ImGui::SliderFloat("Mesopic Range Start", &m_mesopicRangeStart, 0.0f, 1.0f);
+            ImGui::SliderFloat("Mesopic Range End", &m_mesopicRangeEnd, 0.0f, 1.0f);
+            if (m_mesopicRangeStart > m_mesopicRangeEnd) m_mesopicRangeStart = m_mesopicRangeEnd;
         }
     }
     ImGui::End();
@@ -183,12 +183,11 @@ void Application::OnRender()
     m_postprocessShader.SetFloat("exposure", glm::pow(10.0f, m_exposure));
     m_postprocessShader.SetFloat("max_white", m_max_white);
     m_postprocessShader.SetInt("mode", static_cast<int>(m_displayMode));
-    m_postprocessShader.SetVec3("blue_tint", m_tintColor);
-    m_postprocessShader.SetVec3("resolution", m_resolution);
+    m_postprocessShader.SetVec3("blueTint", m_blueTint);
+    m_postprocessShader.SetFloat("aspectRatio", m_resolution.x / m_resolution.y);
     m_postprocessShader.SetFloat("noiseScale", m_noiseScale);
     m_postprocessShader.SetFloat("noiseStrength", m_noiseStrength);
-    m_postprocessShader.SetFloat("left", m_left);
-    m_postprocessShader.SetFloat("right", m_right);
+    m_postprocessShader.SetVec3("mesopicRange", glm::vec3(m_mesopicRangeStart, m_mesopicRangeEnd, 0.0f));
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

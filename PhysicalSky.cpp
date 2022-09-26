@@ -30,7 +30,7 @@ PhysicalSky::PhysicalSky()
     , m_dSkyStarsMapMultiplier(-1.0f)
     , m_dSkyMilkywayMapMultiplier(-1.0f)
 
-    , m_dArtificialLightEnable(true)
+    , m_dArtificialLightEnable(false)
     , m_dArtificialLightPos(0.0f, 5.0f, 0.0f)
     , m_dArtificialLightRadiantIntensity(1.0f) // W*sr^-1
 

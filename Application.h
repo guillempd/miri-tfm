@@ -35,13 +35,17 @@ private:
     ShaderProgram m_postprocessShader;
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
+    DisplayMode m_displayMode;
+
+    // Day Tonemapper
     float m_exposure;
     float m_max_white;
-    DisplayMode m_displayMode;
-    glm::vec3 m_tintColor;
+
+    // Night Tonemapper
+    glm::vec3 m_blueTint;
     glm::vec3 m_resolution;
     float m_noiseScale;
     float m_noiseStrength;
-    float m_left;
-    float m_right;
+    float m_mesopicRangeStart;
+    float m_mesopicRangeEnd;
 };

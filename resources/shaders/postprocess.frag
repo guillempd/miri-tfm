@@ -9,12 +9,11 @@ uniform sampler2D hdrTexture;
 uniform float exposure;
 uniform float max_white;
 
-uniform vec3 blue_tint; // 1:1:2 ratio for this tint works well
-uniform vec3 resolution;
+uniform vec3 blueTint;
 uniform float noiseScale;
 uniform float noiseStrength;
-uniform float left;
-uniform float right;
+uniform vec3 mesopicRange;
+uniform float aspectRatio;
 
 uniform int mode;
 #define MODE_DAY 0
@@ -62,29 +61,35 @@ vec3 XYZ_from_linear(vec3 linear)
     return XYZ_from_RGB * linear;
 }
 
-// TODO: Apply noise
+float compute_noise(vec2 texCoord)
+{
+    texCoord *= noiseScale;
+    mat2 m = mat2(1.6,  1.2, -1.2,  1.6);
+    float result = 0.0;
+    result  = 0.5000 * snoise(texCoord); texCoord = m * texCoord;
+    result += 0.2500 * snoise(texCoord); texCoord = m * texCoord;
+    result += 0.1250 * snoise(texCoord); texCoord = m * texCoord;
+    result += 0.0625 * snoise(texCoord);
+    return result * noiseStrength;
+}
+
 // TODO: Properly compute s
 vec3 mode_selection(vec3 sdrColor)
 {
-    vec2 texCoord = gl_FragCoord.xy / resolution.yy * noiseScale;
-    float f = 0.0;
-    mat2 m = mat2(1.6,  1.2, -1.2,  1.6);
-    f  = 0.5000 * snoise(texCoord); texCoord = m * texCoord;
-    f += 0.2500 * snoise(texCoord); texCoord = m * texCoord;
-    f += 0.1250 * snoise(texCoord); texCoord = m * texCoord;
-    f += 0.0625 * snoise(texCoord); texCoord = m * texCoord;
-    f *= noiseStrength;
-    FragColor = vec4(vec3(f), 1.0);
-
     vec3 xyzColor = XYZ_from_linear(sdrColor);
 
     float Y = photopic_luminance_from_XYZ(xyzColor);
     float V = scotopic_luminance_from_XYZ(xyzColor);
+    float noise = compute_noise(TexCoord * vec2(aspectRatio, 1.0));
 
     vec3 dayColor = sdrColor;
-    vec3 nightColor = (V + f)  * blue_tint;
+    vec3 nightColor = (V + noise) * blueTint;
 
-    float s = 1.0 - smoothstep(left, right, Y); // based on Y // Jonas Thesis
+    float l = mesopicRange.x;
+    float r = mesopicRange.y;
+    float x = clamp(Y, l, r);
+    float s = 1.0 - (x - l) / (r - l);
+    // float s = 1.0 - smoothstep(l, r, Y); // Alternative version from Jonas Thesis
     vec3 mixColor = mix(dayColor, nightColor, s);
 
     switch (mode)
