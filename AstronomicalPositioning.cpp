@@ -22,7 +22,7 @@ AstronomicalPositioning::AstronomicalPositioning()
 
 void AstronomicalPositioning::Update()
 {
-    if (ImGui::Begin("Coordinates Stuff"))
+    if (ImGui::Begin("Astronomical Positioning"))
     {
         ImGui::InputInt("Month", &m_M);
         ImGui::InputInt("Day", &m_D);

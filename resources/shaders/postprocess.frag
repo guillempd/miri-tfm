@@ -8,7 +8,7 @@ uniform sampler2D hdrTexture;
 uniform float exposure;
 uniform float max_white;
 
-uniform vec3 blue_tint;
+uniform vec3 blue_tint; // 1:1:2 ratio for this tint works well
 
 uniform int mode;
 #define MODE_DAY 0
@@ -56,15 +56,25 @@ vec3 XYZ_from_linear(vec3 linear)
     return XYZ_from_RGB * linear;
 }
 
+// TODO: Apply noise
+// TODO: Properly compute s
 vec3 mode_selection(vec3 sdrColor)
 {
     vec3 xyzColor = XYZ_from_linear(sdrColor);
+
     float Y = photopic_luminance_from_XYZ(xyzColor);
     float V = scotopic_luminance_from_XYZ(xyzColor);
+
+    vec3 dayColor = sdrColor;
+    vec3 nightColor = V * blue_tint;
+
+    float s = 1.0 - smoothstep(0.0, 1.0, Y); // based on Y // Jonas Thesis
+    vec3 mixColor = mix(dayColor, nightColor, s);
+
     switch (mode)
     {
-        case MODE_DAY:                  return sdrColor;
-        case MODE_NIGHT:                return V * blue_tint; 
+        case MODE_DAY:                  return dayColor;
+        case MODE_NIGHT:                return mixColor;
         case MODE_PHOTOPIC_LUMINANCE:   return vec3(Y);
         case MODE_SCOTOPIC_LUMINANCE:   return vec3(V);
     }
