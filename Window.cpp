@@ -135,3 +135,8 @@ void Window::OnFramebufferSize(int width, int height)
 {
     m_application->OnFramebufferSize(width, height);
 }
+
+float Window::GetTime() const
+{
+    return static_cast<float>(glfwGetTime());
+}

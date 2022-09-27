@@ -13,6 +13,7 @@ public:
     ~Window();
     void Init();
     void MainLoop();
+    float GetTime() const;
 private:
     void MakeCurrent() const;
     void InstallCallbacks();

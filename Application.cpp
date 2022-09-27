@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "ImGuiNfd.h"
+#include "Window.h"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -21,6 +22,7 @@ Application::Application(int width, int height, Window* window)
     , m_blueTint(0.1f, 0.1f, 0.5f)
     , m_noiseScale(50.0f)
     , m_noiseStrength(0.005f)
+    , m_noiseSpeed(0.05f)
     , m_mesopicRangeStart(0.0f)
     , m_mesopicRangeEnd(0.01f)
 {
@@ -149,6 +151,7 @@ void Application::OnUpdate()
             ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_blueTint), ImGuiColorEditFlags_Float);
             ImGui::SliderFloat("Noise Scale", &m_noiseScale, 0.0f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Noise Strength", &m_noiseStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
+            ImGui::SliderFloat("Noise Speed", &m_noiseSpeed, 0.001f, 0.1f);
             ImGui::SliderFloat("Mesopic Range Start", &m_mesopicRangeStart, 0.0f, 1.0f);
             ImGui::SliderFloat("Mesopic Range End", &m_mesopicRangeEnd, 0.0f, 1.0f);
             if (m_mesopicRangeStart > m_mesopicRangeEnd) m_mesopicRangeStart = m_mesopicRangeEnd;
@@ -176,18 +179,26 @@ void Application::OnRender()
 
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     m_postprocessShader.Use();
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
-    m_postprocessShader.SetFloat("exposure", glm::pow(10.0f, m_exposure));
+    m_postprocessShader.SetFloat("Exposure", glm::pow(10.0f, m_exposure));
     m_postprocessShader.SetFloat("max_white", m_max_white);
-    m_postprocessShader.SetInt("mode", static_cast<int>(m_displayMode));
-    m_postprocessShader.SetVec3("blueTint", m_blueTint);
-    m_postprocessShader.SetFloat("aspectRatio", m_resolution.x / m_resolution.y);
-    m_postprocessShader.SetFloat("noiseScale", m_noiseScale);
-    m_postprocessShader.SetFloat("noiseStrength", m_noiseStrength);
-    m_postprocessShader.SetVec3("mesopicRange", glm::vec3(m_mesopicRangeStart, m_mesopicRangeEnd, 0.0f));
+
+    m_postprocessShader.SetFloat("AspectRatio", m_resolution.x / m_resolution.y);
+    m_postprocessShader.SetFloat("Time", m_window->GetTime());
+
+    m_postprocessShader.SetVec3("BlueTint", m_blueTint);
+    m_postprocessShader.SetFloat("NoiseScale", m_noiseScale);
+    m_postprocessShader.SetFloat("NoiseStrength", m_noiseStrength);
+    m_postprocessShader.SetFloat("NoiseSpeed", m_noiseSpeed);
+    m_postprocessShader.SetVec3("MesopicRange", glm::vec3(m_mesopicRangeStart, m_mesopicRangeEnd, 0.0f));
+
+    m_postprocessShader.SetInt("Mode", static_cast<int>(m_displayMode));
+
     glBindVertexArray(m_fullScreenQuadVao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 

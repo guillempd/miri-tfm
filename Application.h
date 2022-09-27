@@ -36,6 +36,7 @@ private:
     GLuint m_fullScreenQuadVao;
     GLuint m_fullScreenQuadVbo;
     DisplayMode m_displayMode;
+    glm::vec3 m_resolution;
 
     // Day Tonemapper
     float m_exposure;
@@ -43,9 +44,9 @@ private:
 
     // Night Tonemapper
     glm::vec3 m_blueTint;
-    glm::vec3 m_resolution;
     float m_noiseScale;
     float m_noiseStrength;
+    float m_noiseSpeed;
     float m_mesopicRangeStart;
     float m_mesopicRangeEnd;
 };

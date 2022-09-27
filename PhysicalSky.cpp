@@ -12,7 +12,6 @@ namespace {
 
 using namespace atmosphere;
 
-// TODO: Make use of doubles
 PhysicalSky::PhysicalSky()
     : m_dPlanetRadius(6360.0f) // km
     , m_dAtmosphereHeight(60.0f) // km
@@ -350,7 +349,7 @@ void PhysicalSky::Update()
 {
     m_astronomicalPositioning.Update();
 
-    if (ImGui::Begin("Atmosphere Rendering Settings"))
+    if (ImGui::Begin("Atmosphere Rendering"))
     {
         if (ImGui::CollapsingHeader("General"))
         {

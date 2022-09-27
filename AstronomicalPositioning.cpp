@@ -12,17 +12,17 @@ AstronomicalPositioning::AstronomicalPositioning()
     , m_m(0)
     , m_s(33)
     , m_JD(2459862.750382)
-    , m_lonDeg(0.0)
-    , m_latDeg(0.0)
-    , m_lon(0.0)
-    , m_lat(0.0)
+    , m_lonDeg(2.1686)
+    , m_latDeg(41.3874)
+    , m_lon(0.0378)
+    , m_lat(0.7223)
 {
     Compute();
 }
 
 void AstronomicalPositioning::Update()
 {
-    if (ImGui::Begin("Astronomical Positioning"))
+    if (ImGui::Begin("Celestial Bodies Positioning"))
     {
         ImGui::InputInt("Month", &m_M);
         ImGui::InputInt("Day", &m_D);

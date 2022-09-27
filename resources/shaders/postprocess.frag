@@ -1,21 +1,25 @@
 #version 330 core
-#include "noise2D.glsl"
+#include "noise3D.glsl"
 
 const mat3 XYZ_from_RGB = mat3(vec3(0.4124, 0.2126, 0.0193), vec3(0.3576, 0.7152, 0.1192), vec3(0.1805, 0.0722, 0.9505));
 
 in vec2 TexCoord;
 
 uniform sampler2D hdrTexture;
-uniform float exposure;
+
+uniform float Exposure;
 uniform float max_white;
 
-uniform vec3 blueTint;
-uniform float noiseScale;
-uniform float noiseStrength;
-uniform vec3 mesopicRange;
-uniform float aspectRatio;
+uniform float AspectRatio;
+uniform float Time;
 
-uniform int mode;
+uniform vec3 BlueTint;
+uniform float NoiseScale;
+uniform float NoiseStrength;
+uniform float NoiseSpeed;
+uniform vec3 MesopicRange;
+
+uniform int Mode;
 #define MODE_DAY 0
 #define MODE_NIGHT 1
 #define MODE_PHOTOPIC_LUMINANCE 2
@@ -61,38 +65,39 @@ vec3 XYZ_from_linear(vec3 linear)
     return XYZ_from_RGB * linear;
 }
 
-float compute_noise(vec2 texCoord)
+float compute_noise(vec3 texCoord)
 {
-    texCoord *= noiseScale;
-    mat2 m = mat2(1.6,  1.2, -1.2,  1.6);
+    texCoord *= NoiseScale;
+    const mat3 m = mat3(0.00,  0.80,  0.60,
+                       -0.80,  0.36, -0.48,
+                       -0.60, -0.48,  0.64);
     float result = 0.0;
-    result  = 0.5000 * snoise(texCoord); texCoord = m * texCoord;
-    result += 0.2500 * snoise(texCoord); texCoord = m * texCoord;
-    result += 0.1250 * snoise(texCoord); texCoord = m * texCoord;
+    result  = 0.5000 * snoise(texCoord); texCoord = m * texCoord * 2.01;
+    result += 0.2500 * snoise(texCoord); texCoord = m * texCoord * 2.00;
+    result += 0.1250 * snoise(texCoord); texCoord = m * texCoord * 1.99;
     result += 0.0625 * snoise(texCoord);
-    return result * noiseStrength;
+    return result * NoiseStrength;
 }
 
-// TODO: Properly compute s
 vec3 mode_selection(vec3 sdrColor)
 {
     vec3 xyzColor = XYZ_from_linear(sdrColor);
 
     float Y = photopic_luminance_from_XYZ(xyzColor);
     float V = scotopic_luminance_from_XYZ(xyzColor);
-    float noise = compute_noise(TexCoord * vec2(aspectRatio, 1.0));
+    float noise = compute_noise(vec3(TexCoord * vec2(AspectRatio, 1.0), Time * NoiseSpeed));
 
     vec3 dayColor = sdrColor;
-    vec3 nightColor = (V + noise) * blueTint;
+    vec3 nightColor = (V + noise) * BlueTint;
 
-    float l = mesopicRange.x;
-    float r = mesopicRange.y;
+    float l = MesopicRange.x;
+    float r = MesopicRange.y;
     float x = clamp(Y, l, r);
     float s = 1.0 - (x - l) / (r - l);
-    // float s = 1.0 - smoothstep(l, r, Y); // Alternative version from Jonas Thesis
+    // float s = 1.0 - smoothstep(l, r, Y); // Smoothstep version from Jonas Thesis
     vec3 mixColor = mix(dayColor, nightColor, s);
 
-    switch (mode)
+    switch (Mode)
     {
         case MODE_DAY:                  return dayColor;
         case MODE_NIGHT:                return mixColor;
@@ -104,7 +109,7 @@ vec3 mode_selection(vec3 sdrColor)
 void main()
 {
     vec3 hdrColor = texture(hdrTexture, TexCoord).rgb;
-    vec3 exposedHdrColor = hdrColor * exposure;
+    vec3 exposedHdrColor = hdrColor * Exposure;
     vec3 sdrColor = reinhard(exposedHdrColor);
     vec3 outColor = mode_selection(sdrColor);
     vec3 srgbColor = srgb_from_linear(outColor);
