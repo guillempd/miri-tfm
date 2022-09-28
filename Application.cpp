@@ -186,12 +186,12 @@ void Application::OnRender()
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
     m_postprocessShader.SetFloat("Exposure", glm::pow(10.0f, m_exposure));
-    m_postprocessShader.SetFloat("max_white", m_max_white);
+    m_postprocessShader.SetFloat("L_white", m_max_white);
 
     m_postprocessShader.SetFloat("AspectRatio", m_resolution.x / m_resolution.y);
     m_postprocessShader.SetFloat("Time", m_window->GetTime());
 
-    m_postprocessShader.SetVec3("BlueTint", m_blueTint);
+    m_postprocessShader.SetVec3("C_blue", m_blueTint);
     m_postprocessShader.SetFloat("NoiseScale", m_noiseScale);
     m_postprocessShader.SetFloat("NoiseStrength", m_noiseStrength);
     m_postprocessShader.SetFloat("NoiseSpeed", m_noiseSpeed);
