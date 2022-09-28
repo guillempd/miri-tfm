@@ -22,7 +22,7 @@ Application::Application(int width, int height, Window* window)
     , m_blueTint(0.1f, 0.1f, 0.5f)
     , m_noiseScale(50.0f)
     , m_noiseStrength(0.005f)
-    , m_noiseSpeed(0.05f)
+    , m_noiseSpeed(10.0f)
     , m_mesopicRangeStart(0.0f)
     , m_mesopicRangeEnd(0.01f)
 {
@@ -151,7 +151,7 @@ void Application::OnUpdate()
             ImGui::ColorEdit3("Tint Color", glm::value_ptr(m_blueTint), ImGuiColorEditFlags_Float);
             ImGui::SliderFloat("Noise Scale", &m_noiseScale, 0.0f, 200.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
             ImGui::SliderFloat("Noise Strength", &m_noiseStrength, 0.0f, 1.0f, "%.3f", ImGuiSliderFlags_Logarithmic);
-            ImGui::SliderFloat("Noise Speed", &m_noiseSpeed, 0.001f, 0.1f);
+            ImGui::SliderFloat("Noise Speed", &m_noiseSpeed, 0.0f, 20.0f);
             ImGui::SliderFloat("Mesopic Range Start", &m_mesopicRangeStart, 0.0f, 1.0f);
             ImGui::SliderFloat("Mesopic Range End", &m_mesopicRangeEnd, 0.0f, 1.0f);
             if (m_mesopicRangeStart > m_mesopicRangeEnd) m_mesopicRangeStart = m_mesopicRangeEnd;

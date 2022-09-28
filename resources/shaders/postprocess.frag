@@ -1,5 +1,5 @@
 #version 330 core
-#include "noise3D.glsl"
+#include "psrdnoise2.glsl"
 
 const mat3 XYZ_from_RGB = mat3(vec3(0.4124, 0.2126, 0.0193), vec3(0.3576, 0.7152, 0.1192), vec3(0.1805, 0.0722, 0.9505));
 
@@ -65,17 +65,16 @@ vec3 XYZ_from_linear(vec3 linear)
     return XYZ_from_RGB * linear;
 }
 
-float compute_noise(vec3 texCoord)
+float compute_noise(vec2 texCoord)
 {
     texCoord *= NoiseScale;
-    const mat3 m = mat3(0.00,  0.80,  0.60,
-                       -0.80,  0.36, -0.48,
-                       -0.60, -0.48,  0.64);
+    const mat2 m = mat2(1.6,  1.2, -1.2,  1.6); // See: https://www.shadertoy.com/view/lsf3WH
+    vec2 ignore;
     float result = 0.0;
-    result  = 0.5000 * snoise(texCoord); texCoord = m * texCoord * 2.01;
-    result += 0.2500 * snoise(texCoord); texCoord = m * texCoord * 2.00;
-    result += 0.1250 * snoise(texCoord); texCoord = m * texCoord * 1.99;
-    result += 0.0625 * snoise(texCoord);
+    result  = 0.5000 * psrdnoise(texCoord, vec2(0.0, 0.0), Time * NoiseSpeed, ignore); texCoord = m * texCoord;
+    result += 0.2500 * psrdnoise(texCoord, vec2(0.0, 0.0), Time * NoiseSpeed, ignore); texCoord = m * texCoord;
+    result += 0.1250 * psrdnoise(texCoord, vec2(0.0, 0.0), Time * NoiseSpeed, ignore); texCoord = m * texCoord;
+    result += 0.0625 * psrdnoise(texCoord, vec2(0.0, 0.0), Time * NoiseSpeed, ignore);
     return result * NoiseStrength;
 }
 
@@ -85,7 +84,7 @@ vec3 mode_selection(vec3 sdrColor)
 
     float Y = photopic_luminance_from_XYZ(xyzColor);
     float V = scotopic_luminance_from_XYZ(xyzColor);
-    float noise = compute_noise(vec3(TexCoord * vec2(AspectRatio, 1.0), Time * NoiseSpeed));
+    float noise = compute_noise(TexCoord * vec2(AspectRatio, 1.0));
 
     vec3 dayColor = sdrColor;
     vec3 nightColor = (V + noise) * BlueTint;
