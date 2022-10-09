@@ -48,10 +48,10 @@ PhysicalSky::PhysicalSky()
     , m_dOzoneAbsorptionCoefficient(0.345561f, 1.000000f, 0.045189f) // unitless
 
     , m_notAppliedChanges(false)
-    , m_mesh("D:/Escritorio/human.glb")
-    , m_bulbMesh("D:/Escritorio/sphere1.glb")
-    , m_groundMesh("D:/Escritorio/plane50x50.glb")
-    , m_fullScreenQuadMesh("D:/Escritorio/FullScreenQuad.glb")
+    , m_mesh("./resources/models/Human.glb") // How to change this
+    , m_bulbMesh("./resources/models/Sphere.glb")
+    , m_groundMesh("./resources/models/Floor.glb")
+    , m_fullScreenQuadMesh("./resources/models/FullScreenQuad.glb")
 {
     Init();
 }
@@ -277,10 +277,10 @@ void PhysicalSky::InitShaders()
 {
     ShaderStage skyVertexShader = ShaderStage();
     skyVertexShader.Create(ShaderType::VERTEX);
-    skyVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.vert", "D:/dev/miri-tfm/resources/shaders/");
+    skyVertexShader.Compile("./resources/shaders/sky.vert", "./resources/shaders/");
     ShaderStage skyFragmentShader = ShaderStage();
     skyFragmentShader.Create(ShaderType::FRAGMENT);
-    skyFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sky.frag", "D:/dev/miri-tfm/resources/shaders/");
+    skyFragmentShader.Compile("./resources/shaders/sky.frag", "./resources/shaders/");
     m_skyShader.Create();
     m_skyShader.AttachShader(skyVertexShader.m_id);
     m_skyShader.AttachShader(skyFragmentShader.m_id);
@@ -289,10 +289,10 @@ void PhysicalSky::InitShaders()
 
     ShaderStage moonVertexShader = ShaderStage();
     moonVertexShader.Create(ShaderType::VERTEX);
-    moonVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/moon.vert", "D:/dev/miri-tfm/resources/shaders/");
+    moonVertexShader.Compile("./resources/shaders/moon.vert", "./resources/shaders/");
     ShaderStage moonFragmentShader = ShaderStage();
     moonFragmentShader.Create(ShaderType::FRAGMENT);
-    moonFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/moon.frag", "D:/dev/miri-tfm/resources/shaders/");
+    moonFragmentShader.Compile("./resources/shaders/moon.frag", "./resources/shaders/");
     m_moonShader.Create();
     m_moonShader.AttachShader(moonVertexShader.m_id);
     m_moonShader.AttachShader(moonFragmentShader.m_id);
@@ -301,10 +301,10 @@ void PhysicalSky::InitShaders()
 
     ShaderStage sunVertexShader = ShaderStage();
     sunVertexShader.Create(ShaderType::VERTEX);
-    sunVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/sun.vert", "D:/dev/miri-tfm/resources/shaders/");
+    sunVertexShader.Compile("./resources/shaders/sun.vert", "./resources/shaders/");
     ShaderStage sunFragmentShader = ShaderStage();
     sunFragmentShader.Create(ShaderType::FRAGMENT);
-    sunFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/sun.frag", "D:/dev/miri-tfm/resources/shaders/");
+    sunFragmentShader.Compile("./resources/shaders/sun.frag", "./resources/shaders/");
     m_sunShader.Create();
     m_sunShader.AttachShader(sunVertexShader.m_id);
     m_sunShader.AttachShader(sunFragmentShader.m_id);
@@ -313,10 +313,10 @@ void PhysicalSky::InitShaders()
 
     ShaderStage meshVertexShader = ShaderStage();
     meshVertexShader.Create(ShaderType::VERTEX);
-    meshVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.vert", "D:/dev/miri-tfm/resources/shaders/");
+    meshVertexShader.Compile("./resources/shaders/mesh.vert", "./resources/shaders/");
     ShaderStage meshFragmentShader = ShaderStage();
     meshFragmentShader.Create(ShaderType::FRAGMENT);
-    meshFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/mesh.frag", "D:/dev/miri-tfm/resources/shaders/");
+    meshFragmentShader.Compile("./resources/shaders/mesh.frag", "./resources/shaders/");
     m_meshShader.Create();
     m_meshShader.AttachShader(meshVertexShader.m_id);
     m_meshShader.AttachShader(meshFragmentShader.m_id);
@@ -326,10 +326,10 @@ void PhysicalSky::InitShaders()
     // NOTE: Might add atmosphere shader
     ShaderStage lightVertexShader = ShaderStage();
     lightVertexShader.Create(ShaderType::VERTEX);
-    lightVertexShader.Compile("D:/dev/miri-tfm/resources/shaders/light.vert", "D:/dev/miri-tfm/resources/shaders/");
+    lightVertexShader.Compile("./resources/shaders/light.vert", "./resources/shaders/");
     ShaderStage lightFragmentShader = ShaderStage();
     lightFragmentShader.Create(ShaderType::FRAGMENT);
-    lightFragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/light.frag", "D:/dev/miri-tfm/resources/shaders/");
+    lightFragmentShader.Compile("./resources/shaders/light.frag", "./resources/shaders/");
     m_lightShader.Create();
     m_lightShader.AttachShader(lightVertexShader.m_id);
     m_lightShader.AttachShader(lightFragmentShader.m_id);
@@ -339,10 +339,10 @@ void PhysicalSky::InitShaders()
 
 void PhysicalSky::InitResources()
 {
-    m_moonNormalMap.Load("D:/Descargas/moon_xnormal.png");
-    m_moonColorMap.Load("D:/Descargas/lroc_color_poles_8k_nogamma.png");
-    m_skyStarsMap.Load("D:/Escritorio/hiptyc_2020_8k.hdr");
-    m_skyMilkywayMap.Load("D:/Escritorio/milkyway_2020_8k.hdr");
+    m_moonNormalMap.Load("./resources/textures/moon_normal.png");
+    m_moonColorMap.Load("./resources/textures/moon_color.png");
+    m_skyStarsMap.Load("./resources/textures/stars_foreground.hdr");
+    m_skyMilkywayMap.Load("./resources/textures/stars_background.hdr");
 }
 
 void PhysicalSky::Update()

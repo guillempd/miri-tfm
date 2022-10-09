@@ -63,11 +63,11 @@ Application::Application(int width, int height, Window* window)
     // POSTPROCESS STUFF
     ShaderStage vertexShader = ShaderStage();
     vertexShader.Create(ShaderType::VERTEX);
-    vertexShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.vert", "D:/dev/miri-tfm/resources/shaders");
+    vertexShader.Compile("./resources/shaders/postprocess.vert", "./resources/shaders");
 
     ShaderStage fragmentShader = ShaderStage();
     fragmentShader.Create(ShaderType::FRAGMENT);
-    fragmentShader.Compile("D:/dev/miri-tfm/resources/shaders/postprocess.frag", "D:/dev/miri-tfm/resources/shaders");
+    fragmentShader.Compile("./resources/shaders/postprocess.frag", "./resources/shaders");
 
     m_postprocessShader.Create();
     m_postprocessShader.AttachShader(vertexShader.m_id);
