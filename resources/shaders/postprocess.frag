@@ -7,7 +7,7 @@ in vec2 TexCoord;
 
 uniform sampler2D hdrTexture;
 
-uniform float Exposure;
+uniform float k;
 uniform float L_white;
 
 uniform float AspectRatio;
@@ -106,8 +106,7 @@ vec3 mode_selection(vec3 C_d)
 void main()
 {
     vec3 C = texture(hdrTexture, TexCoord).rgb;
-    C *= Exposure;
-    vec3 C_d = tonemap(C);
+    vec3 C_d = tonemap(k * C);
     vec3 C_f = mode_selection(C_d);
     vec3 C_srgb = srgb_from_linear(C_f);
     FragColor = vec4(C_srgb, 1.0);

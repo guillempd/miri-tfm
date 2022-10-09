@@ -185,7 +185,7 @@ void Application::OnRender()
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_hdrTexture);
     m_postprocessShader.SetInt("hdrTexture", 0);
-    m_postprocessShader.SetFloat("Exposure", glm::pow(10.0f, m_exposure));
+    m_postprocessShader.SetFloat("k", glm::pow(10.0f, m_exposure));
     m_postprocessShader.SetFloat("L_white", m_max_white);
 
     m_postprocessShader.SetFloat("AspectRatio", m_resolution.x / m_resolution.y);
