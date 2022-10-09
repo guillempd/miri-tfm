@@ -33,6 +33,7 @@ void Window::MakeCurrent() const
 {
     glfwMakeContextCurrent(m_window);
     gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+    glfwSwapInterval(0);
 }
 
 void Window::InstallCallbacks()
