@@ -14,11 +14,11 @@ using namespace atmosphere;
 
 PhysicalSky::PhysicalSky()
     : m_dPlanetRadius(6360.0f) // km
-    , m_dAtmosphereHeight(60.0f) // km
-    , m_dGroundAlbedo(0.401978f, 0.401978f, 0.401978f) // unitless
+    , m_dAtmosphereHeight(100.0f) // km
+    , m_dGroundAlbedo(0.300000f, 0.300000f, 0.300000f) // unitless
 
     , m_dSunSizeMultiplier(5.0f) // unitless
-    , m_dSunIrradiance(1500.000000f) // W*m^-2
+    , m_dSunIrradiance(1905.000000f) // W*m^-2
     , m_dSunLimbDarkeningAlgorithm(SunLimbDarkeningAlgorithm::NONE)
 
     , m_dMoonSizeMultiplier(5.0f) // unitless
